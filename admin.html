@@ -85,7 +85,7 @@ function draw({totals:t,days}){
     <h2>Last 14 days</h2>
     <div class="wrap"><table><thead><tr><th>Day</th><th>Visitors</th><th>Returning</th><th>New</th><th>Players</th><th>Dailies</th><th>Quick</th><th>Points</th><th>Avg pts</th><th>Avg 🍌</th><th>Shares</th><th>Challenges</th><th>Accounts</th></tr></thead>
       <tbody>${days.map(x=>`<tr><td>${fmtDay(x.day)}</td><td>${n(x.visitors)}</td><td>${n(x.returning)}</td><td>${n(x.new_visitors)}</td><td>${n(x.players)}</td><td>${n(x.dailies)}</td><td>${n(x.quick)}</td><td>${n(x.points)}</td><td>${n(x.avg_points)}</td><td>${x.avg_bananas??'–'}</td><td>${n(x.shares)}</td><td>${n(x.challenges)}</td><td>${n(x.accounts)}</td></tr>`).join('')}</tbody></table></div>
-    <div class="small dim">Days follow the daily: they turn over at midnight Eastern. A visitor is one device; returning = it first visited on an earlier day. 🍌 = a round scoring 90+. Points and averages count dailies and quick games together.</div>
+    <div class="small dim">Days are Eastern time (players each get the new daily at their own midnight). A visitor is one device; returning = it first visited on an earlier day. 🍌 = a round scoring 90+. Points and averages count dailies and quick games together.</div>
   </main>`;
   document.getElementById('re').onclick=load;
 }
