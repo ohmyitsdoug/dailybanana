@@ -1,7 +1,7 @@
 // POST /.netlify/functions/log  (anonymous; nobody needs an account)
 // { kind: "visit", device }
 // { kind: "miss", word, puzzle, lo, hi, device }   an unknown word typed into the gap lo..hi, once per player per day
-// { kind: "play", puzzle, words, score, reached, steps, device }     a finished daily
+// { kind: "play", puzzle, words, score, points:[6 round scores], device }     a finished daily
 import { db, clean, cleanDevice, day } from '../lib/db.mjs';
 
 export default async (req) => {
@@ -32,6 +32,7 @@ export default async (req) => {
     await store.setJSON(`plays/${puzzle}/${id}`, {
       words, score: Math.max(0, Math.min(100000, Math.round(+b.score || 0))), reached: !!b.reached,
       steps: words.length, device, day: today, returning: !!(seen && seen.first < today),
+      points: (Array.isArray(b.points) ? b.points : []).slice(0, 6).map((x) => Math.max(0, Math.min(100, Math.round(+x || 0)))),
     });
     return new Response('ok');
   }

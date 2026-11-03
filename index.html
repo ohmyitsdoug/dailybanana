@@ -5,6 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Daily Banana · Ridiculous measurements for everyday items</title>
 <meta name="description" content="Ridiculous measurements for everyday items. A daily guessing game: how many bananas long is a school bus? How many shoes tall is the Eiffel Tower?">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="alternate icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#FFF0A0">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Daily Banana">
+<meta property="og:title" content="Daily Banana · Banana for scale">
+<meta property="og:description" content="Ridiculous measurements for everyday items. Do you know how many bananas long a bus is?">
+<meta property="og:url" content="https://dailybanana.io/">
+<meta property="og:image" content="https://dailybanana.io/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Daily Banana: Banana for scale, with a pixel-art banana">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://dailybanana.io/og.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
 <script>
@@ -758,7 +774,7 @@ function finish(why){
     store.set('v07:'+r.n,res);
     res.badges=awardBadges(res,r);if(res.badges.length)store.set('v07:'+r.n,res);
     pushSync();
-    log('play',{puzzle:r.n,words:R.answers.map(a=>a.guess==null?'none':String(nice(a.guess))),score:total,reached:R.answers.every(a=>(a.p||0)>=90),steps:R.answers.filter(a=>a.guess!=null).length,device:DEVICE});
+    log('play',{puzzle:r.n,points:R.answers.map(a=>a.p||0),words:R.answers.map(a=>a.guess==null?'none':String(nice(a.guess))),score:total,reached:R.answers.every(a=>(a.p||0)>=90),steps:R.answers.filter(a=>a.guess!=null).length,device:DEVICE});
   }else{
     QUICK=null;
     Object.assign(res,{id:'q'+Date.now().toString(36),at:Date.now(),rounds:toNames(r.rounds),chal:r.chal||null,own:false});
@@ -781,11 +797,12 @@ function showResults(r,res){
         <b class="score num">${fmt(res.total)}</b><span style="font-size:14px">out of ${ROUNDS*MAX_PTS} · ${marks}</span></div>
       <div class="r">${r.quick?'':`<span>${streak()} day streak</span>`}<span>${spot} spot on</span></div>
     </div>
+    ${r.quick?'':`<div class="in" style="--d:1;display:flex;flex-direction:column;gap:2px"><b id="rank" style="font-size:17px">&nbsp;</b><span class="note" id="rankn"></span></div>`}
     ${(res.badges||[]).length?`<div class="badge-new in" style="--d:2"><b>New badge${res.badges.length>1?'s':''} · ${res.badges.map(id=>BADGES.find(x=>x.id===id).name).join(', ')}</b><span>${res.badges.map(id=>BADGES.find(x=>x.id===id).how).join(' · ')}</span></div>`:''}
     <div class="in" style="--d:2"><div class="eyebrow" style="margin-bottom:4px">Your rounds</div>
       <div class="path">${r.qs.map((q,i)=>{const a=res.answers[i]||{};
         return`<div class="prow round"><span class="i num">${i+1}</span><span class="w"><b>${esc(question(q))}</b><br>
-          <span class="t">answer: about ${fmt(nice(q.ans))} · ${a.guess!=null?`you: ${fmt(nice(a.guess))} · ${esc(offLabel(a).replace(/\.$/,'').toLowerCase())}`:'no guess'}</span></span>
+          <span class="t">answer: about ${fmt(nice(q.ans))} · ${a.guess!=null?`you: ${fmt(nice(a.guess))} · ${esc(offLabel(a).replace(/\.$/,'').toLowerCase())}`:'no guess'}<span id="pr${i}"></span></span></span>
           <span class="num">${mark(a.p||0)} ${a.p||0}</span></div>`}).join('')}
       </div></div>
     ${r.quick?`<div class="in" style="--d:3" id="chalbox"></div>`:''}
@@ -798,11 +815,10 @@ function showResults(r,res){
   window.scrollTo(0,0);wireNav();
   tick=setInterval(()=>{const cd=document.getElementById('cd');if(cd)cd.textContent=untilMidnight();else clearInterval(tick)},1000);
   document.getElementById('again').onclick=()=>quick();
-  if(r.quick)chalBox(res);
+  if(r.quick)chalBox(res);else showRank(r,res);
   document.getElementById('homeb').onclick=showStart;
   document.getElementById('cp').onclick=async()=>{
     const lab=document.getElementById('cpl');
-    try{if(navigator.share&&matchMedia('(pointer:coarse)').matches){await navigator.share({text:shareTxt});return}}catch(_){}
     try{await navigator.clipboard.writeText(shareTxt);lab.textContent='Copied!'}catch(_){
       const rg=document.createRange();rg.selectNodeContents(document.getElementById('sh'));const s=getSelection();s.removeAllRanges();s.addRange(rg);lab.textContent='Selected: copy it'}
   };
@@ -902,6 +918,30 @@ async function syncNow(){
 }
 function pushSync(){if(SESSION&&API)fetch(`${API}/sync`,{method:'POST',headers:{'content-type':'application/json',...authHdr()},body:JSON.stringify({data:localData()}),keepalive:true}).catch(()=>{})}
 
+// ---------- how you did against everyone (dailies) ----------
+// With 12+ players we use their real scores; before that, an estimate from a simulated crowd whose guesses
+// get wilder as the answers get bigger (seeded by the daily, so everyone sees the same estimate).
+const REAL_AFTER=12;
+function simCrowd(r){
+  let t=(r.n+1)*2654435761>>>0;const rnd=()=>{t+=0x6D2B79F5;let x=t;x=Math.imul(x^x>>>15,x|1);x^=x+Math.imul(x^x>>>7,x|61);return((x^x>>>14)>>>0)/4294967296};
+  const norm=()=>Math.sqrt(-2*Math.log(rnd()||1e-9))*Math.cos(2*Math.PI*rnd());
+  const sig=r.qs.map(q=>0.22+0.07*Math.max(0,Math.log10(q.ans)));
+  const totals=[],rounds=r.qs.map(()=>[]);
+  for(let k=0;k<3000;k++){const skill=Math.exp(0.35*norm());let tot=0;
+    r.qs.forEach((q,i)=>{const p=rnd()<0.03?0:Math.round(100*10**-Math.abs(norm()*sig[i]*skill));rounds[i].push(p);tot+=p});totals.push(tot)}
+  return{players:0,totals,rounds};
+}
+const beat=(xs,v)=>{if(!xs.length)return null;let lo=0,eq=0;for(const x of xs){if(x<v)lo++;else if(x===v)eq++}return Math.min(99,Math.max(1,Math.round(100*(lo+eq/2)/xs.length)))};
+async function showRank(r,res){
+  let st=null;if(API)st=await fetch(`${API}/stats?n=${r.n}`).then(x=>x.ok?x.json():null).catch(()=>null);
+  const real=st&&st.players>=REAL_AFTER,d=real?st:simCrowd(r);
+  const el=document.getElementById('rank');if(!el)return;
+  const b=beat(d.totals,res.total);
+  el.textContent=b>=50?`Top ${Math.max(1,100-b)}% of players today`:`Better than ${b}% of players today`;
+  document.getElementById('rankn').textContent=real?`Based on ${fmt(st.players)} players.`:`Estimated until ${REAL_AFTER} people have played today's daily.`;
+  res.answers.forEach((a,i)=>{const sp=document.getElementById('pr'+i);if(sp&&d.rounds[i])sp.textContent=` · better than ${beat(d.rounds[i],a.p||0)}%`});
+}
+
 // ---------- challenges ----------
 const CH=`${API}/challenge`;
 const chalLink=code=>`${location.origin}${location.pathname.replace(/index\.html$/,'')}?c=${code}`;
@@ -922,8 +962,7 @@ function shareLinkRow(code){return`<div class="linkbox"><code id="lk">${esc(chal
 function wireLink(code,host){
   const b=document.getElementById('cplk');if(!b)return;
   b.onclick=async()=>{const url=chalLink(code),text=`Daily Banana challenge from ${host}: can you beat me? Same 6 questions, open for 24 hours.`;
-    try{if(navigator.share&&matchMedia('(pointer:coarse)').matches){await navigator.share({text,url});return}}catch(_){}
-    try{await navigator.clipboard.writeText(url);b.textContent='Copied!'}catch(_){const rg=document.createRange();rg.selectNodeContents(document.getElementById('lk'));const s=getSelection();s.removeAllRanges();s.addRange(rg)}};
+    try{await navigator.clipboard.writeText(`${text} ${url}`);b.textContent='Copied!'}catch(_){const rg=document.createRange();rg.selectNodeContents(document.getElementById('lk'));const s=getSelection();s.removeAllRanges();s.addRange(rg)}};
 }
 // the box under a quick game's results
 async function chalBox(res){
