@@ -214,9 +214,10 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 .board .you{font-weight:700}
 .namein{height:48px;border:2px solid var(--ink);padding:0 12px;font:inherit;font-size:16px;background:var(--card);color:var(--ink);width:100%;box-sizing:border-box}
 .acct{display:flex;flex-direction:column;gap:10px}
-.acct .sbtn{display:flex;align-items:center;justify-content:center;gap:10px;height:44px;border:2px solid var(--ink);background:var(--card);color:var(--ink);font:inherit;font-weight:700;font-size:15px;cursor:pointer;width:100%}
-.acct .sbtn svg{width:20px;height:20px}
-.acct #gbtn{min-height:44px;display:flex;justify-content:center}
+.btn .pi{display:inline-flex;width:22px;height:22px;flex:none}
+.btn .pi svg{width:22px;height:22px}
+.btn.prov{justify-content:flex-start}
+.btn.prov .go{margin-left:auto}
 .disclaim{font-size:12px;color:var(--mut);line-height:1.4}
 .help h3{margin:8px 0 0;font-size:12px;letter-spacing:1.5px;color:var(--mut);font-weight:500}
 .help p,.help li{margin:0;font-size:16px;max-width:60ch}
@@ -808,21 +809,23 @@ const authCfg=async()=>AUTHCFG||(AUTHCFG=await fetch(`${API}/auth`).then(r=>r.js
 const authHdr=()=>SESSION?{authorization:'Bearer '+SESSION.token}:{};
 function setSession(x){SESSION=x;x?store.set('session',x):store.del('session')}
 const DISCORD_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#5865F2" d="M20.3 4.4A19.7 19.7 0 0 0 15.4 3l-.6 1.3a18.3 18.3 0 0 0-5.5 0L8.7 3a19.6 19.6 0 0 0-4.9 1.5C.7 9 0 13.6.3 18.1a19.8 19.8 0 0 0 6 3l1.3-2a12.8 12.8 0 0 1-2-1l.5-.4a14.1 14.1 0 0 0 12 0l.5.4a12.7 12.7 0 0 1-2 1l1.3 2a19.7 19.7 0 0 0 6-3c.5-5.2-.8-9.8-3.6-13.7ZM8.5 15.3c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm7 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>';
+const GOOGLE_ICON='<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.5 28.6a14.5 14.5 0 0 1 0-9.2l-7.9-6.1a24 24 0 0 0 0 21.4l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>';
 function acctHtml(){
   if(!SESSION)return`<div class="note">Sign in to keep your scores, streak, badges and history on every device. Or keep playing as a guest: everything stays on this device.</div>
-    <div id="gbtn"></div><button class="sbtn" id="dsc">${DISCORD_ICON}Sign in with Discord</button><div class="note" id="acerr"></div>`;
+    <button class="btn prov" id="ggl"><span class="pi">${GOOGLE_ICON}</span>Sign in with Google</button>
+    <button class="btn prov" id="dsc"><span class="pi">${DISCORD_ICON}</span>Sign in with Discord</button><div class="note" id="acerr"></div>`;
   const u=SESSION.user;
   return`<div class="list">
     <div class="lrow"><span>Signed in as <b>${esc(u.name)}</b></span><button class="sq" id="rename">Rename</button></div>
-    <div class="lrow"><span>Google</span>${u.google?'<span class="mut">Linked</span>':'<span id="gbtn"></span>'}</div>
+    <div class="lrow"><span>Google</span>${u.google?'<span class="mut">Linked</span>':'<button class="sq" id="ggl">Link</button>'}</div>
     <div class="lrow"><span>Discord</span>${u.discord?'<span class="mut">Linked</span>':'<button class="sq" id="dsc">Link</button>'}</div>
     <button class="lrow" id="signout"><span>Sign out</span><span class="mut">→</span></button>
     <button class="lrow" id="delacct"><span>Delete my account</span><span class="mut">Can't be undone</span></button>
   </div><div class="note" id="acerr"></div>`;
 }
 const acErr=m=>{const e=document.getElementById('acerr');if(e)e.textContent=m};
-async function finishSignIn(body){
-  const r=await fetch(`${API}/auth`,{method:'POST',headers:{'content-type':'application/json',...authHdr()},body:JSON.stringify({...body,link:!!SESSION})});
+async function finishSignIn(body,link=!!SESSION){
+  const r=await fetch(`${API}/auth`,{method:'POST',headers:{'content-type':'application/json',...authHdr()},body:JSON.stringify({...body,link})});
   const j=await r.json().catch(()=>({}));
   if(!r.ok||!j.token)throw new Error(j.error||'Sign-in failed. Try again.');
   setSession({token:j.token,user:j.user});
@@ -830,13 +833,9 @@ async function finishSignIn(body){
 }
 async function wireAcct(){
   const on=(id,f)=>{const el=document.getElementById(id);if(el)el.onclick=f};
-  on('dsc',async()=>{
-    const c=await authCfg();if(!c.discord)return acErr('Discord sign-in isn\'t set up yet.');
-    const state=Math.random().toString(36).slice(2)+Date.now().toString(36);
-    try{sessionStorage.setItem('db-discord-state',JSON.stringify({state,link:!!SESSION,back:'menu'}))}catch(_){}
-    location.href=`https://discord.com/oauth2/authorize?${new URLSearchParams({client_id:c.discord,response_type:'code',scope:'identify',redirect_uri:location.origin+'/',state,prompt:'none'})}`;
-  });
-  on('signout',()=>{setSession(null);try{google.accounts.id.disableAutoSelect()}catch(_){}showMenu()});
+  on('dsc',()=>startSignIn('discord'));
+  on('ggl',()=>startSignIn('google'));
+  on('signout',()=>{setSession(null);showMenu()});
   on('rename',async()=>{
     const n=(prompt('Your name for scoreboards (up to 16 characters)',SESSION.user.name)||'').trim().slice(0,16);if(!n)return;
     const r=await fetch(`${API}/auth`,{method:'POST',headers:{'content-type':'application/json',...authHdr()},body:JSON.stringify({action:'rename',name:n})}).then(r=>r.json()).catch(()=>({}));
@@ -846,22 +845,30 @@ async function wireAcct(){
     if(!del.dataset.armed){del.dataset.armed='1';del.innerHTML='<span>Tap again to delete your account</span><b>Sure?</b>';return}
     await fetch(`${API}/auth`,{method:'DELETE',headers:authHdr()}).catch(()=>{});setSession(null);showMenu();
   };
-  const g=document.getElementById('gbtn');if(!g)return;
-  const c=await authCfg();if(!c.google){SESSION?g.outerHTML='<span class="mut">Coming soon</span>':g.remove();return}
-  try{
-    await new Promise((ok,no)=>{if(window.google&&google.accounts)return ok();const sc=document.createElement('script');sc.src='https://accounts.google.com/gsi/client';sc.onload=ok;sc.onerror=no;document.head.appendChild(sc)});
-    google.accounts.id.initialize({client_id:c.google,callback:async x=>{try{await finishSignIn({provider:'google',credential:x.credential});showMenu()}catch(e){acErr(e.message)}}});
-    const el=document.getElementById('gbtn');if(el)google.accounts.id.renderButton(el,{theme:'outline',size:'large',text:SESSION?'signin':'signin_with',width:SESSION?120:300});
-  }catch(_){g.remove()}
+  const c=await authCfg();
+  [['ggl','google'],['dsc','discord']].forEach(([id,k])=>{const b=document.getElementById(id);if(b&&!c[k]){b.disabled=true;b.style.opacity=.5;b.title='Coming soon'}});
 }
-// Discord sends the player back to /?code=…&state=…
-async function discordReturn(){
-  const q=new URLSearchParams(location.search),code=q.get('code'),state=q.get('state');
-  if(!code&&!q.get('error'))return false;
-  let saved=null;try{saved=JSON.parse(sessionStorage.getItem('db-discord-state')||'null');sessionStorage.removeItem('db-discord-state')}catch(_){}
+// both sign-ins leave the page and come back with a code (Discord) or an ID token (Google)
+async function startSignIn(provider,back='menu'){
+  const c=await authCfg();
+  if(!c[provider])return acErr(`${provider==='google'?'Google':'Discord'} sign-in isn't set up yet.`);
+  const state=Math.random().toString(36).slice(2)+Date.now().toString(36),nonce=Math.random().toString(36).slice(2);
+  try{sessionStorage.setItem('db-signin',JSON.stringify({provider,state,nonce,link:!!SESSION,back}))}catch(_){}
+  const redirect_uri=location.origin+'/';
+  location.href=provider==='google'
+    ?`https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({client_id:c.google,redirect_uri,response_type:'id_token',scope:'openid email profile',nonce,state,prompt:'select_account'})}`
+    :`https://discord.com/oauth2/authorize?${new URLSearchParams({client_id:c.discord,response_type:'code',scope:'identify',redirect_uri,state,prompt:'none'})}`;
+}
+// Google comes back to /#id_token=…&state=…, Discord to /?code=…&state=…
+async function signInReturn(){
+  const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.slice(1));
+  const code=q.get('code'),idt=h.get('id_token'),state=q.get('state')||h.get('state');
+  if(!code&&!idt&&!q.get('error')&&!h.get('error'))return false;
+  let saved=null;try{saved=JSON.parse(sessionStorage.getItem('db-signin')||'null');sessionStorage.removeItem('db-signin')}catch(_){}
   history.replaceState(null,'',location.pathname);
-  if(!code||!saved||saved.state!==state){showMenu();return true}
-  try{await finishSignIn({provider:'discord',code,redirect:location.origin+'/'})}catch(e){showMenu();acErr(e.message);return true}
+  if(!saved||saved.state!==state||!(code||idt)){showMenu();return true}
+  try{await finishSignIn(saved.provider==='google'?{provider:'google',credential:idt,nonce:saved.nonce}:{provider:'discord',code,redirect:location.origin+'/'},saved.link)}
+  catch(e){showMenu();acErr(e.message);return true}
   if(saved.back==='admin'){location.href='admin.html';return true}
   showMenu();return true;
 }
@@ -985,7 +992,7 @@ loadData().then(()=>{
     return finish('paused');
   }
   const code=new URLSearchParams(location.search).get('c');
-  discordReturn().then(handled=>{
+  signInReturn().then(handled=>{
     if(handled)return;
     if(code){history.replaceState(null,'',location.pathname);showChallenge(code)}else showStart();
     // pull scores from your other devices, then refresh the home screen if it's showing

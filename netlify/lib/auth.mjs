@@ -52,13 +52,13 @@ export function isAdminUser(u) {
 export const publicUser = (u) => ({ uid: u.uid, name: u.name, google: !!u.google, discord: !!u.discord, admin: isAdminUser(u) });
 
 // ---- the two sign-in providers ----
-export async function googleIdentity(credential) {
+export async function googleIdentity(credential, nonce) {
   const client = process.env.GOOGLE_CLIENT_ID || '';
   if (!client) throw new Error('Google sign-in is not set up yet.');
   const r = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential || '')}`);
   if (!r.ok) throw new Error('Google sign-in failed. Try again.');
   const t = await r.json();
-  const ok = t.aud === client && (t.iss === 'accounts.google.com' || t.iss === 'https://accounts.google.com') && +t.exp > Date.now() / 1000;
+  const ok = t.aud === client && (t.iss === 'accounts.google.com' || t.iss === 'https://accounts.google.com') && +t.exp > Date.now() / 1000 && (!nonce || t.nonce === nonce);
   if (!ok || !t.sub) throw new Error('Google sign-in failed. Try again.');
   return { key: String(t.sub), data: { sub: String(t.sub), email: t.email_verified === true || t.email_verified === 'true' ? t.email : '' }, name: t.given_name || t.name || '' };
 }

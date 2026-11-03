@@ -39,7 +39,7 @@ export default async (req) => {
   const provider = b.provider === 'discord' ? 'discord' : b.provider === 'google' ? 'google' : null;
   if (!provider) return json({ error: 'Unknown sign-in.' }, 400);
   let ident;
-  try { ident = provider === 'google' ? await googleIdentity(b.credential) : await discordIdentity(b.code, b.redirect); }
+  try { ident = provider === 'google' ? await googleIdentity(b.credential, b.nonce) : await discordIdentity(b.code, b.redirect); }
   catch (e) { return json({ error: e.message }, 400); }
 
   const idxKey = `idx/${provider}/${ident.key}`;

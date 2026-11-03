@@ -45,7 +45,7 @@ No database account and no sign-in providers. Netlify hosts the game, runs the s
 1. **Put the folder on GitHub** (e.g. `ohmyitsdoug/matryo`). Deploy from Git so Netlify installs `@netlify/blobs` for the functions; a drag-and-drop deploy doesn't install dependencies.
 2. **Netlify → Add new site → Import from Git** → pick the repo. Build command: leave empty. Publish directory: `.` (netlify.toml already says this).
 3. **Sign-in (players and admin).** Players can sign in with Google or Discord to keep their scores on every device; guests still play without an account.
-   - Google: Google Cloud Console → APIs & Services → Credentials → **OAuth client ID** (Web application). Authorized JavaScript origins: `https://dailybanana.io`, `https://www.dailybanana.io`, `https://dailybanana.netlify.app`.
+   - Google: Google Cloud Console → APIs & Services → Credentials → **OAuth client ID** (Web application). Authorized JavaScript origins: `https://dailybanana.io`, `https://www.dailybanana.io`, `https://dailybanana.netlify.app`. Authorized redirect URIs: `https://dailybanana.io/` and `https://dailybanana.netlify.app/` (with the slash).
    - Discord: discord.com/developers/applications → New Application → **OAuth2**. Copy the Client ID, reset and copy the Client Secret, and add redirects `https://dailybanana.io/` and `https://dailybanana.netlify.app/`.
    - Netlify → Project configuration → Environment variables: `GOOGLE_CLIENT_ID`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` (mark secret), `ADMIN_EMAIL` (your Google address), `ADMIN_DISCORD_ID` (your Discord user ID). Redeploy.
    - The admin page opens for whichever admin account you're signed into on the game's Menu, and the Menu shows the Admin link only then.
