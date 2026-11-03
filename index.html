@@ -443,9 +443,11 @@ const pick=a=>a[Math.floor(Math.random()*a.length)];
 function randomRounds(){
   const units=ITEMS.filter(i=>i.unit),used=new Set(),k=(a,b)=>a+'>'+b;
   const avoid=new Set([...DAILIES.flatMap(d=>d.rounds.map(x=>k(x.a,x.b))),...store.get('seen',[])]);
-  const out=BUCKETS.map(([lo,hi])=>{
-    for(let t=0;t<20000;t++){const a=pick(units),b=pick(ITEMS),r=b.cm/a.cm;
-      if(a.id!==b.id&&!used.has(a.id)&&!used.has(b.id)&&r>=lo&&r<=hi&&(t>15000||!avoid.has(k(a.id,b.id)))){used.add(a.id);used.add(b.id);return{a:a.id,b:b.id}}}
+  // only 1 or 2 rounds use a hyper-specific item (landmarks, niche gear), like the dailies
+  const nSpec=Math.random()<2/3?1:2,want=new Set();while(want.size<nSpec)want.add(Math.floor(Math.random()*BUCKETS.length));
+  const out=BUCKETS.map(([lo,hi],bi)=>{
+    for(let t=0;t<20000;t++){const a=pick(units),b=pick(ITEMS),r=b.cm/a.cm,sp=!!(a.x||b.x);
+      if(a.id!==b.id&&!used.has(a.id)&&!used.has(b.id)&&r>=lo&&r<=hi&&(t>15000||(!avoid.has(k(a.id,b.id))&&sp===want.has(bi)))){used.add(a.id);used.add(b.id);return{a:a.id,b:b.id}}}
     return{a:units[0].id,b:ITEMS[ITEMS.length-1].id}});
   store.set('seen',[...out.map(x=>k(x.a,x.b)),...store.get('seen',[])].slice(0,300));
   for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}   // any order, not small to big

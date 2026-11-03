@@ -1,0 +1,165 @@
+# Hyper-specific items: named landmarks and works, niche sports or trade gear, and things most people
+# have never pictured. Each daily (from #001) and each quick game gets 1-2 of these at most.
+# One item name per line, exactly as in scale_items.txt.
+Statue of Liberty
+Big Ben clock tower
+London Eye
+Great Pyramid of Giza
+Washington Monument
+Space Needle
+Gateway Arch
+Titanic
+Eiffel Tower
+Empire State Building
+Taipei 101 tower
+CN Tower
+Burj Khalifa
+Golden Gate Bridge
+Mount Everest
+marathon
+Leaning Tower of Pisa
+Christ the Redeemer statue
+Mona Lisa
+Hollywood sign letter
+International Space Station
+sheet of plywood
+two-by-four
+piano keyboard
+train boxcar
+subway car
+shipping container
+lane of highway
+emperor penguin
+anaconda
+redwood tree
+TV (55-inch)
+leek
+wheel of cheese
+rigatoni noodle
+cereal O
+floppy disk
+roof shingle
+wooden pallet
+traffic barrel
+extension ladder
+picket fence panel
+badminton shuttlecock
+home plate
+baseball base
+football goalpost
+jockey
+sumo wrestler
+hockey rink
+running track lap
+boxing ring
+diving board
+Olympic diving platform
+balance beam
+pole vault pole
+javelin
+golf hole cup
+cricket pitch
+volleyball net
+strand of hair
+human heart
+human femur
+small intestine
+tallest man ever
+praying mantis
+albatross
+pelican
+Great Dane
+Komodo dragon
+king cobra
+swordfish
+manatee
+giant squid
+manta ray
+sperm whale
+whale shark
+Brachiosaurus
+Stegosaurus
+Velociraptor
+woolly mammoth
+toy train car
+tank
+gondola
+tugboat
+aircraft carrier
+container ship
+submarine
+Airbus A380
+space shuttle
+Saturn V rocket
+Mars rover
+blimp
+freight train
+airport runway
+monster truck tire
+church steeple
+castle tower
+windmill
+wind turbine
+Manhattan
+Central Park
+Las Vegas Strip
+Hoover Dam
+Niagara Falls
+Angel Falls
+Grand Canyon
+Mount Rushmore face
+Great Sphinx
+Colosseum
+Parthenon
+Taj Mahal
+Sydney Opera House
+Big Ben bell
+Arc de Triomphe
+Brooklyn Bridge
+Tower Bridge
+Stonehenge stone
+Easter Island head
+One World Trade Center
+Willis Tower
+Shanghai Tower
+Petronas Towers
+Chrysler Building
+Golden Gate tower
+Mount Kilimanjaro
+Mount Fuji
+Matterhorn
+Mount Rainier
+Mariana Trench
+Great Wall of China
+Panama Canal
+English Channel
+Lake Tahoe
+saguaro cactus
+bamboo stalk
+banana plant
+corn stalk
+giant sequoia
+Hyperion, the tallest tree
+kelp strand
+big surf wave
+tornado
+double bass
+trombone
+tuba
+Statue of David
+The Thinker
+The Starry Night
+Oscar statuette
+Stanley Cup
+school bus seat
+gym floor
+gold bar
+sim card
+microchip
+grain of salt
+Moon
+Earth
+Hubble telescope
+Apollo lunar module
+Voyager antenna
+meteor crater
