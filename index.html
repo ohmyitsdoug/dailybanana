@@ -411,7 +411,8 @@ function judge(guess,q){
   return{guess,p,off:guess/q.ans};
 }
 const mark=p=>p>=90?'🍌':p>=70?'🟨':p>=40?'🟫':'⬜';
-const LEGEND='🍌 90+ · 🟨 70+ · 🟫 40+ · ⬜ under 40';
+const markA=a=>!a||a.guess==null?'❌':mark(a.p||0);   // ❌ = no guess (time ran out)
+const LEGEND='🍌 90+ · 🟨 70+ · 🟫 40+ · ⬜ under 40 · ❌ no guess';
 function offLabel(a){
   if(!a||a.guess==null)return'Out of time.';
   if(a.p>=MAX_PTS)return'Spot on!';
@@ -466,7 +467,11 @@ const BADGES=[
   {id:'streak7',name:'Week streak',how:'Play 7 dailies in a row'},
   {id:'host',name:'Ringleader',how:'Start a challenge'},
   {id:'beat',name:'Bragging rights',how:'Beat a friend in a challenge'},
+  {id:'tester',name:'Playtester',how:'Played during the first two weeks (dailies #000–#013)',secret:true},
 ];
+const PLAYTEST_LAST=13;   // anyone who finishes a game while the daily is #000–#013 gets the secret Playtester badge
+const shownBadges=have=>BADGES.filter(b=>!b.secret||have[b.id]);
+const badgeCount=have=>`${shownBadges(have).filter(b=>have[b.id]).length}/${shownBadges(have).length}`;
 function earnBadge(id){const have=store.get('badges',{});if(have[id])return false;have[id]=todayISO();store.set('badges',have);return true}
 function playedDailies(){return DAILIES.filter(d=>d.date<=TODAY.date).map(d=>({d,res:saved(d.n)})).filter(x=>x.res)}
 function streak(){ // days in a row with a played daily, counting back from today (or yesterday if today isn't played yet)
@@ -488,6 +493,7 @@ function awardBadges(res,r){
   earn('small',ps[smallest]>=90);
   earn('bunch',res.total>=500);
   earn('streak7',streak()>=7);
+  earn('tester',TODAY.n<=PLAYTEST_LAST);
   store.set('badges',have);return got;
 }
 
@@ -504,12 +510,12 @@ function wireNav(){
 const statBoxes=()=>{const sc=playedDailies().map(x=>x.res.total);return`
   <div class="stat"><b class="num">${streak()}</b><span>day streak</span></div>
   <div class="stat"><b class="num">${sc.length?fmt(Math.max(...sc)):'–'}</b><span>best</span></div>
-  <button class="stat" id="tobadges"><b class="num">${Object.keys(store.get('badges',{})).length}/${BADGES.length}</b><span>badges</span></button>`};
+  <button class="stat" id="tobadges"><b class="num">${badgeCount(store.get('badges',{}))}</b><span>badges</span></button>`};
 // one square per round
 function squares(answers,cur){
   let h='';
   for(let i=0;i<ROUNDS;i++){const a=(answers||[])[i];
-    h+=a?`<span class="sqr on ${a.p>=90?'bull':a.p>=30?'good':'miss'}" title="Round ${i+1}: ${a.p||0}">${a.p||0}</span>`
+    h+=a?`<span class="sqr on ${a.p>=90?'bull':a.p>=30?'good':'miss'}" title="Round ${i+1}: ${a.guess==null?'no guess':a.p||0}">${a.guess==null?'✕':a.p||0}</span>`
       :`<span class="sqr ${i===cur?'cur':''}"><span>${i===cur?i+1:'?'}</span></span>`}
   return`<div class="sqrow seven" role="img" aria-label="${(answers||[]).length} of ${ROUNDS} rounds played">${h}</div>`;
 }
@@ -599,8 +605,8 @@ function showMenu(jump){
       <div class="stat"><b class="num">${scores.length?fmt(Math.max(...scores)):'–'}</b><span>best</span></div>
       <div class="stat"><b class="num">${scores.length?fmt(Math.round(scores.reduce((a,b)=>a+b,0)/scores.length)):'–'}</b><span>average</span></div>
     </div>
-    <div class="eyebrow in" style="--d:4" id="badges">Badges · ${Object.keys(have).length} of ${BADGES.length}</div>
-    <div class="badges in" style="--d:4">${BADGES.map(b=>`<div class="badge ${have[b.id]?'on':''}">${badgeIcon()}<span class="bt"><b>${b.name}</b><span>${b.how}</span></span></div>`).join('')}</div>
+    <div class="eyebrow in" style="--d:4" id="badges">Badges · ${badgeCount(have).replace('/',' of ')}</div>
+    <div class="badges in" style="--d:4">${shownBadges(have).map(b=>`<div class="badge ${have[b.id]?'on':''}">${badgeIcon()}<span class="bt"><b>${b.name}</b><span>${b.how}</span></span></div>`).join('')}</div>
     <div class="eyebrow in" style="--d:5">History</div>
     <div class="list in" style="--d:5">
       ${todayRes?'':`<button class="lrow" data-n="${TODAY.n}"><span>Today · #${pad3(TODAY.n)}</span><span class="mut">${liveSaved(TODAY.n)?'Paused':'Not played'}</span></button>`}
@@ -788,7 +794,7 @@ function untilMidnight(){const n=new Date(),m=new Date(n);m.setHours(24,0,0,0);c
 function showResults(r,res){
   clearInterval(tick);
   const title=r.quick?(res.chal?'Daily Banana · challenge':'Daily Banana · quick play'):`Daily Banana #${pad3(r.n)}`;
-  const marks=res.answers.map(a=>mark(a.p||0)).join('');
+  const marks=res.answers.map(markA).join('');
   const shareTxt=`${title} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n${marks}\n${location.host||'dailybanana.io'}`;
   const spot=res.answers.filter(a=>(a.p||0)>=100).length;
   app.innerHTML=`${nav()}<div class="narrow" style="max-width:560px">
@@ -797,13 +803,13 @@ function showResults(r,res){
         <b class="score num">${fmt(res.total)}</b><span style="font-size:14px">out of ${ROUNDS*MAX_PTS} · ${marks}</span></div>
       <div class="r">${r.quick?'':`<span>${streak()} day streak</span>`}<span>${spot} spot on</span></div>
     </div>
-    ${r.quick?'':`<div class="in" style="--d:1;display:flex;flex-direction:column;gap:2px"><b id="rank" style="font-size:17px">&nbsp;</b><span class="note" id="rankn"></span></div>`}
+    ${r.quick?'':`<div class="in" style="--d:1;display:flex;flex-direction:column;gap:2px"><b id="rank" style="font-size:17px">&nbsp;</b></div>`}
     ${(res.badges||[]).length?`<div class="badge-new in" style="--d:2"><b>New badge${res.badges.length>1?'s':''} · ${res.badges.map(id=>BADGES.find(x=>x.id===id).name).join(', ')}</b><span>${res.badges.map(id=>BADGES.find(x=>x.id===id).how).join(' · ')}</span></div>`:''}
     <div class="in" style="--d:2"><div class="eyebrow" style="margin-bottom:4px">Your rounds</div>
       <div class="path">${r.qs.map((q,i)=>{const a=res.answers[i]||{};
         return`<div class="prow round"><span class="i num">${i+1}</span><span class="w"><b>${esc(question(q))}</b><br>
           <span class="t">answer: about ${fmt(nice(q.ans))} · ${a.guess!=null?`you: ${fmt(nice(a.guess))} · ${esc(offLabel(a).replace(/\.$/,'').toLowerCase())}`:'no guess'}<span id="pr${i}"></span></span></span>
-          <span class="num">${mark(a.p||0)} ${a.p||0}</span></div>`}).join('')}
+          <span class="num">${markA(a)} ${a.guess==null?'–':a.p||0}</span></div>`}).join('')}
       </div></div>
     ${r.quick?`<div class="in" style="--d:3" id="chalbox"></div>`:''}
     <div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(shareTxt)}</div>
@@ -938,7 +944,6 @@ async function showRank(r,res){
   const el=document.getElementById('rank');if(!el)return;
   const b=beat(d.totals,res.total);
   el.textContent=b>=50?`Top ${Math.max(1,100-b)}% of players today`:`Better than ${b}% of players today`;
-  document.getElementById('rankn').textContent=real?`Based on ${fmt(st.players)} players.`:`Estimated until ${REAL_AFTER} people have played today's daily.`;
   res.answers.forEach((a,i)=>{const sp=document.getElementById('pr'+i);if(sp&&d.rounds[i])sp.textContent=` · better than ${beat(d.rounds[i],a.p||0)}%`});
 }
 
@@ -989,7 +994,7 @@ async function chalBox(res){
   document.getElementById('mkch').onclick=async e=>{
     const name=readName();if(!name){document.getElementById('nm').focus();document.getElementById('cherr').textContent='Add a name so friends know who to beat.';return}
     e.currentTarget.disabled=true;
-    const c=await chalApi({action:'create',name,rounds:res.rounds,score:res.total,marks:res.answers.map(a=>mark(a.p||0)).join(''),playedAt:res.at});
+    const c=await chalApi({action:'create',name,rounds:res.rounds,score:res.total,marks:res.answers.map(markA).join(''),playedAt:res.at});
     if(!c.ok){document.getElementById('cherr').textContent=c.error||'Could not make a link right now. Try again.';e.currentTarget.disabled=false;return}
     res.chal={code:c.code,host:c.host};res.own=true;saveQuick(res);earnBadge('host');chalBox(res);
   };
@@ -1035,7 +1040,7 @@ async function showChallenge(code){
 // a finished challenge game posts its score (one try per person)
 async function postChallenge(res){
   if(!res.chal||res.own)return;
-  await chalApi({action:'play',code:res.chal.code,name:store.get('name','')||(SESSION?SESSION.user.name:GUEST),score:res.total,marks:res.answers.map(a=>mark(a.p||0)).join('')});
+  await chalApi({action:'play',code:res.chal.code,name:store.get('name','')||(SESSION?SESSION.user.name:GUEST),score:res.total,marks:res.answers.map(markA).join('')});
 }
 
 // ---------- boot ----------
