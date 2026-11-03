@@ -7,14 +7,13 @@ index.html          the game (works on its own; logging and shared stats use the
 admin.html          stats, for the admin account only (ADMIN_EMAIL / ADMIN_DISCORD_ID)
 config.js           optional: where the server functions live (default /.netlify/functions)
 package.json        one dependency for the server functions: @netlify/blobs
-data/words.json     ~2,800 everyday words + ~8,600 specific kinds (COFFEE CUP, DEMITASSE), each with an exact size
-data/categories.json  places with their start word and typical things (the on-theme bonus)
-data/dailies.json   365 dailies (category, start word; the old floor/bottom fields are no longer used)
-netlify/functions/  log (visits, unknown words, finished rounds), words + stats (read by the game),
-                    admin (admin page), words-daily (adds player words each day), stats-hourly (rebuilds stats)
-netlify/lib/db.mjs  shared storage helpers; everything is kept in Netlify Blobs
-tools/              scripts and source files for words, categories and the schedule
-review/             spreadsheet of every word for you to check
+data/items.json     720 items with typical sizes (built from tools/scale_items.txt)
+data/dailies.json   365 dailies, 6 rounds each (built by tools/make_scale.py)
+privacy.html        privacy policy and terms (/privacy, /terms)
+netlify/functions/  log (anonymous visits, games, shares), stats (daily ranking), auth + sync (accounts),
+                    challenge (challenge links), admin (admin numbers)
+netlify/lib/        storage helpers (Netlify Blobs) and sign-in helpers
+tools/              scale_items.txt (items), specific.txt (hyper-specific items), make_scale.py (schedule)
 ```
 
 ## Rules (what players see) · v0.6 beta "Banana for Scale"
@@ -52,7 +51,7 @@ No database account and no sign-in providers. Netlify hosts the game, runs the s
    - The admin page opens for whichever admin account you're signed into on the game's Menu, and the Menu shows the Admin link only then.
 4. **Deploys → Trigger deploy** so the functions see the variable.
 5. **Domain management → Add a domain** → `matryo.io`, then follow Netlify's DNS steps at your registrar. HTTPS turns on by itself.
-6. **Check it:** play a daily, open `matryo.io/admin.html`, enter the password. Today's visitors and the finished round should show (daily stats refresh hourly and every time you open the page). Netlify → Functions shows `words-daily` (daily) and `stats-hourly` (hourly) as scheduled.
+6. **Check it:** play a daily, then open `dailybanana.io/admin.html` while signed in as the admin. Today's visitors and the finished game should show.
 
 ## Admin
 `/admin.html` (signed in on the game's Menu as ADMIN_EMAIL or ADMIN_DISCORD_ID) shows visitors (unique, returning, new),
