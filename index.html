@@ -397,12 +397,16 @@ function log(kind,payload){
 function puzzleFor(d){return{...d,qs:d.rounds.map(x=>{const A=ITEMS[x.a],B=ITEMS[x.b];return{A,B,ans:B.cm/A.cm}})}}
 let QUICK=null;   // a paused quick game (kept in memory only)
 const pick=a=>a[Math.floor(Math.random()*a.length)];
+// skips any question from a daily (past or future) and the last 300 quick-play questions on this device
 function randomRounds(){
-  const units=ITEMS.filter(i=>i.unit),used=new Set();
-  return BUCKETS.map(([lo,hi])=>{
-    for(let t=0;t<5000;t++){const a=pick(units),b=pick(ITEMS),r=b.cm/a.cm;
-      if(a.id!==b.id&&!used.has(a.id)&&!used.has(b.id)&&r>=lo&&r<=hi){used.add(a.id);used.add(b.id);return{a:a.id,b:b.id}}}
+  const units=ITEMS.filter(i=>i.unit),used=new Set(),k=(a,b)=>a+'>'+b;
+  const avoid=new Set([...DAILIES.flatMap(d=>d.rounds.map(x=>k(x.a,x.b))),...store.get('seen',[])]);
+  const out=BUCKETS.map(([lo,hi])=>{
+    for(let t=0;t<20000;t++){const a=pick(units),b=pick(ITEMS),r=b.cm/a.cm;
+      if(a.id!==b.id&&!used.has(a.id)&&!used.has(b.id)&&r>=lo&&r<=hi&&(t>15000||!avoid.has(k(a.id,b.id)))){used.add(a.id);used.add(b.id);return{a:a.id,b:b.id}}}
     return{a:units[0].id,b:ITEMS[ITEMS.length-1].id}});
+  store.set('seen',[...out.map(x=>k(x.a,x.b)),...store.get('seen',[])].slice(0,300));
+  return out;
 }
 // challenges travel by item name, so they keep working if the item list grows
 const BYNAME=()=>Object.fromEntries(ITEMS.map(i=>[i.name,i.id]));
