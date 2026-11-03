@@ -297,21 +297,29 @@ const MAX_PTS=100;
 // answer ranges, one per round, small to huge (keep in sync with tools/make_scale.py)
 const BUCKETS=[[3,20],[15,80],[50,300],[150,1500],[500,6000],[2000,50000]];
 const HOUR=3600e3, CHALLENGE_WITHIN=HOUR;
-// a 16-bit style banana, drawn pixel by pixel (b outline, y yellow, l highlight, s stem)
+// a 16-bit style banana, drawn pixel by pixel (b outline, y yellow, l highlight, d shade, s stem and tip)
 const BANANA_PX=[
-'..............bb',
-'.............bsb',
-'b...........byb.',
-'bb.........byyb.',
-'blb.......byyyb.',
-'.blbb...bbyyyb..',
-'.byllbbbyyyyyb..',
-'..byyllyyyyyb...',
-'...bbyyyyybb....',
-'.....bbbbb......'];
-const BANANA=(px=16)=>{const C={b:'#3B2412',y:'#FFD43B',l:'#FFF0A6',s:'#7A5A2A'};let r='';
+'..........bb....',
+'.........bssb...',
+'.........bssb...',
+'.........bydb...',
+'.........byydb..',
+'.........byydb..',
+'.........bylydb.',
+'........bylyydb.',
+'........bylyydb.',
+'.......bylyyydb.',
+'......bylyyyydb.',
+'....bbylyyyyddb.',
+'..bbylyyyyyyddb.',
+'.bylyyyyyyyddb..',
+'bsyyyyyyyyddb...',
+'bsdddddddbbb....',
+'.bbbbbbbbb......',
+''];
+const BANANA=(px=16)=>{const C={b:'#3B2412',y:'#FFD43B',l:'#FFEC8C',d:'#E8A317',s:'#7A4A1E'};let r='';
   BANANA_PX.forEach((row,y)=>[...row].forEach((c,x)=>{if(C[c])r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${C[c]}"/>`}));
-  return`<svg width="${px}" height="${Math.round(px*10/16)}" viewBox="0 0 16 10" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`};
+  return`<svg width="${px}" height="${Math.round(px*17/16)}" viewBox="0 0 16 17" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`};
 const SITE='https://playsmidgen.com/?utm_source=dailybanana&utm_medium=game&utm_campaign=footer';
 const app=document.getElementById('app');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -487,7 +495,7 @@ const pairLabel=d=>`${(d.rounds||[]).length} rounds`;
 const timeLabel=t=>new Date(t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
 const dateOf=t=>{const d=new Date(t);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const leftLabel=ms=>{const m=Math.max(0,Math.round(ms/60000));return m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`};
-const badgeIcon=(px=28)=>`<span class="bi">${BANANA(px)}</span>`;
+const badgeIcon=(px=24)=>`<span class="bi">${BANANA(px)}</span>`;
 function alertBox(msg){app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:14px;padding-top:20px"><p>${esc(msg)}</p><button class="btn" id="homeb">Home</button></div>`;wireNav();document.getElementById('homeb').onclick=showStart}
 
 // ---------- home ----------
@@ -964,7 +972,7 @@ async function postChallenge(res){
 }
 
 // ---------- boot ----------
-document.getElementById('bgb').innerHTML=[[8,14,90,0],[78,8,64,3],[66,38,78,4],[18,62,72,6],[84,70,100,2],[50,88,56,5]].map(([x,y,s,d])=>`<span style="left:${x}%;top:${y}%;--s:${s}px;--d:${d}s">${BANANA(s)}</span>`).join('');
+document.getElementById('bgb').innerHTML=[[8,14,72,0],[80,8,52,3],[68,38,64,4],[16,62,60,6],[84,70,80,2],[50,88,46,5]].map(([x,y,s,d])=>`<span style="left:${x}%;top:${y}%;--s:${s}px;--d:${d}s">${BANANA(s)}</span>`).join('');
 app.innerHTML='<div class="note" style="padding:40px 0">Loading…</div>';
 loadData().then(()=>{
   // a daily left mid-round (tab closed or reloaded) counts as a pause
