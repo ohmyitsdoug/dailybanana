@@ -468,20 +468,20 @@ function saveQuick(rec){const l=quickList().filter(x=>x.id!==rec.id);l.unshift(r
 
 // ---------- badges and history (dailies only) ----------
 const BADGES=[
-  {id:'first',name:'First peel',how:'Finish your first game'},
-  {id:'bull',name:'Spot on',how:'Score 95 or more on a round'},
-  {id:'triple',name:'Top banana',how:'3 rounds of 90+ in one game'},
-  {id:'sharp',name:'Good eye',how:'Every round 70 or more'},
-  {id:'big',name:'Big thinker',how:'90+ on the biggest number'},
-  {id:'small',name:'Small wonder',how:'90+ on the smallest number'},
-  {id:'bunch',name:'Whole bunch',how:'Score 500 or more in one game'},
+  {id:'first',name:'First peel',how:'Finish your first daily'},
+  {id:'bull',name:'Spot on',how:'Score 95 or more on a daily round'},
+  {id:'triple',name:'Top banana',how:'3 rounds of 90+ in one daily'},
+  {id:'sharp',name:'Good eye',how:'Every round of a daily 70 or more'},
+  {id:'big',name:'Big thinker',how:'90+ on the daily\'s biggest number'},
+  {id:'small',name:'Small wonder',how:'90+ on the daily\'s smallest number'},
+  {id:'bunch',name:'Whole bunch',how:'Score 500 or more in one daily'},
   {id:'streak7',name:'Week streak',how:'Play 7 dailies in a row'},
   {id:'host',name:'Ringleader',how:'Start a challenge'},
   {id:'beat',name:'Bragging rights',how:'Beat a friend in a challenge'},
   {id:'tester',name:'Playtester',how:'Played during the first two weeks (dailies #000–#013)',secret:true},
 ];
-const PLAYTEST_LAST=13;   // anyone who finishes a game while the daily is #000–#013 gets the secret Playtester badge
-function testerCheck(){if(TODAY&&TODAY.n<=PLAYTEST_LAST&&(playedDailies().length||quickList().length)&&earnBadge('tester'))pushSync()}
+const PLAYTEST_LAST=13;   // anyone who finishes a daily from #000–#013 gets the secret Playtester badge
+function testerCheck(){if(TODAY&&TODAY.n<=PLAYTEST_LAST&&playedDailies().length&&earnBadge('tester'))pushSync()}
 const shownBadges=have=>BADGES.filter(b=>!b.secret||have[b.id]);
 const badgeCount=have=>`${shownBadges(have).filter(b=>have[b.id]).length}/${shownBadges(have).length}`;
 function earnBadge(id){const have=store.get('badges',{});if(have[id])return false;have[id]=todayISO();store.set('badges',have);return true}
@@ -505,7 +505,7 @@ function awardBadges(res,r){
   earn('small',ps[smallest]>=90);
   earn('bunch',res.total>=500);
   earn('streak7',streak()>=7);
-  earn('tester',TODAY.n<=PLAYTEST_LAST);
+  earn('tester',r.n<=PLAYTEST_LAST);
   store.set('badges',have);return got;
 }
 
@@ -796,7 +796,7 @@ function finish(why){
   }else{
     QUICK=null;
     Object.assign(res,{id:'q'+Date.now().toString(36),at:Date.now(),rounds:toNames(r.rounds),chal:r.chal||null,own:false});
-    res.badges=awardBadges(res,r);saveQuick(res);pushSync();
+    res.badges=[];saveQuick(res);pushSync();   // quick games and challenges don't earn the daily badges
     log('quick',{score:total,points:R.answers.map(a=>a.p||0),chal:!!res.chal,device:DEVICE});
     if(res.chal){showResults(r,res);postChallenge(res).then(()=>chalBox(res));return}
   }
