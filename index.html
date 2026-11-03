@@ -478,7 +478,7 @@ const BADGES=[
   {id:'streak7',name:'Week streak',how:'Play 7 dailies in a row'},
   {id:'host',name:'Ringleader',how:'Start a challenge'},
   {id:'beat',name:'Bragging rights',how:'Beat a friend in a challenge'},
-  {id:'tester',name:'Playtester',how:'Played during the first two weeks (dailies #000–#013)',secret:true},
+  {id:'tester',name:'Playtester',how:'Played a daily in the first two weeks',secret:true},
 ];
 const PLAYTEST_LAST=13;   // anyone who finishes a daily from #000–#013 gets the secret Playtester badge
 function testerCheck(){if(TODAY&&TODAY.n<=PLAYTEST_LAST&&playedDailies().length&&earnBadge('tester'))pushSync()}
