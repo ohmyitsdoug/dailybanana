@@ -4,7 +4,7 @@ Daily word game: today's place and a big thing to start from (A BASEBALL GAME ·
 
 ```
 index.html          the game (works on its own; logging and shared stats use the Netlify functions)
-admin.html          stats and word review, protected by ADMIN_PASSWORD
+admin.html          stats, protected by Google sign-in (only ADMIN_EMAIL gets in)
 config.js           optional: where the server functions live (default /.netlify/functions)
 package.json        one dependency for the server functions: @netlify/blobs
 data/words.json     ~2,800 everyday words + ~8,600 specific kinds (COFFEE CUP, DEMITASSE), each with an exact size
@@ -44,7 +44,7 @@ No database account and no sign-in providers. Netlify hosts the game, runs the s
 
 1. **Put the folder on GitHub** (e.g. `ohmyitsdoug/matryo`). Deploy from Git so Netlify installs `@netlify/blobs` for the functions; a drag-and-drop deploy doesn't install dependencies.
 2. **Netlify → Add new site → Import from Git** → pick the repo. Build command: leave empty. Publish directory: `.` (netlify.toml already says this).
-3. **Site configuration → Environment variables** → add `ADMIN_PASSWORD` (8+ characters; this unlocks `/admin.html`). Optional: `AUTO_PLAYERS` (default 5), `REVIEW_PLAYERS` (default 2), `BLOCKED_WORDS` (comma list of words never to add).
+3. **Admin sign-in.** In Google Cloud Console → APIs & Services → Credentials, create an **OAuth client ID** (type: Web application). Under *Authorized JavaScript origins* add `https://dailybanana.io` and your `https://<site>.netlify.app` address. Then in Netlify → **Site configuration → Environment variables** add `GOOGLE_CLIENT_ID` (the client ID) and `ADMIN_EMAIL` (your Google address), and redeploy. Open `/admin.html` once and sign in: from then on the game's Menu shows an Admin link on that device only.
 4. **Deploys → Trigger deploy** so the functions see the variable.
 5. **Domain management → Add a domain** → `matryo.io`, then follow Netlify's DNS steps at your registrar. HTTPS turns on by itself.
 6. **Check it:** play a daily, open `matryo.io/admin.html`, enter the password. Today's visitors and the finished round should show (daily stats refresh hourly and every time you open the page). Netlify → Functions shows `words-daily` (daily) and `stats-hourly` (hourly) as scheduled.
@@ -59,7 +59,7 @@ When a player types a word the game doesn't know, `log` records it once per play
 3. Size: about one size (1.5×) smaller than the median thing players typed it after. If players disagree a lot about where it goes (more than 3 sizes apart), it waits for review even with 5+ players.
 4. Skipped: words already known or rejected, anything in `BLOCKED_WORDS`, and anything that isn't plain letters.
 
-Open `/admin.html` (with your ADMIN_PASSWORD) to see stats and:
+Open `/admin.html` (signed in with the admin Google account) to see stats and:
 - **Add a word by hand:** a size in mm/cm/m/km, or "same size as" a known word, plus an optional "kind of" word (Surgeon → Doctor).
 - **Needs a decision:** approve (with a size you can change) or reject.
 - **Auto-approved:** fix the size or undo.

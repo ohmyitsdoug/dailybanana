@@ -59,7 +59,7 @@ th:first-child,td:first-child{text-align:left}
 <body>
 <div id="m"></div>
 <script>
-// Daily Banana admin. Protected by the ADMIN_PASSWORD you set in Netlify (Site configuration → Environment variables).
+// Daily Banana admin. Sign in with Google: only the account set as ADMIN_EMAIL in Netlify gets in.
 // Stats come from Netlify Blobs via /.netlify/functions/admin. No AI anywhere: new words are added by you,
 // or automatically once enough different players type the same word in one day.
 const API=(window.MATRYO_CONFIG&&window.MATRYO_CONFIG.api)||'/.netlify/functions';
@@ -72,26 +72,35 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const fmtDay=d=>{const [y,mo,dd]=d.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo-1]+' '+(+dd)};
 let KNOWN={};   // bundled words: word -> exact size, for "same size as", "kind of" and size suggestions
 fetch('data/words.json').then(r=>r.json()).then(w=>{w.words.forEach(r=>KNOWN[r[0]]=r[1])}).catch(()=>{});
-let PASS='';try{PASS=sessionStorage.getItem('matryo-admin')||''}catch(_){}
+let PASS='';try{PASS=sessionStorage.getItem('db-admin-token')||''}catch(_){}
+// marks this browser as yours, so the game's menu shows the Admin link here (and nowhere else)
+const markDevice=on=>{try{on?localStorage.setItem('snug:admin','true'):localStorage.removeItem('snug:admin')}catch(_){}};
+const signOut=()=>{PASS='';try{sessionStorage.removeItem('db-admin-token')}catch(_){};try{google.accounts.id.disableAutoSelect()}catch(_){}};
 let TAB='words',DATA=null,MSG='';
 
 async function call(method,body){
-  const r=await fetch(`${API}/admin`,{method,headers:{'x-admin-key':PASS,'content-type':'application/json'},body:body?JSON.stringify(body):undefined});
-  if(r.status===401){PASS='';try{sessionStorage.removeItem('matryo-admin')}catch(_){}gate('Wrong password.');throw new Error('401')}
+  const r=await fetch(`${API}/admin`,{method,headers:{authorization:'Bearer '+PASS,'content-type':'application/json'},body:body?JSON.stringify(body):undefined});
+  if(r.status===401){const had=PASS;signOut();gate(had?'That Google account isn\'t the admin, or the sign-in expired. Sign in again.':'');throw new Error('401')}
   const j=await r.json().catch(()=>({error:'Server error'}));if(!r.ok)throw new Error(j.error||'Server error');return j;
 }
-function gate(msg){
+let CLIENT=null;
+async function gate(msg){
   m.innerHTML=`<div class="gate"><div class="logo"><span class="m">🍌</span>dailybanana <span class="a">ADMIN</span></div>
     ${msg?`<div class="msg">${esc(msg)}</div>`:''}
-    <form id="pf" style="display:flex;flex-direction:column;gap:12px"><label class="small dim" for="pw">Admin password</label>
-    <input id="pw" type="password" autocomplete="current-password" required><button>Open admin</button></form>
-    <div class="small dim">Set the password as ADMIN_PASSWORD in Netlify (at least 8 characters).</div></div>`;
-  document.getElementById('pf').onsubmit=e=>{e.preventDefault();PASS=document.getElementById('pw').value;try{sessionStorage.setItem('matryo-admin',PASS)}catch(_){}load()};
+    <div class="small dim">Sign in with the admin Google account.</div><div id="gbtn" style="min-height:44px"></div><div class="small dim" id="gnote"></div></div>`;
+  try{
+    if(CLIENT==null)CLIENT=(await fetch(`${API}/admin-config`).then(r=>r.json())).google||'';
+    if(!CLIENT){document.getElementById('gnote').textContent='Google sign-in isn\'t set up yet: add GOOGLE_CLIENT_ID and ADMIN_EMAIL in Netlify\'s environment variables, then redeploy.';return}
+    await new Promise((ok,no)=>{if(window.google&&google.accounts)return ok();const sc=document.createElement('script');sc.src='https://accounts.google.com/gsi/client';sc.onload=ok;sc.onerror=no;document.head.appendChild(sc)});
+    google.accounts.id.initialize({client_id:CLIENT,auto_select:true,callback:c=>{PASS=c.credential;try{sessionStorage.setItem('db-admin-token',PASS)}catch(_){}load()}});
+    google.accounts.id.renderButton(document.getElementById('gbtn'),{theme:'outline',size:'large',text:'signin_with'});
+    google.accounts.id.prompt();
+  }catch(e){document.getElementById('gnote').textContent='Could not load Google sign-in. Check your connection and reload.'}
 }
 async function load(){
   if(!PASS)return gate();
   m.innerHTML='<main><div class="dim">Loading…</div></main>';
-  try{DATA=await call('GET')}catch(e){if(e.message!=='401')m.innerHTML=`<main><div class="msg">${esc(e.message)}. Is the site deployed with its functions?</div></main>`;return}
+  try{DATA=await call('GET');markDevice(true)}catch(e){if(e.message!=='401')m.innerHTML=`<main><div class="msg">${esc(e.message)}. Is the site deployed with its functions?</div></main>`;return}
   draw();
 }
 function draw(){
@@ -99,7 +108,7 @@ function draw(){
   const tp=d.puzzles.find(p=>p.date===today.day);
   m.innerHTML=`<div class="top"><div><div class="logo"><span class="m">🍌</span>dailybanana <span class="a">ADMIN</span></div>
     <div class="tabs"><button data-t="overview" class="${TAB==='overview'?'on':''}">Overview</button><button data-t="words" class="${TAB==='words'?'on':''}">Words${d.review.length?` · ${d.review.length}`:''}</button><button data-t="dailies" class="${TAB==='dailies'?'on':''}">Dailies</button></div>
-    <div style="flex:1"></div><a href="./" class="small">← Back to game</a><button class="ghost" id="lo">Lock</button></div></div>
+    <div style="flex:1"></div><a href="./" class="small">← Back to game</a><button class="ghost" id="lo">Sign out</button></div></div>
   <main>${MSG?`<div class="msg">${esc(MSG)}</div>`:''}
     <div class="stats">
       <div class="stat"><b>${today.uniques??0}</b><span>unique visitors today</span></div>
@@ -111,7 +120,7 @@ function draw(){
     ${TAB==='overview'?overview():TAB==='dailies'?dailies():words()}
   </main>`;
   m.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;MSG='';draw()});
-  document.getElementById('lo').onclick=()=>{PASS='';try{sessionStorage.removeItem('matryo-admin')}catch(_){}gate()};
+  document.getElementById('lo').onclick=()=>{signOut();markDevice(false);gate('Signed out. The Admin link is hidden on this device until you sign in again.')};
   wire();
 }
 function overview(){

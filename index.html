@@ -573,7 +573,7 @@ function showMenu(jump){
       <button class="lrow" id="opt-help"><span>How to play</span><span class="mut">→</span></button>
       <button class="lrow" id="opt-theme"><span>Dark mode</span><span class="toggle ${document.documentElement.dataset.theme==='dark'?'on':''}" aria-hidden="true"></span></button>
       <button class="lrow" id="opt-motion"><span>Animations</span><span class="toggle ${SET.motion?'on':''}" aria-hidden="true"></span></button>
-      <a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">Password needed →</span></a>
+      ${store.get('admin',false)?'<a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">→</span></a>':''}
     </div>
   </div>${footer(7)}`;
   wireNav();

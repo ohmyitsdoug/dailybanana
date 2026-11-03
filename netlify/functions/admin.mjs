@@ -1,10 +1,10 @@
-// The admin page's backend. Every request needs the x-admin-key header = ADMIN_PASSWORD (set in Netlify).
+// The admin page's backend. Every request needs a Google sign-in token for ADMIN_EMAIL (see isAdmin in lib/db.mjs).
 // GET  -> stats (last 14 days + each daily) and the word queues
 // POST { action: "add" | "approve" | "reject" | "ignore", word, size_cm?, parent? }
 import { db, json, isAdmin, clean, day, tierOf, keys, getAll, aggregate, rebuildLive } from '../lib/db.mjs';
 
 export default async (req) => {
-  if (!isAdmin(req)) return json({ error: 'wrong password' }, 401);
+  if (!(await isAdmin(req))) return json({ error: 'not the admin account' }, 401);
   const store = db();
   if (req.method === 'GET') {
     const [stats, words] = await Promise.all([aggregate(store), getAll(store, 'words/')]);
