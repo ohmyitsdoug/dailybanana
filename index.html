@@ -236,6 +236,9 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 .btn .pi svg{width:22px;height:22px}
 .btn.prov{justify-content:flex-start}
 .btn.prov .go{margin-left:auto}
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,16px);z-index:50;background:var(--ink);color:var(--bg);border:2px solid var(--ink);box-shadow:4px 4px 0 var(--accsh);
+  padding:12px 18px;font-weight:700;font-size:15px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
+.toast.on{opacity:1;transform:translate(-50%,0)}
 .disclaim{font-size:12px;color:var(--mut);line-height:1.4}
 .help h3{margin:8px 0 0;font-size:12px;letter-spacing:1.5px;color:var(--mut);font-weight:500}
 .help p,.help li{margin:0;font-size:16px;max-width:60ch}
@@ -411,6 +414,8 @@ function judge(guess,q){
   return{guess,p,off:guess/q.ans};
 }
 const mark=p=>p>=90?'🍌':p>=70?'🟨':p>=40?'🟫':'⬜';
+function toast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.className='toast';t.setAttribute('role','status');document.body.appendChild(t)}
+  t.textContent=msg;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2200)}
 const markA=a=>!a||a.guess==null?'❌':mark(a.p||0);   // ❌ = no guess (time ran out)
 const LEGEND='🍌 90+ · 🟨 70+ · 🟫 40+ · ⬜ under 40 · ❌ no guess';
 function offLabel(a){
@@ -825,7 +830,7 @@ function showResults(r,res){
   document.getElementById('homeb').onclick=showStart;
   document.getElementById('cp').onclick=async()=>{
     const lab=document.getElementById('cpl');
-    try{await navigator.clipboard.writeText(shareTxt);lab.textContent='Copied!'}catch(_){
+    try{await navigator.clipboard.writeText(shareTxt);lab.textContent='Copied!';toast('Results copied to your clipboard')}catch(_){
       const rg=document.createRange();rg.selectNodeContents(document.getElementById('sh'));const s=getSelection();s.removeAllRanges();s.addRange(rg);lab.textContent='Selected: copy it'}
   };
 }
@@ -967,7 +972,7 @@ function shareLinkRow(code){return`<div class="linkbox"><code id="lk">${esc(chal
 function wireLink(code,host){
   const b=document.getElementById('cplk');if(!b)return;
   b.onclick=async()=>{const url=chalLink(code),text=`Daily Banana challenge from ${host}: can you beat me? Same 6 questions, open for 24 hours.`;
-    try{await navigator.clipboard.writeText(`${text} ${url}`);b.textContent='Copied!'}catch(_){const rg=document.createRange();rg.selectNodeContents(document.getElementById('lk'));const s=getSelection();s.removeAllRanges();s.addRange(rg)}};
+    try{await navigator.clipboard.writeText(`${text} ${url}`);b.textContent='Copied!';toast('Challenge link copied')}catch(_){const rg=document.createRange();rg.selectNodeContents(document.getElementById('lk'));const s=getSelection();s.removeAllRanges();s.addRange(rg)}};
 }
 // the box under a quick game's results
 async function chalBox(res){
