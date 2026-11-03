@@ -3,6 +3,7 @@
 import { db, json, day, keys, getAll } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
 
+const laDay = (t) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(t));
 const bananas = (p) => (p.points || []).filter((x) => x >= 90).length;
 function sum(games) {
   const n = games.length, pts = games.reduce((t, g) => t + (g.score || 0), 0), ban = games.reduce((t, g) => t + bananas(g), 0);
@@ -30,8 +31,8 @@ export default async (req) => {
       dailies: dp.length, quick: dq.length,
       ...sum([...dp, ...dq]),
       shares: ds.length, share_results: ds.filter((s) => s.what === 'results').length, share_challenge: ds.filter((s) => s.what === 'challenge').length,
-      challenges: chals.filter((c) => c.created && new Date(c.created).toISOString().slice(0, 10) === d).length,
-      accounts: users.filter((u) => u.created && new Date(u.created).toISOString().slice(0, 10) === d).length,
+      challenges: chals.filter((c) => c.created && laDay(c.created) === d).length,
+      accounts: users.filter((u) => u.created && laDay(u.created) === d).length,
     });
   }
   const all = [...plays, ...quick];

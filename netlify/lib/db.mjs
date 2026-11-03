@@ -8,7 +8,8 @@ export const json = (o, status = 200, headers = {}) =>
   new Response(JSON.stringify(o), { status, headers: { 'content-type': 'application/json', ...headers } });
 
 export const cleanDevice = (s) => String(s || '').replace(/[^a-zA-Z0-9-]/g, '').slice(0, 64);
-export const day = (offset = 0) => { const d = new Date(); d.setUTCDate(d.getUTCDate() + offset); return d.toISOString().slice(0, 10); };
+// days follow the daily: they change at midnight Pacific time
+export const day = (offset = 0) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(Date.now() + offset * 86400e3));
 
 export async function keys(store, prefix) {
   const { blobs } = await store.list({ prefix });

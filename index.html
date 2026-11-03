@@ -379,7 +379,10 @@ function clearResults(){try{Object.keys(localStorage).filter(k=>/^snug:(best|res
 // every new device gets a guest name like Guest_4821; it becomes your account's games when you sign in
 const GUEST=(()=>{let g=store.get('guest',null);if(!g){g='Guest_'+String(1000+Math.floor(Math.random()*9000));store.set('guest',g)}return g})();
 const DEVICE=(()=>{let d=store.get('device',null);if(!d){d=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());store.set('device',d)}return d})();
-const todayISO=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+// the daily changes at midnight Pacific time, the same moment for everyone
+const DAILY_TZ='America/Los_Angeles';
+const tzParts=(d=new Date())=>Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:DAILY_TZ,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(d).map(p=>[p.type,p.value]));
+const todayISO=()=>{const p=tzParts();return`${p.year}-${p.month}-${p.day}`};
 
 // ---------- data ----------
 let ITEMS=[],DAILIES=[],TODAY=null;
@@ -801,7 +804,7 @@ function finish(why){
   }
   showResults(r,res);
 }
-function untilMidnight(){const n=new Date(),m=new Date(n);m.setHours(24,0,0,0);const s=Math.floor((m-n)/1000);
+function untilMidnight(){const p=tzParts();const s=Math.max(0,86400-(+p.hour*3600+ +p.minute*60+ +p.second));
   return`${Math.floor(s/3600)}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
 function showResults(r,res){
   clearInterval(tick);
