@@ -317,7 +317,7 @@ const VERSION='0.6';
 // v0.5 "Banana for Scale": 5 quick rounds a day. "How many bananas long is a school bus?"
 // Answer with a number. Points come from how far off you are, measured in multiples:
 //   within 10% = 100, sliding down to 0 at 10x too high or too low.
-const ROUNDS=6, ROUND_SECONDS=20, HEADSTART_MS=1000, MAX_PAUSES=2;
+const ROUNDS=6, ROUND_SECONDS=25, HEADSTART_MS=1000, MAX_PAUSES=2;
 const MAX_PTS=100;
 // answer ranges, one per round, small to huge (keep in sync with tools/make_scale.py)
 const BUCKETS=[[3,20],[15,80],[50,300],[150,1500],[500,6000],[2000,50000]];
@@ -556,7 +556,7 @@ function showStart(){
         <span class="tag">Daily #${pad3(TODAY.n)} · ${fmtDate(TODAY.date)}</span>
         <h1>Banana for scale</h1>
         <p class="lead">Ridiculous measurements for everyday items. Do you know how many bananas long a bus is?</p>
-        <div class="fine">6 rounds · 20 seconds each. The closer your guess, the more it scores.</div>
+        <div class="fine">6 rounds · 25 seconds each. The closer your guess, the more it scores.</div>
       </div>
       <div class="cta in" style="--d:4">
         <button class="btn main" id="daily">${play}</button>
@@ -575,7 +575,7 @@ function showStart(){
 function showHelp(){
   app.innerHTML=`${nav()}<div class="narrow help in" style="--d:1;display:flex;flex-direction:column;gap:12px">
     <div class="head"><h2>How it works</h2><button class="sq" id="back">Back</button></div>
-    <p>Each round asks something like <b>How many bananas long is a school bus?</b> Picture them lined up end to end, then type your guess. You have 20 seconds. Six rounds a day.</p>
+    <p>Each round asks something like <b>How many bananas long is a school bus?</b> Picture them lined up end to end, then type your guess. You have 25 seconds. Six rounds a day.</p>
     <h3>POINTS EACH ROUND</h3>
     <table class="pt"><tbody>
       <tr><td>Right on the answer</td><td>100</td></tr>
@@ -1038,7 +1038,7 @@ async function showChallenge(code){
     <div class="head in" style="--d:1"><h2>${c.mine?'Your challenge':`${esc(c.host)}'s challenge`}</h2><button class="sq" id="back">Home</button></div>
     <div class="note in" style="--d:1">${status(c)} · 6 rounds, the same for everyone · ${c.entries.length} played</div>
     <div class="in" style="--d:2">${board(c)}</div>
-    ${c.open&&!played?`<div class="chal in" style="--d:3"><h3>Your turn</h3><span class="note">Six questions, 20 seconds each. You get one try.</span>${nameField()}<button class="btn main" id="playch"><span>Play the challenge</span><span aria-hidden="true">→</span></button><span class="note" id="cherr"></span></div>`:''}
+    ${c.open&&!played?`<div class="chal in" style="--d:3"><h3>Your turn</h3><span class="note">Six questions, 25 seconds each. You get one try.</span>${nameField()}<button class="btn main" id="playch"><span>Play the challenge</span><span aria-hidden="true">→</span></button><span class="note" id="cherr"></span></div>`:''}
     ${c.open&&c.mine?`<div class="chal in" style="--d:3"><h3>Share it</h3>${shareLinkRow(c.code)}<button class="btn" id="closech">Close challenge now</button></div>`:''}
     ${!c.open?`<div class="note in" style="--d:3">This challenge is closed. ${c.entries[0]?`${esc(c.entries[0].name)} came out on top.`:''}</div>`:''}
   </div>${footer(5)}`;

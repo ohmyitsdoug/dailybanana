@@ -17,7 +17,7 @@ tools/              scale_items.txt (items), specific.txt (hyper-specific items)
 ```
 
 ## Rules (what players see) · v0.6 beta "Banana for Scale"
-Six rounds a day, 20 seconds each. Every round asks one question in the same shape:
+Six rounds a day, 25 seconds each. Every round asks one question in the same shape:
 "How many bananas long is a school bus?" Players type a number (1200, 1,200 and 1.2k all work).
 
 ## Scoring
