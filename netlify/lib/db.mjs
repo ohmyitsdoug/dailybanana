@@ -42,26 +42,6 @@ export async function rebuildLive(store) {
   return all;
 }
 
-// Admin requests carry a Google sign-in token (Authorization: Bearer …). Google checks the token;
-// we check it was made for this site (GOOGLE_CLIENT_ID) and belongs to ADMIN_EMAIL. Both are set in Netlify.
-const seen = new Map();   // token -> expiry, so a page of admin calls only asks Google once
-export async function isAdmin(req) {
-  const want = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase(), client = process.env.GOOGLE_CLIENT_ID || '';
-  const tok = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
-  if (!want || !client || tok.length < 100) return false;
-  const now = Date.now() / 1000;
-  if (seen.get(tok) > now) return true;
-  try {
-    const r = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(tok)}`);
-    if (!r.ok) return false;
-    const t = await r.json();
-    const ok = t.aud === client && String(t.email || '').toLowerCase() === want && (t.email_verified === true || t.email_verified === 'true') && +t.exp > now
-      && (t.iss === 'accounts.google.com' || t.iss === 'https://accounts.google.com');
-    if (ok) seen.set(tok, +t.exp);
-    return ok;
-  } catch { return false; }
-}
-
 async function dailies() {
   try { return await fetch(`${process.env.URL || ''}/data/dailies.json`).then((r) => r.json()); } catch { return []; }
 }

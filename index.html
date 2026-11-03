@@ -213,6 +213,10 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 .board .n{width:18px;color:var(--mut)}.board .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .board .you{font-weight:700}
 .namein{height:48px;border:2px solid var(--ink);padding:0 12px;font:inherit;font-size:16px;background:var(--card);color:var(--ink);width:100%;box-sizing:border-box}
+.acct{display:flex;flex-direction:column;gap:10px}
+.acct .sbtn{display:flex;align-items:center;justify-content:center;gap:10px;height:44px;border:2px solid var(--ink);background:var(--card);color:var(--ink);font:inherit;font-weight:700;font-size:15px;cursor:pointer;width:100%}
+.acct .sbtn svg{width:20px;height:20px}
+.acct #gbtn{min-height:44px;display:flex;justify-content:center}
 .disclaim{font-size:12px;color:var(--mut);line-height:1.4}
 .help h3{margin:8px 0 0;font-size:12px;letter-spacing:1.5px;color:var(--mut);font-weight:500}
 .help p,.help li{margin:0;font-size:16px;max-width:60ch}
@@ -555,7 +559,8 @@ function showMenu(jump){
   const games=[...hist.map(x=>({...x,t:new Date(x.d.date+'T12:00').getTime()})),...quickList().map(q=>({q,t:q.at}))].sort((a,b)=>b.t-a.t);
   app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:18px">
     <div class="head in" style="--d:1"><h2>Menu</h2><button class="sq" id="back">Back</button></div>
-    <div class="note in" style="--d:2">Your scores, streak and badges are saved in this browser on this device.</div>
+    <div class="eyebrow in" style="--d:2">Account</div>
+    <div class="acct in" style="--d:2" id="acct">${acctHtml()}</div>
     <div class="eyebrow in" style="--d:3">Your stats</div>
     <div class="stats in" style="--d:3;grid-template-columns:repeat(2,minmax(0,1fr))">
       <div class="stat"><b class="num">${hist.length}</b><span>played</span></div>
@@ -577,12 +582,13 @@ function showMenu(jump){
       <button class="lrow" id="opt-help"><span>How to play</span><span class="mut">→</span></button>
       <button class="lrow" id="opt-theme"><span>Dark mode</span><span class="toggle ${document.documentElement.dataset.theme==='dark'?'on':''}" aria-hidden="true"></span></button>
       <button class="lrow" id="opt-motion"><span>Animations</span><span class="toggle ${SET.motion?'on':''}" aria-hidden="true"></span></button>
-      ${store.get('admin',false)?'<a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">→</span></a>':''}
+      ${SESSION&&SESSION.user.admin?'<a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">→</span></a>':''}
     </div>
   </div>${footer(7)}`;
   wireNav();
   app.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const q=quickList().find(x=>x.id===b.dataset.q);if(q)showResults({...puzzleFor({rounds:fromNames(q.rounds)}),n:0,quick:true,chal:q.chal},q)});
   document.getElementById('opt-help').onclick=showHelp;
+  wireAcct();
   if(jump==='badges')setTimeout(()=>{const el=document.getElementById('badges');if(el)window.scrollTo(0,el.getBoundingClientRect().top+scrollY-12)},50);
   app.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const r=puzzleFor(DAILIES.find(x=>x.n===+b.dataset.n)),s=saved(r.n);s?showResults(r,s):r.n===TODAY.n?showStart():leave(r,liveSaved(r.n))});
   document.getElementById('back').onclick=showStart;
@@ -736,11 +742,12 @@ function finish(why){
     store.del('live:'+r.n);
     store.set('v06:'+r.n,res);
     res.badges=awardBadges(res,r);if(res.badges.length)store.set('v06:'+r.n,res);
+    pushSync();
     log('play',{puzzle:r.n,words:R.answers.map(a=>a.guess==null?'none':String(nice(a.guess))),score:total,reached:R.answers.every(a=>(a.p||0)>=90),steps:R.answers.filter(a=>a.guess!=null).length,device:DEVICE});
   }else{
     QUICK=null;
     Object.assign(res,{id:'q'+Date.now().toString(36),at:Date.now(),rounds:toNames(r.rounds),chal:r.chal||null,own:false});
-    res.badges=awardBadges(res,r);saveQuick(res);
+    res.badges=awardBadges(res,r);saveQuick(res);pushSync();
     if(res.chal){showResults(r,res);postChallenge(res).then(()=>chalBox(res));return}
   }
   showResults(r,res);
@@ -786,6 +793,93 @@ function showResults(r,res){
   };
 }
 
+// ---------- accounts: Google or Discord, so scores follow you to other devices ----------
+let SESSION=store.get('session',null);       // { token, user:{ uid, name, google, discord, admin } }
+let AUTHCFG=null;
+const authCfg=async()=>AUTHCFG||(AUTHCFG=await fetch(`${API}/auth`).then(r=>r.json()).catch(()=>({})));
+const authHdr=()=>SESSION?{authorization:'Bearer '+SESSION.token}:{};
+function setSession(x){SESSION=x;x?store.set('session',x):store.del('session')}
+const DISCORD_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#5865F2" d="M20.3 4.4A19.7 19.7 0 0 0 15.4 3l-.6 1.3a18.3 18.3 0 0 0-5.5 0L8.7 3a19.6 19.6 0 0 0-4.9 1.5C.7 9 0 13.6.3 18.1a19.8 19.8 0 0 0 6 3l1.3-2a12.8 12.8 0 0 1-2-1l.5-.4a14.1 14.1 0 0 0 12 0l.5.4a12.7 12.7 0 0 1-2 1l1.3 2a19.7 19.7 0 0 0 6-3c.5-5.2-.8-9.8-3.6-13.7ZM8.5 15.3c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm7 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>';
+function acctHtml(){
+  if(!SESSION)return`<div class="note">Sign in to keep your scores, streak, badges and history on every device. Or keep playing as a guest: everything stays on this device.</div>
+    <div id="gbtn"></div><button class="sbtn" id="dsc">${DISCORD_ICON}Sign in with Discord</button><div class="note" id="acerr"></div>`;
+  const u=SESSION.user;
+  return`<div class="list">
+    <div class="lrow"><span>Signed in as <b>${esc(u.name)}</b></span><button class="sq" id="rename">Rename</button></div>
+    <div class="lrow"><span>Google</span>${u.google?'<span class="mut">Linked</span>':'<span id="gbtn"></span>'}</div>
+    <div class="lrow"><span>Discord</span>${u.discord?'<span class="mut">Linked</span>':'<button class="sq" id="dsc">Link</button>'}</div>
+    <button class="lrow" id="signout"><span>Sign out</span><span class="mut">→</span></button>
+    <button class="lrow" id="delacct"><span>Delete my account</span><span class="mut">Can't be undone</span></button>
+  </div><div class="note" id="acerr"></div>`;
+}
+const acErr=m=>{const e=document.getElementById('acerr');if(e)e.textContent=m};
+async function finishSignIn(body){
+  const r=await fetch(`${API}/auth`,{method:'POST',headers:{'content-type':'application/json',...authHdr()},body:JSON.stringify({...body,link:!!SESSION})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok||!j.token)throw new Error(j.error||'Sign-in failed. Try again.');
+  setSession({token:j.token,user:j.user});
+  await syncNow();
+}
+async function wireAcct(){
+  const on=(id,f)=>{const el=document.getElementById(id);if(el)el.onclick=f};
+  on('dsc',async()=>{
+    const c=await authCfg();if(!c.discord)return acErr('Discord sign-in isn\'t set up yet.');
+    const state=Math.random().toString(36).slice(2)+Date.now().toString(36);
+    try{sessionStorage.setItem('db-discord-state',JSON.stringify({state,link:!!SESSION,back:'menu'}))}catch(_){}
+    location.href=`https://discord.com/oauth2/authorize?${new URLSearchParams({client_id:c.discord,response_type:'code',scope:'identify',redirect_uri:location.origin+'/',state,prompt:'none'})}`;
+  });
+  on('signout',()=>{setSession(null);try{google.accounts.id.disableAutoSelect()}catch(_){}showMenu()});
+  on('rename',async()=>{
+    const n=(prompt('Your name for scoreboards (up to 16 characters)',SESSION.user.name)||'').trim().slice(0,16);if(!n)return;
+    const r=await fetch(`${API}/auth`,{method:'POST',headers:{'content-type':'application/json',...authHdr()},body:JSON.stringify({action:'rename',name:n})}).then(r=>r.json()).catch(()=>({}));
+    if(r.user){setSession({...SESSION,user:r.user});store.set('name',r.user.name);showMenu()}
+  });
+  const del=document.getElementById('delacct');if(del)del.onclick=async()=>{
+    if(!del.dataset.armed){del.dataset.armed='1';del.innerHTML='<span>Tap again to delete your account</span><b>Sure?</b>';return}
+    await fetch(`${API}/auth`,{method:'DELETE',headers:authHdr()}).catch(()=>{});setSession(null);showMenu();
+  };
+  const g=document.getElementById('gbtn');if(!g)return;
+  const c=await authCfg();if(!c.google){SESSION?g.outerHTML='<span class="mut">Coming soon</span>':g.remove();return}
+  try{
+    await new Promise((ok,no)=>{if(window.google&&google.accounts)return ok();const sc=document.createElement('script');sc.src='https://accounts.google.com/gsi/client';sc.onload=ok;sc.onerror=no;document.head.appendChild(sc)});
+    google.accounts.id.initialize({client_id:c.google,callback:async x=>{try{await finishSignIn({provider:'google',credential:x.credential});showMenu()}catch(e){acErr(e.message)}}});
+    const el=document.getElementById('gbtn');if(el)google.accounts.id.renderButton(el,{theme:'outline',size:'large',text:SESSION?'signin':'signin_with',width:SESSION?120:300});
+  }catch(_){g.remove()}
+}
+// Discord sends the player back to /?code=…&state=…
+async function discordReturn(){
+  const q=new URLSearchParams(location.search),code=q.get('code'),state=q.get('state');
+  if(!code&&!q.get('error'))return false;
+  let saved=null;try{saved=JSON.parse(sessionStorage.getItem('db-discord-state')||'null');sessionStorage.removeItem('db-discord-state')}catch(_){}
+  history.replaceState(null,'',location.pathname);
+  if(!code||!saved||saved.state!==state){showMenu();return true}
+  try{await finishSignIn({provider:'discord',code,redirect:location.origin+'/'})}catch(e){showMenu();acErr(e.message);return true}
+  if(saved.back==='admin'){location.href='admin.html';return true}
+  showMenu();return true;
+}
+// ---- sync: every saved game, badge and name, merged both ways ----
+function localData(){
+  const results={};
+  try{Object.keys(localStorage).forEach(k=>{const m=k.match(/^snug:v06:(\d+)$/);if(m)results[m[1]]=JSON.parse(localStorage.getItem(k))})}catch(_){}
+  return{results,quick:quickList(),badges:store.get('badges',{}),name:store.get('name','')};
+}
+function applyData(d){
+  Object.entries(d.results||{}).forEach(([n,res])=>{if(!saved(+n))store.set('v06:'+n,res)});
+  const ids=new Set(quickList().map(q=>q.id)),q=[...quickList(),...(d.quick||[]).filter(x=>!ids.has(x.id))].sort((a,b)=>(b.at||0)-(a.at||0));store.set('quick',q.slice(0,60));
+  const b=store.get('badges',{});Object.entries(d.badges||{}).forEach(([k,v])=>{if(!b[k]||v<b[k])b[k]=v});store.set('badges',b);
+  if(d.name&&!store.get('name',''))store.set('name',d.name);
+}
+async function syncNow(){
+  if(!SESSION||!API)return;
+  try{
+    const g=await fetch(`${API}/sync`,{headers:authHdr()});
+    if(g.status===401){setSession(null);return}
+    applyData(((await g.json())||{}).data||{});
+    await fetch(`${API}/sync`,{method:'POST',headers:{'content-type':'application/json',...authHdr()},body:JSON.stringify({data:localData()})});
+  }catch(_){}
+}
+function pushSync(){if(SESSION&&API)fetch(`${API}/sync`,{method:'POST',headers:{'content-type':'application/json',...authHdr()},body:JSON.stringify({data:localData()}),keepalive:true}).catch(()=>{})}
+
 // ---------- challenges ----------
 const CH=`${API}/challenge`;
 const chalLink=code=>`${location.origin}${location.pathname.replace(/index\.html$/,'')}?c=${code}`;
@@ -795,7 +889,7 @@ async function chalApi(body){
 }
 const getChal=code=>fetch(`${CH}?code=${encodeURIComponent(code)}&device=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():null).catch(()=>null);
 const myOpen=()=>fetch(`${CH}?host=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():{}).catch(()=>({}));
-const nameField=()=>`<input class="namein" id="nm" maxlength="16" placeholder="Your name for the scoreboard" value="${esc(store.get('name',''))}" autocomplete="nickname">`;
+const nameField=()=>`<input class="namein" id="nm" maxlength="16" placeholder="Your name for the scoreboard" value="${esc(store.get('name','')||(SESSION?SESSION.user.name:''))}" autocomplete="nickname">`;
 const readName=()=>{const el=document.getElementById('nm');const v=(el?el.value:'').trim().slice(0,16);if(v)store.set('name',v);return v};
 function board(c){
   if(c.entries.some(e=>e.you)&&c.entries.length>1){const me=c.entries.find(e=>e.you);if(c.entries.some(e=>!e.you&&e.score<me.score))earnBadge('beat')}
@@ -883,7 +977,12 @@ loadData().then(()=>{
     return finish('paused');
   }
   const code=new URLSearchParams(location.search).get('c');
-  if(code){history.replaceState(null,'',location.pathname);showChallenge(code)}else showStart();
+  discordReturn().then(handled=>{
+    if(handled)return;
+    if(code){history.replaceState(null,'',location.pathname);showChallenge(code)}else showStart();
+    // pull scores from your other devices, then refresh the home screen if it's showing
+    if(SESSION)syncNow().then(()=>{if(!S&&document.querySelector('.home'))showStart()});
+  });
   log('visit',{device:DEVICE});
 }).catch(e=>{
   console.error(e);

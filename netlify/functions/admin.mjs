@@ -1,10 +1,11 @@
-// The admin page's backend. Every request needs a Google sign-in token for ADMIN_EMAIL (see isAdmin in lib/db.mjs).
+// The admin page's backend. Every request needs a signed-in admin account (ADMIN_EMAIL or ADMIN_DISCORD_ID, see lib/auth.mjs).
 // GET  -> stats (last 14 days + each daily) and the word queues
 // POST { action: "add" | "approve" | "reject" | "ignore", word, size_cm?, parent? }
-import { db, json, isAdmin, clean, day, tierOf, keys, getAll, aggregate, rebuildLive } from '../lib/db.mjs';
+import { db, json, clean, day, tierOf, keys, getAll, aggregate, rebuildLive } from '../lib/db.mjs';
+import { userFor, isAdminUser } from '../lib/auth.mjs';
 
 export default async (req) => {
-  if (!(await isAdmin(req))) return json({ error: 'not the admin account' }, 401);
+  if (!isAdminUser(await userFor(req))) return json({ error: 'not the admin account' }, 401);
   const store = db();
   if (req.method === 'GET') {
     const [stats, words] = await Promise.all([aggregate(store), getAll(store, 'words/')]);

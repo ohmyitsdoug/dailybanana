@@ -4,7 +4,7 @@ Daily word game: today's place and a big thing to start from (A BASEBALL GAME ·
 
 ```
 index.html          the game (works on its own; logging and shared stats use the Netlify functions)
-admin.html          stats, protected by Google sign-in (only ADMIN_EMAIL gets in)
+admin.html          stats, for the admin account only (ADMIN_EMAIL / ADMIN_DISCORD_ID)
 config.js           optional: where the server functions live (default /.netlify/functions)
 package.json        one dependency for the server functions: @netlify/blobs
 data/words.json     ~2,800 everyday words + ~8,600 specific kinds (COFFEE CUP, DEMITASSE), each with an exact size
@@ -44,7 +44,11 @@ No database account and no sign-in providers. Netlify hosts the game, runs the s
 
 1. **Put the folder on GitHub** (e.g. `ohmyitsdoug/matryo`). Deploy from Git so Netlify installs `@netlify/blobs` for the functions; a drag-and-drop deploy doesn't install dependencies.
 2. **Netlify → Add new site → Import from Git** → pick the repo. Build command: leave empty. Publish directory: `.` (netlify.toml already says this).
-3. **Admin sign-in.** In Google Cloud Console → APIs & Services → Credentials, create an **OAuth client ID** (type: Web application). Under *Authorized JavaScript origins* add `https://dailybanana.io` and your `https://<site>.netlify.app` address. Then in Netlify → **Site configuration → Environment variables** add `GOOGLE_CLIENT_ID` (the client ID) and `ADMIN_EMAIL` (your Google address), and redeploy. Open `/admin.html` once and sign in: from then on the game's Menu shows an Admin link on that device only.
+3. **Sign-in (players and admin).** Players can sign in with Google or Discord to keep their scores on every device; guests still play without an account.
+   - Google: Google Cloud Console → APIs & Services → Credentials → **OAuth client ID** (Web application). Authorized JavaScript origins: `https://dailybanana.io`, `https://www.dailybanana.io`, `https://dailybanana.netlify.app`.
+   - Discord: discord.com/developers/applications → New Application → **OAuth2**. Copy the Client ID, reset and copy the Client Secret, and add redirects `https://dailybanana.io/` and `https://dailybanana.netlify.app/`.
+   - Netlify → Project configuration → Environment variables: `GOOGLE_CLIENT_ID`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` (mark secret), `ADMIN_EMAIL` (your Google address), `ADMIN_DISCORD_ID` (your Discord user ID). Redeploy.
+   - The admin page opens for whichever admin account you're signed into on the game's Menu, and the Menu shows the Admin link only then.
 4. **Deploys → Trigger deploy** so the functions see the variable.
 5. **Domain management → Add a domain** → `matryo.io`, then follow Netlify's DNS steps at your registrar. HTTPS turns on by itself.
 6. **Check it:** play a daily, open `matryo.io/admin.html`, enter the password. Today's visitors and the finished round should show (daily stats refresh hourly and every time you open the page). Netlify → Functions shows `words-daily` (daily) and `stats-hourly` (hourly) as scheduled.
