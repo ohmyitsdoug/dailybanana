@@ -28,3 +28,13 @@
   for = "/data/*"
   [headers.values]
     Cache-Control = "public, max-age=3600"
+
+[[redirects]]
+  from = "/privacy"
+  to = "/privacy.html"
+  status = 301
+
+[[redirects]]
+  from = "/terms"
+  to = "/privacy.html#terms"
+  status = 301

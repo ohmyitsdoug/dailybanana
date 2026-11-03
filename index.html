@@ -466,7 +466,7 @@ const nav=(right='')=>`<header class="nav in" style="--d:0">
   <button class="logo" id="home" aria-label="Home"><span class="m" aria-hidden="true">${BANANA(18)}</span>dailybanana.io</button>
   <div class="r">${right}<button class="sq" id="menu">Menu</button><button class="sq icon" id="theme" aria-label="Switch light or dark mode">${ICON.sun}${ICON.moon}</button></div>
 </header>`;
-const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · v${VERSION} beta</div>`;
+const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · v${VERSION} beta · <a href="privacy.html">Privacy &amp; terms</a></div>`;
 function wireNav(){
   const on=(id,f)=>{const el=document.getElementById(id);if(el)el.onclick=f};
   on('home',showStart);on('menu',()=>showMenu());on('theme',toggleTheme);on('tobadges',()=>showMenu('badges'));
@@ -964,7 +964,7 @@ async function postChallenge(res){
 }
 
 // ---------- boot ----------
-document.getElementById('bgb').innerHTML=[[8,14,90,0],[78,8,64,3],[18,62,72,6],[84,70,100,2],[50,88,56,5]].map(([x,y,s,d])=>`<span style="left:${x}%;top:${y}%;--s:${s}px;--d:${d}s">${BANANA(s)}</span>`).join('');
+document.getElementById('bgb').innerHTML=[[8,14,90,0],[78,8,64,3],[66,38,78,4],[18,62,72,6],[84,70,100,2],[50,88,56,5]].map(([x,y,s,d])=>`<span style="left:${x}%;top:${y}%;--s:${s}px;--d:${d}s">${BANANA(s)}</span>`).join('');
 app.innerHTML='<div class="note" style="padding:40px 0">Loading…</div>';
 loadData().then(()=>{
   // a daily left mid-round (tab closed or reloaded) counts as a pause
