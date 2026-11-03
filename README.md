@@ -34,7 +34,7 @@ One open challenge per person (per device); joining others is unlimited. Server:
 
 ## Daily schedule
 Items live in `tools/scale_items.txt` (`name | plural | article | long/tall/across/deep | cm | u`, where `u` means it can be the counting unit).
-Edit sizes there, then run `python3 tools/make_scale.py` to rebuild `data/items.json` and `data/dailies.json` (365 days from 2026-11-03).
+Edit sizes there, then run `python3 tools/make_scale.py` to rebuild `data/items.json` and `data/dailies.json` (365 days; Daily #000 is 2026-11-03, #001 the next day).
 Each day spreads its answers from small (3-20) to huge (2,000-50,000), and the thing measured doesn't repeat within 10 days.
 Challenges store item names, so keep names stable once live (changing a size is fine).
 

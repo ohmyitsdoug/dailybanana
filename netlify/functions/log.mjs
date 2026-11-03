@@ -10,7 +10,7 @@ export default async (req) => {
   try { b = await req.json(); } catch { return new Response('bad json', { status: 400 }); }
   const store = db(), today = day(), device = cleanDevice(b.device);
   if (!device) return new Response('skip');
-  const puzzle = Number.isInteger(b.puzzle) && b.puzzle > 0 && b.puzzle < 10000 ? b.puzzle : null;
+  const puzzle = Number.isInteger(b.puzzle) && b.puzzle >= 0 && b.puzzle < 10000 ? b.puzzle : null;
 
   if (b.kind === 'visit') {
     await store.set(`visits/${today}/${device}`, '1');
@@ -24,7 +24,7 @@ export default async (req) => {
     await store.setJSON(`misses/${today}/${word}/${device}`, { lo: num(b.lo), hi: num(b.hi), puzzle });
     return new Response('ok');
   }
-  if (b.kind === 'play' && puzzle) {
+  if (b.kind === 'play' && puzzle !== null) {
     const words = (Array.isArray(b.words) ? b.words : []).slice(0, 60).map(clean).filter(Boolean);
     const seen = await store.get(`players/${device}`, { type: 'json' }).catch(() => null);
     if (!seen) await store.setJSON(`players/${device}`, { first: today });

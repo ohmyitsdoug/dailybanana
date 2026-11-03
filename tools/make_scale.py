@@ -1,6 +1,6 @@
 """Build data/items.json and data/dailies.json for v0.5 "Banana for Scale".
 Items come from tools/scale_items.txt. Each daily has 6 rounds: "How many [unit] [long/tall/across] is [thing]?"
-The answers spread from small (3-20) to big (2,000-50,000), the unit is always something smaller and
+Each day has one answer from each size range, from small (3-20) to big (2,000-50,000), the unit is always something smaller and
 familiar, and a thing being measured doesn't come back within 10 days.
 Usage: python3 tools/make_scale.py 2026-11-03 365
 """
@@ -34,7 +34,8 @@ for d in range(days):
             if c: break
         p = random.choice(c)
         rounds.append({'a': p[0], 'b': p[1]}); used_pairs.add(p); today |= {p[0], p[1]}; last[p[1]] = d
-    out.append({'n': d + 1, 'date': (start + datetime.timedelta(days=d)).isoformat(), 'rounds': rounds})
+    random.shuffle(rounds)   # one answer from each size range, in a random order
+    out.append({'n': d, 'date': (start + datetime.timedelta(days=d)).isoformat(), 'rounds': rounds})
 json.dump(out, open(os.path.join(HERE, '..', 'data', 'dailies.json'), 'w'), separators=(',', ':'))
 print(len(items), 'items,', len(units), 'units,', {k: len(v) for k, v in pairs.items()}, 'pairs per bucket;', len(out), 'days')
 def q(r):

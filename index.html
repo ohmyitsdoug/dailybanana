@@ -116,7 +116,9 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .sqrow.seven{justify-content:flex-start;gap:6px}
 .sqrow.seven .sqr{max-width:56px}
 .ask{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;margin:4px 0}
-.ask b{font-size:30px;line-height:1.05;letter-spacing:-1px}
+.ask b{font-size:34px;line-height:1.05;letter-spacing:-1px}
+.ask .lab{font-size:13px;letter-spacing:1.5px;color:var(--mut);text-transform:uppercase}
+.ask .lab+b{margin-bottom:6px}
 .nest{display:flex;justify-content:center}
 .outer{position:relative;width:min(240px,70vw);aspect-ratio:1;border:3px solid var(--ink);background:var(--card);display:flex;align-items:flex-end;justify-content:flex-start;padding:6px;box-sizing:border-box}
 .olab{position:absolute;top:-24px;left:0;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--mut)}
@@ -262,7 +264,7 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
   .footer{border-top:2px solid var(--ink);margin:0 -32px;padding:18px 32px;text-align:left}
   .page.play{align-items:flex-start}
   .play .ends{font-size:56px;letter-spacing:-2px}
-  .play .ask b{font-size:56px;letter-spacing:-2px}
+  .play .ask b{font-size:52px;letter-spacing:-2px}
   .outer{width:320px}
   .play .ends .mid{font-size:15px}
   .play .sqr{max-width:64px}
@@ -348,10 +350,12 @@ function applySettings(){document.documentElement.classList.toggle('calm',!SET.m
 applySettings();
 const reduced=()=>!SET.motion||matchMedia('(prefers-reduced-motion: reduce)').matches;
 function toggleTheme(){const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;store.set('theme',t)}
-const saved=n=>store.get('v06:'+n,null);          // finished dailies (v0.6: 6 rounds, accuracy scoring)
+const saved=n=>store.get('v07:'+n,null);          // finished dailies (v0.7: daily #000 is Nov 3, 2026)
 const liveSaved=n=>store.get('live:'+n,null);     // a daily that was paused or left mid-round
-function clearResults(){try{Object.keys(localStorage).filter(k=>/^snug:(best|result|r8|v01|v02|v03|v04|v05|v06|quick|recent|live|badges)/.test(k)).forEach(k=>localStorage.removeItem(k))}catch(_){}}
+function clearResults(){try{Object.keys(localStorage).filter(k=>/^snug:(best|result|r8|v01|v02|v03|v04|v05|v06|v07|quick|recent|live|badges)/.test(k)).forEach(k=>localStorage.removeItem(k))}catch(_){}}
 // anonymous id for this device, so admin stats can count unique visitors without accounts
+// every new device gets a guest name like Guest_4821; it becomes your account's games when you sign in
+const GUEST=(()=>{let g=store.get('guest',null);if(!g){g='Guest_'+String(1000+Math.floor(Math.random()*9000));store.set('guest',g)}return g})();
 const DEVICE=(()=>{let d=store.get('device',null);if(!d){d=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());store.set('device',d)}return d})();
 const todayISO=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 
@@ -419,6 +423,7 @@ function randomRounds(){
       if(a.id!==b.id&&!used.has(a.id)&&!used.has(b.id)&&r>=lo&&r<=hi&&(t>15000||!avoid.has(k(a.id,b.id)))){used.add(a.id);used.add(b.id);return{a:a.id,b:b.id}}}
     return{a:units[0].id,b:ITEMS[ITEMS.length-1].id}});
   store.set('seen',[...out.map(x=>k(x.a,x.b)),...store.get('seen',[])].slice(0,300));
+  for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}   // any order, not small to big
   return out;
 }
 // challenges travel by item name, so they keep working if the item list grows
@@ -568,6 +573,7 @@ function showMenu(jump){
   const games=[...hist.map(x=>({...x,t:new Date(x.d.date+'T12:00').getTime()})),...quickList().map(q=>({q,t:q.at}))].sort((a,b)=>b.t-a.t);
   app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:18px">
     <div class="head in" style="--d:1"><h2>Menu</h2><button class="sq" id="back">Back</button></div>
+    <div id="opench" class="in" style="--d:2;display:flex;flex-direction:column;gap:10px"></div>
     <div class="eyebrow in" style="--d:2">Account</div>
     <div class="acct in" style="--d:2" id="acct">${acctHtml()}</div>
     <div class="eyebrow in" style="--d:3">Your stats</div>
@@ -595,9 +601,9 @@ function showMenu(jump){
     </div>
   </div>${footer(7)}`;
   wireNav();
-  app.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const q=quickList().find(x=>x.id===b.dataset.q);if(q)showResults({...puzzleFor({rounds:fromNames(q.rounds)}),n:0,quick:true,chal:q.chal},q)});
+  app.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const q=quickList().find(x=>x.id===b.dataset.q);if(q&&q.chal)return showChallenge(q.chal.code);if(q)showResults({...puzzleFor({rounds:fromNames(q.rounds)}),n:0,quick:true,chal:q.chal},q)});
   document.getElementById('opt-help').onclick=showHelp;
-  wireAcct();
+  wireAcct();openChallenges();
   if(jump==='badges')setTimeout(()=>{const el=document.getElementById('badges');if(el)window.scrollTo(0,el.getBoundingClientRect().top+scrollY-12)},50);
   app.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const r=puzzleFor(DAILIES.find(x=>x.n===+b.dataset.n)),s=saved(r.n);s?showResults(r,s):r.n===TODAY.n?showStart():leave(r,liveSaved(r.n))});
   document.getElementById('back').onclick=showStart;
@@ -636,7 +642,7 @@ function showQuestion(){
         <span class="tag pts num">${S.i+1}/${ROUNDS} · ${fmt(S.score)}</span>
       </div>
       <div class="in" style="--d:1">${squares(S.answers,S.i)}</div>
-      <div class="ask in" style="--d:1"><span class="eyebrow">How many ${esc(q.A.plural)}</span><b>${esc(q.B.dim)} is ${esc(the(q.B))}?</b></div>
+      <div class="ask in" style="--d:1"><span class="lab">How many</span><b>${esc(q.A.plural)}</b><span class="lab">${esc(q.B.dim)} is</span><b>${esc(the(q.B))}?</b></div>
       <form id="f" class="in" style="--d:2" autocomplete="off">
         <label for="g" class="field"><span class="mut">≈</span><span class="mirror num" id="m"></span><span class="caret"></span>
           <button type="submit" class="go" id="go" aria-label="Enter guess">Enter</button>
@@ -749,8 +755,8 @@ function finish(why){
   const res={why,answers:R.answers,total,pauses:R.pauses};
   if(!r.quick){
     store.del('live:'+r.n);
-    store.set('v06:'+r.n,res);
-    res.badges=awardBadges(res,r);if(res.badges.length)store.set('v06:'+r.n,res);
+    store.set('v07:'+r.n,res);
+    res.badges=awardBadges(res,r);if(res.badges.length)store.set('v07:'+r.n,res);
     pushSync();
     log('play',{puzzle:r.n,words:R.answers.map(a=>a.guess==null?'none':String(nice(a.guess))),score:total,reached:R.answers.every(a=>(a.p||0)>=90),steps:R.answers.filter(a=>a.guess!=null).length,device:DEVICE});
   }else{
@@ -811,7 +817,8 @@ function setSession(x){SESSION=x;x?store.set('session',x):store.del('session')}
 const DISCORD_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#5865F2" d="M20.3 4.4A19.7 19.7 0 0 0 15.4 3l-.6 1.3a18.3 18.3 0 0 0-5.5 0L8.7 3a19.6 19.6 0 0 0-4.9 1.5C.7 9 0 13.6.3 18.1a19.8 19.8 0 0 0 6 3l1.3-2a12.8 12.8 0 0 1-2-1l.5-.4a14.1 14.1 0 0 0 12 0l.5.4a12.7 12.7 0 0 1-2 1l1.3 2a19.7 19.7 0 0 0 6-3c.5-5.2-.8-9.8-3.6-13.7ZM8.5 15.3c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm7 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>';
 const GOOGLE_ICON='<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.5 28.6a14.5 14.5 0 0 1 0-9.2l-7.9-6.1a24 24 0 0 0 0 21.4l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>';
 function acctHtml(){
-  if(!SESSION)return`<div class="note">Sign in to keep your scores, streak, badges and history on every device. Or keep playing as a guest: everything stays on this device.</div>
+  if(!SESSION)return`<div class="lrow" style="border-top:2px solid var(--ink)"><span>Playing as <b>${esc(store.get('name','')||GUEST)}</b></span><span class="mut">Guest</span></div>
+    <div class="note">Your games are saved on this device. Sign in to keep them on every device: everything you've played so far comes with you.</div>
     <button class="btn prov" id="ggl"><span class="pi">${GOOGLE_ICON}</span>Sign in with Google</button>
     <button class="btn prov" id="dsc"><span class="pi">${DISCORD_ICON}</span>Sign in with Discord</button><div class="note" id="acerr"></div>`;
   const u=SESSION.user;
@@ -875,11 +882,11 @@ async function signInReturn(){
 // ---- sync: every saved game, badge and name, merged both ways ----
 function localData(){
   const results={};
-  try{Object.keys(localStorage).forEach(k=>{const m=k.match(/^snug:v06:(\d+)$/);if(m)results[m[1]]=JSON.parse(localStorage.getItem(k))})}catch(_){}
+  try{Object.keys(localStorage).forEach(k=>{const m=k.match(/^snug:v07:(\d+)$/);if(m)results[m[1]]=JSON.parse(localStorage.getItem(k))})}catch(_){}
   return{results,quick:quickList(),badges:store.get('badges',{}),name:store.get('name','')};
 }
 function applyData(d){
-  Object.entries(d.results||{}).forEach(([n,res])=>{if(!saved(+n))store.set('v06:'+n,res)});
+  Object.entries(d.results||{}).forEach(([n,res])=>{if(!saved(+n))store.set('v07:'+n,res)});
   const ids=new Set(quickList().map(q=>q.id)),q=[...quickList(),...(d.quick||[]).filter(x=>!ids.has(x.id))].sort((a,b)=>(b.at||0)-(a.at||0));store.set('quick',q.slice(0,60));
   const b=store.get('badges',{});Object.entries(d.badges||{}).forEach(([k,v])=>{if(!b[k]||v<b[k])b[k]=v});store.set('badges',b);
   if(d.name&&!store.get('name',''))store.set('name',d.name);
@@ -904,7 +911,7 @@ async function chalApi(body){
 }
 const getChal=code=>fetch(`${CH}?code=${encodeURIComponent(code)}&device=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():null).catch(()=>null);
 const myOpen=()=>fetch(`${CH}?host=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():{}).catch(()=>({}));
-const nameField=()=>`<input class="namein" id="nm" maxlength="16" placeholder="Your name for the scoreboard" value="${esc(store.get('name','')||(SESSION?SESSION.user.name:''))}" autocomplete="nickname">`;
+const nameField=()=>`<input class="namein" id="nm" maxlength="16" placeholder="Your name for the scoreboard" value="${esc(store.get('name','')||(SESSION?SESSION.user.name:GUEST))}" autocomplete="nickname">`;
 const readName=()=>{const el=document.getElementById('nm');const v=(el?el.value:'').trim().slice(0,16);if(v)store.set('name',v);return v};
 function board(c){
   if(c.entries.some(e=>e.you)&&c.entries.length>1){const me=c.entries.find(e=>e.you);if(c.entries.some(e=>!e.you&&e.score<me.score))earnBadge('beat')}
@@ -948,6 +955,20 @@ async function chalBox(res){
     res.chal={code:c.code,host:c.host};res.own=true;saveQuick(res);earnBadge('host');chalBox(res);
   };
 }
+// open challenges you made or played, on the Menu: time left, players, your place
+async function openChallenges(){
+  const box=document.getElementById('opench');if(!box||!API)return;
+  const codes=[...new Set(quickList().filter(q=>q.chal&&Date.now()-q.at<24*HOUR).map(q=>q.chal.code))];
+  if(!codes.length)return;
+  const cs=(await Promise.all(codes.map(getChal))).filter(c=>c&&c.open);
+  const b=document.getElementById('opench');if(!b||!cs.length)return;
+  b.innerHTML=`<div class="eyebrow">Open challenges</div>`+cs.map(c=>{const i=c.entries.findIndex(e=>e.you);
+    return`<button class="chal" data-ch="${esc(c.code)}" style="text-align:left;font:inherit;color:inherit;cursor:pointer">
+      <h3>${c.mine?'Your challenge':`${esc(c.host)}'s challenge`}</h3>
+      <span class="note">Closes in ${leftLabel(c.closes-Date.now())} · ${c.entries.length} played${i>=0?` · you're ${ordinal(i+1)} of ${c.entries.length}`:''}</span></button>`}).join('');
+  b.querySelectorAll('[data-ch]').forEach(x=>x.onclick=()=>showChallenge(x.dataset.ch));
+}
+const ordinal=n=>n+(n%100>=11&&n%100<=13?'th':['th','st','nd','rd'][n%10]||'th');
 // the page a challenge link opens
 async function showChallenge(code){
   clearInterval(tick);S=null;
@@ -975,7 +996,7 @@ async function showChallenge(code){
 // a finished challenge game posts its score (one try per person)
 async function postChallenge(res){
   if(!res.chal||res.own)return;
-  await chalApi({action:'play',code:res.chal.code,name:store.get('name','')||'Someone',score:res.total,marks:res.answers.map(a=>mark(a.p||0)).join('')});
+  await chalApi({action:'play',code:res.chal.code,name:store.get('name','')||(SESSION?SESSION.user.name:GUEST),score:res.total,marks:res.answers.map(a=>mark(a.p||0)).join('')});
 }
 
 // ---------- boot ----------
