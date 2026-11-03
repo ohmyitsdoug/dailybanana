@@ -38,3 +38,16 @@
   from = "/terms"
   to = "/privacy.html#terms"
   status = 301
+
+# one address for everyone, so sign-in redirects always match
+[[redirects]]
+  from = "https://www.dailybanana.io/*"
+  to = "https://dailybanana.io/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://dailybanana.netlify.app/*"
+  to = "https://dailybanana.io/:splat"
+  status = 301
+  force = true
