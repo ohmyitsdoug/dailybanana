@@ -1,61 +1,47 @@
-// The admin page's backend. Every request needs a signed-in admin account (ADMIN_EMAIL or ADMIN_DISCORD_ID, see lib/auth.mjs).
-// GET  -> stats (last 14 days + each daily) and the word queues
-// POST { action: "add" | "approve" | "reject" | "ignore", word, size_cm?, parent? }
-import { db, json, clean, day, tierOf, keys, getAll, aggregate, rebuildLive } from '../lib/db.mjs';
+// The admin page's numbers. Needs a signed-in admin account (ADMIN_EMAIL or ADMIN_DISCORD_ID, see lib/auth.mjs).
+// GET -> { totals, days: [last 14 days, newest first] }
+import { db, json, day, keys, getAll } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
+
+const bananas = (p) => (p.points || []).filter((x) => x >= 90).length;
+function sum(games) {
+  const n = games.length, pts = games.reduce((t, g) => t + (g.score || 0), 0), ban = games.reduce((t, g) => t + bananas(g), 0);
+  return { games: n, points: pts, avg_points: n ? Math.round(pts / n) : null, avg_bananas: n ? Math.round((10 * ban) / n) / 10 : null };
+}
 
 export default async (req) => {
   if (!isAdminUser(await userFor(req))) return json({ error: 'not the admin account' }, 401);
   const store = db();
-  if (req.method === 'GET') {
-    const [stats, words] = await Promise.all([aggregate(store), getAll(store, 'words/')]);
-    const days = [];
-    for (let i = 0; i < 14; i++) {
-      const d = day(-i), s = stats.find((x) => x.date === d);
-      days.push({ day: d, uniques: (await keys(store, `visits/${d}/`)).length, completions: s ? s.plays : 0, returning: s ? s.returning : 0 });
-    }
-    // unknown words from the last 7 days: how many different players, and what they typed them after
-    const unknown = {};
-    const ignored = new Set((await keys(store, 'ignored/')).map((k) => k.slice(8)));
-    const added = new Set(words.map((w) => w.word));
-    for (let i = 0; i < 7; i++) for (const k of await keys(store, `misses/${day(-i)}/`)) {
-      const [, d, word, device] = k.split('/');
-      if (ignored.has(word) || added.has(word)) continue;
-      const u = (unknown[word] = unknown[word] || { word, devices: new Set(), last: d, key: k });
-      u.devices.add(device);
-      if (d > u.last) { u.last = d; u.key = k; }
-    }
-    const top = Object.values(unknown).sort((a, b) => b.devices.size - a.devices.size).slice(0, 40);
-    const samples = await Promise.all(top.map((u) => store.get(u.key, { type: 'json' }).catch(() => null)));
-    const sort = (st, by) => words.filter((w) => w.status === st).sort(by);
-    return json({
-      days, puzzles: stats.map(({ pct, ...s }) => ({ ...s, top: Object.entries(pct).sort((a, b) => b[1] - a[1]).slice(0, 12) })),
-      review: sort('review', (a, b) => (b.players || 0) - (a.players || 0)),
-      auto: sort('auto', (a, b) => String(b.created).localeCompare(String(a.created))).slice(0, 60),
-      mine: sort('approved', (a, b) => String(b.decided).localeCompare(String(a.decided))).slice(0, 30),
-      unknown: top.map((u, i) => ({ word: u.word, players: u.devices.size, last: u.last, lo: samples[i]?.lo ?? null, hi: samples[i]?.hi ?? null })),
+  const [seen, plays, quick, shares, chals, users] = await Promise.all([
+    keys(store, 'seen/'), getAll(store, 'plays/'), getAll(store, 'quick/'), getAll(store, 'shares/'), getAll(store, 'challenges/'), getAll(store, 'users/'),
+  ]);
+  const dayOf = (k) => k.split('/')[1];
+  const days = [];
+  for (let i = 0; i < 14; i++) {
+    const d = day(-i);
+    const visits = await getAll(store, `visits/${d}/`);
+    const dp = plays.filter((p) => p.day === d), dq = quick.filter((q) => dayOf(q.key) === d), ds = shares.filter((s) => dayOf(s.key) === d);
+    days.push({
+      day: d,
+      visitors: visits.length,
+      returning: visits.filter((v) => v.first && v.first < d).length,
+      new_visitors: visits.filter((v) => !v.first || v.first >= d).length,
+      players: new Set([...dp, ...dq].map((g) => g.device)).size,
+      dailies: dp.length, quick: dq.length,
+      ...sum([...dp, ...dq]),
+      shares: ds.length, share_results: ds.filter((s) => s.what === 'results').length, share_challenge: ds.filter((s) => s.what === 'challenge').length,
+      challenges: chals.filter((c) => c.created && new Date(c.created).toISOString().slice(0, 10) === d).length,
+      accounts: users.filter((u) => u.created && new Date(u.created).toISOString().slice(0, 10) === d).length,
     });
   }
-  if (req.method !== 'POST') return json({ error: 'GET or POST' }, 405);
-  let b;
-  try { b = await req.json(); } catch { return json({ error: 'bad json' }, 400); }
-  const word = clean(b.word);
-  if (!word) return json({ error: 'no word' }, 400);
-  const now = new Date().toISOString();
-  const cur = await store.get(`words/${word}`, { type: 'json' }).catch(() => null);
-  if (b.action === 'ignore') { await store.set(`ignored/${word}`, now); return json({ ok: true }); }
-  if (b.action === 'reject') {
-    if (!cur) return json({ error: 'not found' }, 404);
-    await store.setJSON(`words/${word}`, { ...cur, status: 'rejected', decided: now });
-  } else if (b.action === 'add' || b.action === 'approve') {
-    const size_cm = +b.size_cm || cur?.size_cm;
-    if (!(size_cm > 0)) return json({ error: 'needs a size' }, 400);
-    await store.setJSON(`words/${word}`, {
-      ...(cur || { word, pop: 2, players: null, created: now, note: 'added by hand' }),
-      size_cm, tier: tierOf(size_cm), parent: b.parent ? clean(b.parent) : cur?.parent || null, status: 'approved', decided: now,
-    });
-    await store.delete(`ignored/${word}`).catch(() => {});
-  } else return json({ error: 'unknown action' }, 400);
-  await rebuildLive(store);
-  return json({ ok: true });
+  const all = [...plays, ...quick];
+  const totals = {
+    unique_visitors: seen.length,
+    players: new Set(all.map((g) => g.device)).size,
+    dailies: plays.length, quick: quick.length, challenge_games: quick.filter((q) => q.chal).length,
+    ...sum(all),
+    shares: shares.length, share_results: shares.filter((s) => s.what === 'results').length, share_challenge: shares.filter((s) => s.what === 'challenge').length,
+    challenges: chals.length, accounts: users.length,
+  };
+  return json({ totals, days });
 };

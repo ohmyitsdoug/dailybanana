@@ -480,6 +480,7 @@ const BADGES=[
   {id:'tester',name:'Playtester',how:'Played during the first two weeks (dailies #000–#013)',secret:true},
 ];
 const PLAYTEST_LAST=13;   // anyone who finishes a game while the daily is #000–#013 gets the secret Playtester badge
+function testerCheck(){if(TODAY&&TODAY.n<=PLAYTEST_LAST&&(playedDailies().length||quickList().length)&&earnBadge('tester'))pushSync()}
 const shownBadges=have=>BADGES.filter(b=>!b.secret||have[b.id]);
 const badgeCount=have=>`${shownBadges(have).filter(b=>have[b.id]).length}/${shownBadges(have).length}`;
 function earnBadge(id){const have=store.get('badges',{});if(have[id])return false;have[id]=todayISO();store.set('badges',have);return true}
@@ -790,11 +791,12 @@ function finish(why){
     store.set('v07:'+r.n,res);
     res.badges=awardBadges(res,r);if(res.badges.length)store.set('v07:'+r.n,res);
     pushSync();
-    log('play',{puzzle:r.n,points:R.answers.map(a=>a.p||0),words:R.answers.map(a=>a.guess==null?'none':String(nice(a.guess))),score:total,reached:R.answers.every(a=>(a.p||0)>=90),steps:R.answers.filter(a=>a.guess!=null).length,device:DEVICE});
+    log('play',{puzzle:r.n,points:R.answers.map(a=>a.p||0),score:total,device:DEVICE});
   }else{
     QUICK=null;
     Object.assign(res,{id:'q'+Date.now().toString(36),at:Date.now(),rounds:toNames(r.rounds),chal:r.chal||null,own:false});
     res.badges=awardBadges(res,r);saveQuick(res);pushSync();
+    log('quick',{score:total,points:R.answers.map(a=>a.p||0),chal:!!res.chal,device:DEVICE});
     if(res.chal){showResults(r,res);postChallenge(res).then(()=>chalBox(res));return}
   }
   showResults(r,res);
@@ -835,7 +837,7 @@ function showResults(r,res){
   document.getElementById('homeb').onclick=showStart;
   document.getElementById('cp').onclick=async()=>{
     const lab=document.getElementById('cpl');
-    try{await navigator.clipboard.writeText(shareTxt);lab.textContent='Copied!';toast('Results copied to your clipboard')}catch(_){
+    try{await navigator.clipboard.writeText(shareTxt);lab.textContent='Copied!';toast('Results copied to your clipboard');log('share',{what:'results',device:DEVICE})}catch(_){
       const rg=document.createRange();rg.selectNodeContents(document.getElementById('sh'));const s=getSelection();s.removeAllRanges();s.addRange(rg);lab.textContent='Selected: copy it'}
   };
 }
@@ -978,7 +980,7 @@ function shareLinkRow(code){return`<div class="linkbox"><code id="lk">${esc(chal
 function wireLink(code,host){
   const b=document.getElementById('cplk');if(!b)return;
   b.onclick=async()=>{const url=chalLink(code),text=`Daily Banana challenge from ${host}: can you beat me? Same 6 questions, open for 24 hours.`;
-    try{await navigator.clipboard.writeText(`${text} ${url}`);b.textContent='Copied!';toast('Challenge link copied')}catch(_){const rg=document.createRange();rg.selectNodeContents(document.getElementById('lk'));const s=getSelection();s.removeAllRanges();s.addRange(rg)}};
+    try{await navigator.clipboard.writeText(`${text} ${url}`);b.textContent='Copied!';toast('Challenge link copied');log('share',{what:'challenge',device:DEVICE})}catch(_){const rg=document.createRange();rg.selectNodeContents(document.getElementById('lk'));const s=getSelection();s.removeAllRanges();s.addRange(rg)}};
 }
 // the box under a quick game's results
 async function chalBox(res){
@@ -1072,9 +1074,10 @@ loadData().then(()=>{
     if(handled)return;
     if(code){history.replaceState(null,'',location.pathname);showChallenge(code)}else showStart();
     // pull scores from your other devices, then refresh the home screen if it's showing
-    if(SESSION)syncNow().then(()=>{if(!S&&document.querySelector('.home'))showStart()});
+    if(SESSION)syncNow().then(()=>{testerCheck();if(!S&&document.querySelector('.home'))showStart()});
   });
   log('visit',{device:DEVICE});
+  testerCheck();
 }).catch(e=>{
   console.error(e);
   app.innerHTML='<div style="padding:40px 0">Could not load the game data.<div class="note">Check that the data folder is published next to this page.</div></div>';
