@@ -3,7 +3,7 @@
 import { db, json, day, keys, getAll } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
 
-const laDay = (t) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(t));
+const laDay = (t) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(t));
 const bananas = (p) => (p.points || []).filter((x) => x >= 90).length;
 function sum(games) {
   const n = games.length, pts = games.reduce((t, g) => t + (g.score || 0), 0), ban = games.reduce((t, g) => t + bananas(g), 0);
