@@ -894,7 +894,7 @@ async function startSignIn(provider,back='menu'){
   const redirect_uri=location.origin+'/';
   location.href=provider==='google'
     ?`https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams({client_id:c.google,redirect_uri,response_type:'id_token',scope:'openid email profile',nonce,state,prompt:'select_account'})}`
-    :`https://discord.com/oauth2/authorize?${new URLSearchParams({client_id:c.discord,response_type:'code',scope:'identify',redirect_uri,state,prompt:'none'})}`;
+    :`https://discord.com/oauth2/authorize?${new URLSearchParams({client_id:c.discord,response_type:'code',scope:'identify',redirect_uri,state})}`;
 }
 // Google comes back to /#id_token=…&state=…, Discord to /?code=…&state=…
 async function signInReturn(){
@@ -903,7 +903,8 @@ async function signInReturn(){
   if(!code&&!idt&&!q.get('error')&&!h.get('error'))return false;
   let saved=null;try{saved=JSON.parse(sessionStorage.getItem('db-signin')||'null');sessionStorage.removeItem('db-signin')}catch(_){}
   history.replaceState(null,'',location.pathname);
-  if(!saved||saved.state!==state||!(code||idt)){showMenu();return true}
+  const err=q.get('error_description')||q.get('error')||h.get('error_description')||h.get('error');
+  if(err||!saved||saved.state!==state||!(code||idt)){showMenu();acErr(err?`Sign-in was cancelled or refused: ${err}`:'Sign-in didn\'t finish. Try again.');return true}
   try{await finishSignIn(saved.provider==='google'?{provider:'google',credential:idt,nonce:saved.nonce}:{provider:'discord',code,redirect:location.origin+'/'},saved.link)}
   catch(e){showMenu();acErr(e.message);return true}
   if(saved.back==='admin'){location.href='admin.html';return true}
