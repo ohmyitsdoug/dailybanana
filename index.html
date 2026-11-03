@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daily Banana · Compare sizes using ridiculous measurements</title>
+<meta name="description" content="Compare sizes using ridiculous measurements. A daily guessing game: how many bananas long is a school bus? How many shoes tall is the Eiffel Tower?">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<script>
+// pick the theme before anything paints: saved choice, else the device setting
+(function(){var t;try{t=JSON.parse(localStorage.getItem('snug:theme'))}catch(e){}
+  if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  document.documentElement.dataset.theme=t})();
+</script>
+<style>
+/* Banana for Scale · "A Offset" design: 2px borders, hard offset shadows, banana yellow + dark brown.
+   Yellow is a fill with dark brown text on it; --accsh is the yellow shadow tone that shows on each background;
+   --acc-text is small bold text that passes 4.5:1 on that theme's background. */
+:root,:root[data-theme="light"]{
+  --bg:#FFF0A0;--ink:#3B2412;--mut:#6B4F30;--card:#FFFAE0;--line:#E6D38A;
+  --acc:#FFD43B;--acc-ink:#3B2412;--acc-text:#8A4B00;--accsh:#B97E00;color-scheme:light}
+:root[data-theme="dark"]{
+  --bg:#2A1A0E;--ink:#FFF3C9;--mut:#CDB68C;--card:#382415;--line:#4E3622;
+  --acc:#FFD43B;--acc-ink:#2A1A0E;--acc-text:#FFD43B;--accsh:#FFD43B;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink)}
+body{font-family:'Space Grotesk',system-ui,sans-serif;font-size:16px;line-height:1.4;-webkit-font-smoothing:antialiased;
+  padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+a{color:var(--ink)}
+button{font-family:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:3px solid var(--accsh);outline-offset:3px}
+.field:focus-within{outline:none}
+button[disabled]{opacity:.45;cursor:not-allowed}
+.num{font-variant-numeric:tabular-nums}
+.mut{color:var(--mut)}
+.eyebrow{font-size:12px;letter-spacing:1.5px;color:var(--mut);text-transform:uppercase}
+
+.app{max-width:440px;margin:0 auto;min-height:100vh;min-height:100dvh;padding:20px 20px 18px;display:flex;flex-direction:column;gap:18px}
+.spacer{flex:1}
+
+/* buttons */
+.btn{height:56px;border:2px solid var(--ink);background:var(--bg);color:var(--ink);box-shadow:4px 4px 0 var(--ink);
+  font-weight:700;font-size:17px;padding:0 20px;display:flex;align-items:center;justify-content:center;gap:12px;text-decoration:none}
+.btn.main{height:60px;background:var(--ink);color:var(--bg);box-shadow:4px 4px 0 var(--accsh);justify-content:space-between;font-size:18px}
+.btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.btn.main:active{box-shadow:2px 2px 0 var(--accsh)}
+.btn small{font-weight:500;font-size:14px;opacity:.85}
+.sq{height:40px;min-width:40px;border:2px solid var(--ink);background:var(--bg);display:flex;align-items:center;justify-content:center;
+  padding:0 12px;font-weight:700;font-size:14px}
+.sq.icon{padding:0;width:40px}
+.tag{display:inline-block;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink);padding:4px 10px;font-size:13px;font-weight:700;
+  background:var(--acc);color:var(--acc-ink)}
+
+/* nav */
+.nav{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:14px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:20px;letter-spacing:-.5px;text-decoration:none;background:none;border:0;padding:0}
+.logo .m{display:inline-flex;width:30px;height:30px;border:2px solid var(--ink);box-shadow:2px 2px 0 var(--ink);align-items:center;justify-content:center;
+  background:var(--card)}
+.nav .r{display:flex;gap:8px}
+.sun,.moon{display:none}
+:root[data-theme="light"] .sun,:root[data-theme="dark"] .moon{display:block}
+
+/* boxes */
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.stat{border:2px solid var(--ink);padding:7px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat b{font-size:22px;line-height:1.1}
+.stat span{font-size:13px;color:var(--mut)}
+.card{border:2px solid var(--ink);box-shadow:5px 5px 0 var(--ink);background:var(--card);padding:16px}
+
+/* home */
+.daily{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.daily h1{margin:0;font-size:52px;line-height:1;letter-spacing:-2px}
+.daily p{margin:0;font-size:16px;max-width:34ch}
+.fine{font-size:13px;color:var(--mut)}
+.foot{font-size:12px;color:var(--mut);text-align:center}
+.cta{display:flex;flex-direction:column;gap:12px}
+.main-col,.side-col{display:flex;flex-direction:column;gap:12px}
+.page.home{display:contents}
+@media (max-height:720px) and (max-width:899px){.app:has(.home){gap:12px}.home .daily h1{font-size:44px}}
+.howlink{font-size:14px;font-weight:500}
+.narrow{display:flex;flex-direction:column;gap:16px}
+
+/* play */
+.playtop{display:flex;align-items:center;gap:10px}
+.timer{font-size:28px;font-weight:700}
+.pts{margin-left:auto}
+.bar{height:10px;border:2px solid var(--ink)}
+.bar>div{height:100%;background:var(--ink);transition:width .1s linear}
+.bar.low>div{background:var(--accsh)}
+.ctx{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--mut)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;font-size:13px;font-weight:500}
+.chips span{border:2px solid var(--ink);padding:2px 7px}
+.chips span.hi{box-shadow:2px 2px 0 var(--accsh)}
+.sqrow{display:flex;justify-content:space-between;gap:4px}
+.sqr{flex:1;aspect-ratio:1;max-width:40px;border:2px dashed var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--mut);box-sizing:border-box}
+.sqr span{opacity:.55}
+.sqr.end{background:var(--ink);color:var(--bg);border:2px solid var(--ink)}
+.sqr.on{border:2px solid var(--ink);background:var(--card);color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.sqr.hi{box-shadow:3px 3px 0 var(--accsh)}
+.sqr.cur{border:2px solid var(--ink);color:var(--ink)} .sqr.cur span{opacity:1}
+.sqr.on{font-size:12px;font-variant-numeric:tabular-nums}
+.sqr.on.bull{background:var(--acc);color:var(--acc-ink)}
+.sqr.on.miss{color:var(--mut);box-shadow:none}
+.scale{display:flex;flex-direction:column;gap:8px;padding:30px 0 4px}
+.track{position:relative;height:12px;border:2px solid var(--ink);background:var(--card)}
+.track .tick{position:absolute;top:-10px;bottom:-10px;width:3px;margin-left:-1.5px;background:var(--accsh)}
+.pin{position:absolute;top:-34px;transform:translateX(-50%);white-space:nowrap}
+.pin span{display:inline-block;border:2px solid var(--ink);background:var(--bg);padding:1px 7px;font-size:13px;font-weight:700;box-shadow:2px 2px 0 var(--accsh)}
+.pin::after{content:"";position:absolute;left:50%;top:100%;width:2px;height:12px;margin-left:-1px;background:var(--ink)}
+.scale-ends{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.prow.round{align-items:flex-start}
+.prow .t .rare{color:var(--acc-text);font-weight:700}
+.reveal .score{font-size:48px}
+.note .rare{color:var(--acc-text);font-weight:700}
+.sqrow.seven{justify-content:flex-start;gap:6px}
+.sqrow.seven .sqr{max-width:56px}
+.ask{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;margin:4px 0}
+.ask b{font-size:30px;line-height:1.05;letter-spacing:-1px}
+.nest{display:flex;justify-content:center}
+.outer{position:relative;width:min(240px,70vw);aspect-ratio:1;border:3px solid var(--ink);background:var(--card);display:flex;align-items:flex-end;justify-content:flex-start;padding:6px;box-sizing:border-box}
+.olab{position:absolute;top:-24px;left:0;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--mut)}
+.inner{background:var(--acc);color:var(--acc-ink);border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;overflow:visible;min-width:14px;min-height:14px;box-sizing:border-box;transition:width .5s cubic-bezier(.2,.8,.2,1),height .5s cubic-bezier(.2,.8,.2,1)}
+.inner{position:relative}
+.inner span{font-size:13px;font-weight:700;white-space:nowrap;padding:0 4px}
+.inner.tiny span{position:absolute;left:calc(100% + 6px);bottom:0;color:var(--ink);padding:0}
+.nest{padding-top:22px}
+/* floating 16-bit bananas behind everything */
+.bgb{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bgb span{position:absolute;opacity:.22;animation:floaty 9s ease-in-out infinite;animation-delay:calc(var(--d) * -1)}
+:root[data-theme="dark"] .bgb span{opacity:.14}
+@keyframes floaty{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-22px) rotate(8deg)}}
+.app{position:relative;z-index:1}
+.answer{font-size:18px}
+.answer b{font-size:22px}
+.calm .bgb span{animation:none}
+@media (prefers-reduced-motion:reduce){.bgb span{animation:none}}
+.sqlabels{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:6px}
+.ends{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-weight:700;font-size:22px;letter-spacing:-.5px}
+.ends .mid{font-size:12px;font-weight:500;color:var(--mut);letter-spacing:0;text-align:center}
+.lead{font-size:18px!important;font-weight:500}
+.playtop .bar{flex:1;height:10px;margin:0 4px}
+.prow .pct{font-size:12px;color:var(--mut)}
+.prow .pct.rare,.fb .rare{color:var(--acc-text);font-weight:700}
+.prow.endrow{font-weight:700;font-size:16px}
+.prow.gap{border-bottom-style:dashed}
+.prow.gap .w{color:var(--mut)}
+.prow.bonus{font-size:14px}
+.big{font-size:42px;line-height:1;font-weight:700;letter-spacing:-1.5px;overflow-wrap:anywhere}
+.field{position:relative;display:flex;align-items:center;gap:8px;height:56px;padding:0 14px;border:2px solid var(--ink);box-shadow:4px 4px 0 var(--accsh);
+  font-size:22px;font-weight:500;background:var(--card);cursor:text}
+.field .go{position:relative;z-index:2;margin-left:auto;margin-right:-8px;height:40px;padding:0 16px;border:2px solid var(--ink);background:var(--acc);color:var(--acc-ink);font:inherit;font-weight:700;font-size:16px;cursor:pointer}
+.field input{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:0;padding:0;background:transparent}
+.mirror{white-space:pre;overflow:hidden}
+.caret{width:2px;height:24px;background:var(--ink);animation:blink 1s steps(1) infinite;flex:none}
+@keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+.fb{min-height:28px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.fb b{font-size:20px}
+.fb span{font-size:13px;color:var(--mut)}
+.fb .rare{color:var(--acc-text);font-weight:700}
+.fb.no span{color:var(--ink);font-size:14px;font-weight:500}
+.count{font-size:44px;font-weight:700;letter-spacing:-1px}
+.side{display:none}
+.keep{position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0}
+
+/* results */
+.score{font-size:56px;line-height:.95;letter-spacing:-2px;font-weight:700}
+.sumrow{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.sumrow .r{display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:13px;color:var(--mut);text-align:right}
+.sumrow .r b{color:var(--ink);font-size:18px}
+.path{display:flex;flex-direction:column}
+.prow{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:15px}
+.prow .i{width:18px;font-size:13px;color:var(--mut)}
+.prow .w{flex:1;min-width:0}
+.prow .t{font-size:12px;color:var(--mut)}
+.prow .rare{font-size:12px;font-weight:700;color:var(--acc-text)}
+.prow.start{color:var(--mut)}
+.range{border:2px solid var(--ink);padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.range div{display:flex;flex-direction:column}
+.range b{font-size:20px;line-height:1.2}
+.range span{font-size:12px;color:var(--mut)}
+.share{border:2px dashed var(--mut);padding:10px 12px;font-size:14px;line-height:1.5;white-space:pre-wrap;user-select:all}
+.badge-new{border:2px solid var(--ink);box-shadow:4px 4px 0 var(--accsh);padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.badge-new span{font-size:13px;color:var(--mut)}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.ladder{display:flex;flex-direction:column;font-size:15px}
+.ladder div{padding:5px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}
+.ladder .you{font-weight:700}
+.ladder .x{color:var(--mut)}
+
+/* menu, help, admin */
+.head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.head h2{margin:0;font-size:34px;letter-spacing:-1px;line-height:1}
+.list{display:flex;flex-direction:column;border-top:2px solid var(--ink)}
+.lrow{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:50px;padding:0 2px;border:0;border-bottom:1px solid var(--line);
+  background:transparent;font-size:15px;text-align:left;width:100%;color:inherit;text-decoration:none}
+.lrow b{font-variant-numeric:tabular-nums}
+.badges{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.badge{border:2px dashed var(--line);padding:10px;display:flex;flex-direction:column;gap:2px;font-size:13px;color:var(--mut)}
+.badge b{font-size:15px}
+.badge.on{border:2px solid var(--ink);color:var(--ink)}
+.badge{flex-direction:row;align-items:center;gap:10px}
+.badge .bi{flex:none;display:flex;filter:grayscale(1);opacity:.35}
+.badge.on .bi{filter:none;opacity:1}
+.badge .bt{display:flex;flex-direction:column;gap:2px;min-width:0}
+button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cursor:pointer}
+.chal{border:2px solid var(--ink);box-shadow:4px 4px 0 var(--accsh);background:var(--card);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.chal h3{margin:0;font-size:18px}
+.chal .linkbox{display:flex;gap:8px;align-items:stretch}
+.chal .linkbox code{flex:1;min-width:0;border:2px dashed var(--line);padding:10px;font-size:14px;overflow-wrap:anywhere;font-family:inherit}
+.board{display:flex;flex-direction:column;border-top:2px solid var(--ink)}
+.board div{display:flex;gap:10px;align-items:baseline;padding:7px 2px;border-bottom:1px solid var(--line);font-size:15px}
+.board .n{width:18px;color:var(--mut)}.board .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .you{font-weight:700}
+.namein{height:48px;border:2px solid var(--ink);padding:0 12px;font:inherit;font-size:16px;background:var(--card);color:var(--ink);width:100%;box-sizing:border-box}
+.disclaim{font-size:12px;color:var(--mut);line-height:1.4}
+.help h3{margin:8px 0 0;font-size:12px;letter-spacing:1.5px;color:var(--mut);font-weight:500}
+.help p,.help li{margin:0;font-size:16px;max-width:60ch}
+.help ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.pt{width:100%;border-collapse:collapse;font-size:15px}
+.pt td,.pt th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left}
+.pt th{font-size:12px;letter-spacing:1px;color:var(--mut);font-weight:500;border-bottom:2px solid var(--ink)}
+.pt td:last-child,.pt th:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.toggle{width:46px;height:26px;border:2px solid var(--ink);position:relative;flex:none}
+.toggle::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;background:var(--ink)}
+.toggle.on{background:var(--acc)} .toggle.on::after{left:22px;background:var(--acc-ink)}
+.note{font-size:14px;color:var(--mut)}
+.tablewrap{overflow-x:auto}
+
+/* motion: things slide in on arrival, out when a round starts */
+@keyframes slideIn{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+@keyframes slideOut{to{transform:translateY(-14px);opacity:0}}
+@keyframes pop{from{transform:translateY(5px);opacity:.3}to{transform:none;opacity:1}}
+.in{animation:slideIn .4s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--d,0) * 60ms)}
+.out{animation:slideOut .25s ease-in both;animation-delay:calc(var(--d,0) * 35ms)}
+.pop{animation:pop .2s ease-out}
+.calm .in,.calm .out,.calm .pop,.calm .caret{animation:none!important}
+@media (prefers-reduced-motion:reduce){.in,.out,.pop,.caret{animation:none!important}}
+
+/* desktop */
+@media (min-width:900px){
+  .app{max-width:1120px;padding:0 32px 0;gap:0}
+  .nav{padding:18px 0;margin:0 -32px;padding-inline:32px}
+  .page{flex:1;display:flex;flex-wrap:wrap;gap:64px;align-items:center;padding:64px 0}
+  .page.home{display:flex}
+  .home .main-col{order:-1}
+  .home .spacer{display:none}
+  .page>.main-col{flex:999 1 520px;min-width:0;display:flex;flex-direction:column;gap:18px}
+  .page>.side-col{flex:1 1 280px;min-width:0;display:flex;flex-direction:column;gap:14px}
+  .home .daily h1{font-size:96px;letter-spacing:-4px;line-height:.95}
+  .home .daily p{font-size:20px;max-width:560px}
+  .home .cta{flex-direction:row;flex-wrap:wrap;gap:16px}
+  .home .cta .btn{padding:0 28px}
+  .home .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .home .stats .stat:first-child{grid-column:1/-1;box-shadow:5px 5px 0 var(--ink);background:var(--card);padding:18px 20px}
+  .home .stats .stat:first-child b{font-size:40px}
+  .footer{border-top:2px solid var(--ink);margin:0 -32px;padding:18px 32px;text-align:left}
+  .page.play{align-items:flex-start}
+  .play .ends{font-size:56px;letter-spacing:-2px}
+  .play .ask b{font-size:56px;letter-spacing:-2px}
+  .outer{width:320px}
+  .play .ends .mid{font-size:15px}
+  .play .sqr{max-width:64px}
+  .home .sqr{max-width:56px}
+  .play .field{height:72px;font-size:30px;max-width:640px;box-shadow:6px 6px 0 var(--accsh)}
+  .play .chips{display:none}
+  .side{display:flex;flex-direction:column;border:2px solid var(--ink);padding:18px 20px}
+  .side .prow{font-size:16px}
+  .narrow{max-width:720px;margin:0 auto;width:100%;padding:40px 0;display:flex;flex-direction:column;gap:18px}
+}
+</style>
+</head>
+<body>
+<div class="bgb" id="bgb" aria-hidden="true"></div>
+<div class="app" id="app"></div>
+<input class="keep" id="keep" tabindex="-1" aria-hidden="true" autocapitalize="off">
+<!-- optional: config.js can point the game at its server functions; the game runs without them -->
+<script src="config.js" onerror="void 0"></script>
+<script>
+// =====================================================================
+// Banana for Scale v0.5 — 5 quick rounds: how many bananas long is a school bus?
+// Data: data/items.json (things and their typical lengths) + data/dailies.json (5 rounds a day)
+// Server: Netlify functions + Netlify Blobs storage (netlify/functions); the game still works without them
+// =====================================================================
+const CFG=Object.assign({api:'/.netlify/functions'},window.MATRYO_CONFIG||{});
+const API=CFG.api;   // Netlify server functions: logging, shared stats, words added after launch
+const VERSION='0.6';
+// v0.5 "Banana for Scale": 5 quick rounds a day. "How many bananas long is a school bus?"
+// Answer with a number. Points come from how far off you are, measured in multiples:
+//   within 10% = 100, sliding down to 0 at 10x too high or too low.
+const ROUNDS=6, ROUND_SECONDS=20, HEADSTART_MS=1000, MAX_PAUSES=2;
+const MAX_PTS=100;
+// answer ranges, one per round, small to huge (keep in sync with tools/make_scale.py)
+const BUCKETS=[[3,20],[15,80],[50,300],[150,1500],[500,6000],[2000,50000]];
+const HOUR=3600e3, CHALLENGE_WITHIN=HOUR;
+// a 16-bit style banana, drawn pixel by pixel (b outline, y yellow, l highlight, s stem)
+const BANANA_PX=[
+'..............bb',
+'.............bsb',
+'b...........byb.',
+'bb.........byyb.',
+'blb.......byyyb.',
+'.blbb...bbyyyb..',
+'.byllbbbyyyyyb..',
+'..byyllyyyyyb...',
+'...bbyyyyybb....',
+'.....bbbbb......'];
+const BANANA=(px=16)=>{const C={b:'#3B2412',y:'#FFD43B',l:'#FFF0A6',s:'#7A5A2A'};let r='';
+  BANANA_PX.forEach((row,y)=>[...row].forEach((c,x)=>{if(C[c])r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${C[c]}"/>`}));
+  return`<svg width="${px}" height="${Math.round(px*10/16)}" viewBox="0 0 16 10" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`};
+const SITE='https://playsmidgen.com/?utm_source=dailybanana&utm_medium=game&utm_campaign=footer';
+const app=document.getElementById('app');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const W=w=>{const s=String(w).replace(/_/g,' ');return s.length<=2?s.toUpperCase():s.charAt(0).toUpperCase()+s.slice(1)};   // first_aid_kit → First aid kit
+const TC=s=>String(s).toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());                  // A HOSPITAL → A Hospital
+const pad3=n=>String(n).padStart(3,'0');
+const clock=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+const fmt=n=>Number(n).toLocaleString('en-US');
+const ICON={
+  sun:'<svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  moon:'<svg class="moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  pause:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>',
+  right:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  left:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+  check:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>',
+  copy:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+};
+
+// ---------- saved per-player stuff (keys keep the old "snug:" prefix); the game works without it ----------
+const store={get(k,d){try{const v=localStorage.getItem('snug:'+k);return v==null?d:JSON.parse(v)}catch(_){return d}},
+  set(k,v){try{localStorage.setItem('snug:'+k,JSON.stringify(v))}catch(_){}},
+  del(k){try{localStorage.removeItem('snug:'+k)}catch(_){}}};
+const SET=Object.assign({motion:true},store.get('settings',{}));
+function applySettings(){document.documentElement.classList.toggle('calm',!SET.motion)}
+applySettings();
+const reduced=()=>!SET.motion||matchMedia('(prefers-reduced-motion: reduce)').matches;
+function toggleTheme(){const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;store.set('theme',t)}
+const saved=n=>store.get('v06:'+n,null);          // finished dailies (v0.6: 6 rounds, accuracy scoring)
+const liveSaved=n=>store.get('live:'+n,null);     // a daily that was paused or left mid-round
+function clearResults(){try{Object.keys(localStorage).filter(k=>/^snug:(best|result|r8|v01|v02|v03|v04|v05|v06|quick|recent|live|badges)/.test(k)).forEach(k=>localStorage.removeItem(k))}catch(_){}}
+// anonymous id for this device, so admin stats can count unique visitors without accounts
+const DEVICE=(()=>{let d=store.get('device',null);if(!d){d=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());store.set('device',d)}return d})();
+const todayISO=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+
+// ---------- data ----------
+let ITEMS=[],DAILIES=[],TODAY=null;
+async function loadData(){
+  const [it,d]=await Promise.all(['items','dailies'].map(f=>fetch(`data/${f}.json`).then(r=>r.json())));
+  ITEMS=it;DAILIES=d;
+  const iso=todayISO(),idx=d.findIndex(x=>x.date>iso);
+  TODAY=d.find(x=>x.date===iso)||(idx===-1?d[d.length-1]:d[Math.max(0,idx-1)]);
+}
+const fmtDate=iso=>{const [y,m,dd]=iso.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]+' '+(+dd)};
+const the=b=>b.art?`${b.art} ${b.name}`:b.name;
+// "How many bananas long is a school bus?"
+const question=q=>`How many ${q.A.plural} ${q.B.dim} is ${the(q.B)}?`;
+// a friendly rounded answer: 61, 140, 1,900, 13,000
+function nice(n){if(n<10)return Math.round(n*10)/10;const p=10**Math.max(0,Math.floor(Math.log10(n))-1);return Math.round(n/p)*p}
+// lengths for the reveal, metric with imperial alongside
+function len(cm){
+  const m=cm>=100000?`${fmt(nice(cm/100000))} km`:cm>=100?`${fmt(nice(cm/100))} m`:`${nice(cm)} cm`;
+  const ft=cm/30.48,i=cm>=30.48*5280?`${fmt(nice(ft/5280))} mi`:ft>=3?`${fmt(nice(ft))} ft`:`${nice(cm/2.54)} in`;
+  return`${m} (${i})`;
+}
+// what people type: 60, 1,200, 1.5k, 2m, ~300
+function parseGuess(raw){
+  const s=String(raw).toLowerCase().replace(/[,\s~≈]/g,'');
+  const m=s.match(/^(\d*\.?\d+)(k|m)?$/);if(!m)return null;
+  const n=parseFloat(m[1])*(m[2]==='k'?1e3:m[2]==='m'?1e6:1);
+  return n>0&&isFinite(n)?n:null;
+}
+
+// ---------- scoring ----------
+// points = how accurate you were, as a percent: the smaller of (guess, answer) over the bigger.
+// Half the answer scores 50, twice the answer scores 50, 5x off scores 20, 10x off scores 10.
+function judge(guess,q){
+  const p=Math.round(MAX_PTS*Math.min(guess,q.ans)/Math.max(guess,q.ans));
+  return{guess,p,off:guess/q.ans};
+}
+const mark=p=>p>=90?'🍌':p>=70?'🟨':p>=40?'🟫':'⬜';
+const LEGEND='🍌 90+ · 🟨 70+ · 🟫 40+ · ⬜ under 40';
+function offLabel(a){
+  if(!a||a.guess==null)return'Out of time.';
+  if(a.p>=MAX_PTS)return'Spot on!';
+  const r=a.off,pc=Math.round(Math.abs(r-1)*100);
+  if(r>1)return r>=2?`${(Math.round(r*10)/10)}× too high.`:`${pc}% too high.`;
+  return 1/r>=2?`${(Math.round(10/r)/10)}× too low.`:`${pc}% too low.`;
+}
+
+// ---------- backend (optional): logging ----------
+function log(kind,payload){
+  if(!API)return;
+  try{fetch(`${API}/log`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind,...payload}),keepalive:true}).catch(()=>{})}catch(_){}
+}
+
+// ---------- puzzles ----------
+function puzzleFor(d){return{...d,qs:d.rounds.map(x=>{const A=ITEMS[x.a],B=ITEMS[x.b];return{A,B,ans:B.cm/A.cm}})}}
+let QUICK=null;   // a paused quick game (kept in memory only)
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function randomRounds(){
+  const units=ITEMS.filter(i=>i.unit),used=new Set();
+  return BUCKETS.map(([lo,hi])=>{
+    for(let t=0;t<5000;t++){const a=pick(units),b=pick(ITEMS),r=b.cm/a.cm;
+      if(a.id!==b.id&&!used.has(a.id)&&!used.has(b.id)&&r>=lo&&r<=hi){used.add(a.id);used.add(b.id);return{a:a.id,b:b.id}}}
+    return{a:units[0].id,b:ITEMS[ITEMS.length-1].id}});
+}
+// challenges travel by item name, so they keep working if the item list grows
+const BYNAME=()=>Object.fromEntries(ITEMS.map(i=>[i.name,i.id]));
+const toNames=rounds=>rounds.map(x=>({a:ITEMS[x.a].name,b:ITEMS[x.b].name}));
+const fromNames=rounds=>{const m=BYNAME();return rounds.map(x=>({a:m[x.a],b:m[x.b]}))};
+function quick(chal){
+  const rounds=chal?fromNames(chal.rounds):randomRounds();
+  if(rounds.some(x=>x.a==null||x.b==null))return alertBox('This challenge uses items this version of the game doesn\'t have.');
+  leave({...puzzleFor({rounds}),n:0,quick:true,date:todayISO(),chal:chal?{code:chal.code,host:chal.host}:null});
+}
+const quickList=()=>store.get('quick',[]);
+function saveQuick(rec){const l=quickList().filter(x=>x.id!==rec.id);l.unshift(rec);store.set('quick',l.slice(0,60))}
+
+// ---------- badges and history (dailies only) ----------
+const BADGES=[
+  {id:'first',name:'First peel',how:'Finish your first game'},
+  {id:'bull',name:'Spot on',how:'Score 95 or more on a round'},
+  {id:'triple',name:'Top banana',how:'3 rounds of 90+ in one game'},
+  {id:'sharp',name:'Good eye',how:'Every round 70 or more'},
+  {id:'big',name:'Big thinker',how:'90+ on the biggest number'},
+  {id:'small',name:'Small wonder',how:'90+ on the smallest number'},
+  {id:'bunch',name:'Whole bunch',how:'Score 500 or more in one game'},
+  {id:'streak7',name:'Week streak',how:'Play 7 dailies in a row'},
+  {id:'host',name:'Ringleader',how:'Start a challenge'},
+  {id:'beat',name:'Bragging rights',how:'Beat a friend in a challenge'},
+];
+function earnBadge(id){const have=store.get('badges',{});if(have[id])return false;have[id]=todayISO();store.set('badges',have);return true}
+function playedDailies(){return DAILIES.filter(d=>d.date<=TODAY.date).map(d=>({d,res:saved(d.n)})).filter(x=>x.res)}
+function streak(){ // days in a row with a played daily, counting back from today (or yesterday if today isn't played yet)
+  const played=new Set(playedDailies().map(x=>x.d.date));let n=0,day=new Date(TODAY.date+'T12:00');
+  if(!played.has(TODAY.date))day.setDate(day.getDate()-1);
+  const iso=x=>`${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+  while(played.has(iso(day))){n++;day.setDate(day.getDate()-1)}return n;
+}
+function awardBadges(res,r){
+  const have=store.get('badges',{}),got=[],ps=res.answers.map(a=>a.p||0);
+  const earn=(id,ok)=>{if(ok&&!have[id]){have[id]=todayISO();got.push(id)}};
+  const biggest=r.qs.reduce((b,q,i)=>q.ans>r.qs[b].ans?i:b,0);
+  const smallest=r.qs.reduce((b,q,i)=>q.ans<r.qs[b].ans?i:b,0);
+  earn('first',true);
+  earn('bull',ps.some(p=>p>=95));
+  earn('triple',ps.filter(p=>p>=90).length>=3);
+  earn('sharp',ps.length===ROUNDS&&ps.every(p=>p>=70));
+  earn('big',ps[biggest]>=90);
+  earn('small',ps[smallest]>=90);
+  earn('bunch',res.total>=500);
+  earn('streak7',streak()>=7);
+  store.set('badges',have);return got;
+}
+
+// ---------- shared pieces ----------
+const nav=(right='')=>`<header class="nav in" style="--d:0">
+  <button class="logo" id="home" aria-label="Home"><span class="m" aria-hidden="true">${BANANA(18)}</span>dailybanana.io</button>
+  <div class="r">${right}<button class="sq" id="menu">Menu</button><button class="sq icon" id="theme" aria-label="Switch light or dark mode">${ICON.sun}${ICON.moon}</button></div>
+</header>`;
+const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · v${VERSION} beta</div>`;
+function wireNav(){
+  const on=(id,f)=>{const el=document.getElementById(id);if(el)el.onclick=f};
+  on('home',showStart);on('menu',()=>showMenu());on('theme',toggleTheme);on('tobadges',()=>showMenu('badges'));
+}
+const statBoxes=()=>{const sc=playedDailies().map(x=>x.res.total);return`
+  <div class="stat"><b class="num">${streak()}</b><span>day streak</span></div>
+  <div class="stat"><b class="num">${sc.length?fmt(Math.max(...sc)):'–'}</b><span>best</span></div>
+  <button class="stat" id="tobadges"><b class="num">${Object.keys(store.get('badges',{})).length}/${BADGES.length}</b><span>badges</span></button>`};
+// one square per round
+function squares(answers,cur){
+  let h='';
+  for(let i=0;i<ROUNDS;i++){const a=(answers||[])[i];
+    h+=a?`<span class="sqr on ${a.p>=90?'bull':a.p>=30?'good':'miss'}" title="Round ${i+1}: ${a.p||0}">${a.p||0}</span>`
+      :`<span class="sqr ${i===cur?'cur':''}"><span>${i===cur?i+1:'?'}</span></span>`}
+  return`<div class="sqrow seven" role="img" aria-label="${(answers||[]).length} of ${ROUNDS} rounds played">${h}</div>`;
+}
+const pairLabel=d=>`${(d.rounds||[]).length} rounds`;
+const timeLabel=t=>new Date(t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+const dateOf=t=>{const d=new Date(t);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const leftLabel=ms=>{const m=Math.max(0,Math.round(ms/60000));return m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`};
+const badgeIcon=(px=28)=>`<span class="bi">${BANANA(px)}</span>`;
+function alertBox(msg){app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:14px;padding-top:20px"><p>${esc(msg)}</p><button class="btn" id="homeb">Home</button></div>`;wireNav();document.getElementById('homeb').onclick=showStart}
+
+// ---------- home ----------
+let S=null,tick=null;
+function showStart(){
+  clearInterval(tick);S=null;
+  const res=saved(TODAY.n),live=liveSaved(TODAY.n);
+  const p=puzzleFor(TODAY);
+  const pausesLeft=live?MAX_PAUSES-live.pauses:MAX_PAUSES;
+  const play=res?`<span>See today's results</span><span aria-hidden="true">→</span>`
+    :live?`<span>Resume the daily <small>· round ${Math.min(ROUNDS,live.answers.length+1)} of ${ROUNDS}</small></span><span aria-hidden="true">→</span>`
+    :`<span>Play the daily</span><span aria-hidden="true">→</span>`;
+  app.innerHTML=`${nav()}
+  <div class="page home">
+    <div class="side-col"><div class="stats in" style="--d:1">${statBoxes()}</div></div>
+    <div class="spacer"></div>
+    <div class="main-col">
+      <div class="daily in" style="--d:3">
+        <span class="tag">Daily #${pad3(TODAY.n)} · ${fmtDate(TODAY.date)}</span>
+        <h1>Banana for scale</h1>
+        <p class="lead">How many bananas long is a school bus? How many shoes tall is the Eiffel Tower? Guess the number.</p>
+        <div class="fine">6 rounds · 20 seconds each. The closer your guess, the more it scores.</div>
+      </div>
+      <div class="cta in" style="--d:4">
+        <button class="btn main" id="daily">${play}</button>
+        <button class="btn" id="quick">${QUICK?'Resume quick play':'Quick play'}</button>
+      </div>
+      ${live&&!res?`<div class="note in" style="--d:5">${pausesLeft>0?`${pausesLeft} pause${pausesLeft===1?'':'s'} left today.`:'No pauses left: pausing again ends your daily.'}</div>`:''}
+    </div>
+  </div>
+  ${footer(6)}`;
+  wireNav();
+  document.getElementById('daily').onclick=()=>res?showResults(p,res):live?leave(p,live):leave(p);
+  document.getElementById('quick').onclick=()=>QUICK?leave(QUICK.r,QUICK):quick();
+  window.scrollTo(0,0);
+}
+// ---------- help ----------
+function showHelp(){
+  app.innerHTML=`${nav()}<div class="narrow help in" style="--d:1;display:flex;flex-direction:column;gap:12px">
+    <div class="head"><h2>How it works</h2><button class="sq" id="back">Back</button></div>
+    <p>Each round asks something like <b>How many bananas long is a school bus?</b> Picture them lined up end to end, then type your guess. You have 20 seconds. Six rounds a day.</p>
+    <h3>POINTS EACH ROUND</h3>
+    <table class="pt"><tbody>
+      <tr><td>Right on the answer</td><td>100</td></tr>
+      <tr><td>10% off</td><td>about 90</td></tr>
+      <tr><td>Half the answer, or twice it</td><td>50</td></tr>
+      <tr><td>5× off</td><td>20</td></tr>
+      <tr><td>10× off</td><td>10</td></tr>
+    </tbody></table>
+    <p class="note">Your points are how accurate you were, as a percent. Being off counts the same in both directions: guessing 50 when the answer is 100 scores the same as guessing 200.</p>
+    <h3>CHALLENGES</h3>
+    <p>Up to an hour after a quick game, you can turn it into a challenge link. Anyone with the link gets the same six questions for 24 hours. You can have one open challenge at a time, and join as many as you like.</p>
+    <h3>TYPING NUMBERS</h3>
+    <p>Type it however you like: 1200, 1,200 or 1.2k all work.</p>
+    <h3>THE SIZES</h3>
+    <p class="note">Every answer uses a typical size: an adult shoe is 28 cm, a banana 18 cm, a school bus 12.2 m. Landmarks use their official height. After each round you'll see both sizes.</p>
+    <h3>PAUSING</h3>
+    <p>Tap pause to step away. You can pause a daily twice; pausing a third time ends it.</p>
+  </div>${footer(2)}`;
+  wireNav();document.getElementById('back').onclick=showStart;window.scrollTo(0,0);
+}
+
+// ---------- menu: account, your stats, badges, history, settings (and admin stats for admins) ----------
+function showMenu(jump){
+  const hist=playedDailies().reverse();
+  const scores=hist.map(x=>x.res.total);
+  const have=store.get('badges',{});
+  const todayRes=saved(TODAY.n);
+  const games=[...hist.map(x=>({...x,t:new Date(x.d.date+'T12:00').getTime()})),...quickList().map(q=>({q,t:q.at}))].sort((a,b)=>b.t-a.t);
+  app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:18px">
+    <div class="head in" style="--d:1"><h2>Menu</h2><button class="sq" id="back">Back</button></div>
+    <div class="note in" style="--d:2">Your scores, streak and badges are saved in this browser on this device.</div>
+    <div class="eyebrow in" style="--d:3">Your stats</div>
+    <div class="stats in" style="--d:3;grid-template-columns:repeat(2,minmax(0,1fr))">
+      <div class="stat"><b class="num">${hist.length}</b><span>played</span></div>
+      <div class="stat"><b class="num">${streak()}</b><span>streak</span></div>
+      <div class="stat"><b class="num">${scores.length?fmt(Math.max(...scores)):'–'}</b><span>best</span></div>
+      <div class="stat"><b class="num">${scores.length?fmt(Math.round(scores.reduce((a,b)=>a+b,0)/scores.length)):'–'}</b><span>average</span></div>
+    </div>
+    <div class="eyebrow in" style="--d:4" id="badges">Badges · ${Object.keys(have).length} of ${BADGES.length}</div>
+    <div class="badges in" style="--d:4">${BADGES.map(b=>`<div class="badge ${have[b.id]?'on':''}">${badgeIcon()}<span class="bt"><b>${b.name}</b><span>${b.how}</span></span></div>`).join('')}</div>
+    <div class="eyebrow in" style="--d:5">History</div>
+    <div class="list in" style="--d:5">
+      ${todayRes?'':`<button class="lrow" data-n="${TODAY.n}"><span>Today · #${pad3(TODAY.n)}</span><span class="mut">${liveSaved(TODAY.n)?'Paused':'Not played'}</span></button>`}
+      ${games.map(g=>g.d?`<button class="lrow" data-n="${g.d.n}"><span>Daily #${pad3(g.d.n)} · ${fmtDate(g.d.date)}</span><b>${fmt(g.res.total)}</b></button>`
+        :`<button class="lrow" data-q="${g.q.id}"><span>${g.q.chal?(g.q.own?'Your challenge':`Challenge from ${esc(g.q.chal.host)}`):'Quick play'} · ${fmtDate(dateOf(g.q.at))} ${timeLabel(g.q.at)}</span><b>${fmt(g.q.total)}</b></button>`).join('')}
+      ${games.length?'':'<div class="note" style="padding:10px 2px">Your finished games will show up here.</div>'}
+    </div>
+    <div class="eyebrow in" style="--d:6">Settings</div>
+    <div class="list in" style="--d:6">
+      <button class="lrow" id="opt-help"><span>How to play</span><span class="mut">→</span></button>
+      <button class="lrow" id="opt-theme"><span>Dark mode</span><span class="toggle ${document.documentElement.dataset.theme==='dark'?'on':''}" aria-hidden="true"></span></button>
+      <button class="lrow" id="opt-motion"><span>Animations</span><span class="toggle ${SET.motion?'on':''}" aria-hidden="true"></span></button>
+      <a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">Password needed →</span></a>
+    </div>
+  </div>${footer(7)}`;
+  wireNav();
+  app.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const q=quickList().find(x=>x.id===b.dataset.q);if(q)showResults({...puzzleFor({rounds:fromNames(q.rounds)}),n:0,quick:true,chal:q.chal},q)});
+  document.getElementById('opt-help').onclick=showHelp;
+  if(jump==='badges')setTimeout(()=>{const el=document.getElementById('badges');if(el)window.scrollTo(0,el.getBoundingClientRect().top+scrollY-12)},50);
+  app.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const r=puzzleFor(DAILIES.find(x=>x.n===+b.dataset.n)),s=saved(r.n);s?showResults(r,s):r.n===TODAY.n?showStart():leave(r,liveSaved(r.n))});
+  document.getElementById('back').onclick=showStart;
+  document.getElementById('opt-theme').onclick=e=>{toggleTheme();e.currentTarget.querySelector('.toggle').classList.toggle('on',document.documentElement.dataset.theme==='dark')};
+  document.getElementById('opt-motion').onclick=e=>{SET.motion=!SET.motion;store.set('settings',SET);applySettings();e.currentTarget.querySelector('.toggle').classList.toggle('on',SET.motion)};
+  window.scrollTo(0,0);
+}
+
+// ---------- rounds ----------
+function leave(r,resume){
+  // open the keyboard now, inside the tap, so phones allow it; the real input takes focus once the round screen exists
+  document.getElementById('keep').focus();
+  const els=[...app.querySelectorAll('.in')].filter(el=>!el.parentElement.closest('.in'));
+  els.forEach((el,i)=>{el.classList.remove('in');el.style.setProperty('--d',Math.min(i,8));el.classList.add('out')});
+  setTimeout(()=>startGame(r,resume),reduced()?0:250+Math.min(els.length,8)*35);
+}
+function saveLive(){ // dailies only: what's needed to resume, and to stop a reload from restarting a round
+  if(!S||S.r.quick)return;
+  const left=S.clock?Math.max(0,S.end-Date.now()):S.left;
+  store.set('live:'+S.r.n,{answers:S.answers,score:S.score,i:S.i,left,pauses:S.pauses,phase:S.phase,running:S.live});
+}
+function startGame(r,resume){
+  if(r.quick)QUICK=null;
+  S={r,i:0,answers:[],score:0,left:ROUND_SECONDS*1000,pauses:0,phase:'play',live:false,clock:false,end:0,
+     ...(resume?{answers:resume.answers,score:resume.score,i:resume.i,left:resume.left,pauses:resume.pauses,phase:resume.phase}:{})};
+  S.phase==='reveal'?showReveal():showQuestion();
+}
+function showQuestion(){
+  const q=S.r.qs[S.i];S.phase='play';S.clock=false;S.live=false;
+  app.innerHTML=`<div class="page play">
+    <div class="main-col" style="display:flex;flex-direction:column;gap:10px">
+      <div class="playtop in" style="--d:0">
+        <button class="sq icon" id="pause" aria-label="Pause">${ICON.pause}</button>
+        <span class="timer num" id="t">0:${String(Math.ceil(S.left/1000)).padStart(2,'0')}</span>
+        <div class="bar" id="bar"><div style="width:${100*S.left/(ROUND_SECONDS*1000)}%"></div></div>
+        <span class="tag pts num">${S.i+1}/${ROUNDS} · ${fmt(S.score)}</span>
+      </div>
+      <div class="in" style="--d:1">${squares(S.answers,S.i)}</div>
+      <div class="ask in" style="--d:1"><span class="eyebrow">How many ${esc(q.A.plural)}</span><b>${esc(q.B.dim)} is ${esc(the(q.B))}?</b></div>
+      <form id="f" class="in" style="--d:2" autocomplete="off">
+        <label for="g" class="field"><span class="mut">≈</span><span class="mirror num" id="m"></span><span class="caret"></span>
+          <button type="submit" class="go" id="go" aria-label="Enter guess">Enter</button>
+          <input id="g" aria-label="${esc(question(q))}" inputmode="decimal" enterkeyhint="go" maxlength="14" autocomplete="off"></label>
+      </form>
+      <div class="fb" id="fb" aria-live="polite"></div>
+    </div>
+  </div>`;
+  const g=document.getElementById('g');
+  // the clock starts at the first keystroke, or a moment after the round appears
+  g.oninput=()=>{document.getElementById('m').textContent=g.value;if(S&&!S.clock)startClock()};
+  g.onfocus=()=>{if(!matchMedia('(min-width:900px)').matches){window.scrollTo(0,0);setTimeout(()=>window.scrollTo(0,0),300)}};
+  document.getElementById('f').onsubmit=e=>{e.preventDefault();if(!S)return;if(!S.clock)startClock();submit(g.value);if(S&&S.phase==='play'){g.value='';g.oninput();g.focus()}};
+  document.getElementById('go').onpointerdown=e=>e.preventDefault();   // keep the keyboard open
+  document.getElementById('pause').onclick=pause;
+  g.focus();
+  const fb=document.getElementById('fb');
+  if(!reduced()){fb.className='fb pop';fb.innerHTML=`<span class="count">Round ${S.i+1}</span>`}
+  setTimeout(()=>{if(S&&S.phase==='play'&&!S.clock)startClock()},HEADSTART_MS);
+  saveLive();
+}
+function startClock(){
+  if(!S||S.clock||S.phase!=='play')return;
+  S.clock=true;S.live=true;S.end=Date.now()+S.left;
+  const fb=document.getElementById('fb');if(fb&&fb.querySelector('.count'))fb.innerHTML='';
+  let n=0;
+  tick=setInterval(()=>{
+    if(!S||S.phase!=='play')return clearInterval(tick);
+    const left=Math.max(0,S.end-Date.now()),s=Math.ceil(left/1000);
+    document.getElementById('t').textContent=`0:${String(s).padStart(2,'0')}`;
+    const bar=document.getElementById('bar');
+    bar.firstElementChild.style.width=(left/(ROUND_SECONDS*10))+'%';
+    bar.classList.toggle('low',s<=5);
+    if(++n%10===0)saveLive();
+    if(!left)endRound(null);
+  },100);
+}
+function pause(){
+  if(!S)return;
+  const playing=S.phase==='play';
+  if(playing){S.left=S.clock?Math.max(0,S.end-Date.now()):S.left;clearInterval(tick)}
+  if(S.r.quick){QUICK={r:S.r,answers:S.answers,score:S.score,i:S.i,left:S.left,pauses:0,phase:S.phase};S=null;showStart();return}
+  if(playing){
+    if(S.pauses>=MAX_PAUSES){
+      const b=document.getElementById('pause');
+      if(!b.dataset.armed){b.dataset.armed='1';S.end=Date.now()+S.left;say('Pausing again ends your daily. Tap pause once more to end it.');setTimeout(()=>{if(b)delete b.dataset.armed},4000);return}
+      return finish('paused');
+    }
+    S.pauses++;
+  }
+  S.clock=false;S.live=false;saveLive();S=null;showStart();
+}
+function say(msg){
+  const fb=document.getElementById('fb');if(!fb)return;
+  fb.className='fb pop no';fb.innerHTML=`<span>✕ ${esc(msg)}</span>`;
+}
+function submit(raw){
+  if(!raw.trim()||!S||!S.live||S.phase!=='play')return;
+  const n=parseGuess(raw);
+  if(n==null)return say('Type a number, like 40, 1,200 or 3.5k.');
+  endRound(judge(n,S.r.qs[S.i]));
+}
+function endRound(a){
+  clearInterval(tick);
+  const ans=a||{guess:null,p:0};
+  S.answers[S.i]=ans;S.score+=ans.p||0;
+  S.phase='reveal';S.clock=false;S.live=false;S.left=ROUND_SECONDS*1000;
+  saveLive();showReveal();
+}
+// where the guess landed: the answer in the middle, each side counts down from 100 points to 0 at the edge,
+// so the distance from the middle is exactly the points lost
+function guessScale(q,a){
+  const pos=a&&a.guess!=null?(a.guess<=q.ans?50*a.guess/q.ans:100-50*q.ans/a.guess):null;
+  return`<div class="scale">
+    <div class="track"><span class="tick" style="left:50%"></span>${pos!=null?`<div class="pin you" style="left:${pos.toFixed(1)}%"><span>${fmt(nice(a.guess))}</span></div>`:''}</div>
+    <div class="scale-ends"><span class="mut">too low</span><b>${fmt(nice(q.ans))}</b><span class="mut">too high</span></div>
+  </div>`;
+}
+function showReveal(){
+  const q=S.r.qs[S.i],a=S.answers[S.i],last=S.i>=ROUNDS-1;
+  app.innerHTML=`<div class="page play reveal">
+    <div class="main-col" style="display:flex;flex-direction:column;gap:14px">
+      <div class="playtop in" style="--d:0"><button class="sq icon" id="pause" aria-label="Pause">${ICON.pause}</button><span class="timer">Round ${S.i+1}</span><span class="tag pts num">${S.i+1}/${ROUNDS} · ${fmt(S.score)}</span></div>
+      <div class="in" style="--d:1">${squares(S.answers)}</div>
+      <div class="in" style="--d:1;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><b class="score num">+${a.p||0}</b><span>${esc(offLabel(a))}</span></div>
+      <div class="answer in" style="--d:1">${esc(the(q.B).replace(/^./,c=>c.toUpperCase()))} is about <b class="num">${fmt(nice(q.ans))} ${esc(q.ans>=1.5?q.A.plural:q.A.name)}</b> ${esc(q.B.dim)}.</div>
+      <div class="in" style="--d:2">${guessScale(q,a)}</div>
+      <div class="note in" style="--d:2">${esc(q.B.name.replace(/^./,c=>c.toUpperCase()))}: ${len(q.B.cm)} · ${esc(q.A.name)}: ${len(q.A.cm)}${a&&a.guess!=null?` · you guessed ${fmt(nice(a.guess))}`:''}</div>
+      <button class="btn main in" style="--d:3" id="next"><span>${last?'See results':'Next round'}</span><span aria-hidden="true">→</span></button>
+    </div>
+  </div>`;
+  document.getElementById('pause').onclick=pause;
+  document.getElementById('next').onclick=()=>{
+    if(last)return finish('done');
+    document.getElementById('keep').focus();   // keeps the phone keyboard up for the next round
+    S.i++;showQuestion();
+  };
+  window.scrollTo(0,0);
+}
+
+// ---------- results ----------
+function finish(why){
+  clearInterval(tick);
+  if(!S)return;
+  const R=S;S=null;
+  document.activeElement&&document.activeElement.blur();
+  const r=R.r;
+  while(R.answers.length<ROUNDS)R.answers.push({guess:null,p:0});
+  const total=R.answers.reduce((t,a)=>t+(a.p||0),0);
+  const res={why,answers:R.answers,total,pauses:R.pauses};
+  if(!r.quick){
+    store.del('live:'+r.n);
+    store.set('v06:'+r.n,res);
+    res.badges=awardBadges(res,r);if(res.badges.length)store.set('v06:'+r.n,res);
+    log('play',{puzzle:r.n,words:R.answers.map(a=>a.guess==null?'none':String(nice(a.guess))),score:total,reached:R.answers.every(a=>(a.p||0)>=90),steps:R.answers.filter(a=>a.guess!=null).length,device:DEVICE});
+  }else{
+    QUICK=null;
+    Object.assign(res,{id:'q'+Date.now().toString(36),at:Date.now(),rounds:toNames(r.rounds),chal:r.chal||null,own:false});
+    res.badges=awardBadges(res,r);saveQuick(res);
+    if(res.chal){showResults(r,res);postChallenge(res).then(()=>chalBox(res));return}
+  }
+  showResults(r,res);
+}
+function untilMidnight(){const n=new Date(),m=new Date(n);m.setHours(24,0,0,0);const s=Math.floor((m-n)/1000);
+  return`${Math.floor(s/3600)}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
+function showResults(r,res){
+  clearInterval(tick);
+  const title=r.quick?(res.chal?'Daily Banana · challenge':'Daily Banana · quick play'):`Daily Banana #${pad3(r.n)}`;
+  const marks=res.answers.map(a=>mark(a.p||0)).join('');
+  const shareTxt=`${title} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n${marks}\n${location.host||'dailybanana.io'}`;
+  const spot=res.answers.filter(a=>(a.p||0)>=100).length;
+  app.innerHTML=`${nav()}<div class="narrow" style="max-width:560px">
+    <div class="sumrow in" style="--d:1">
+      <div style="display:flex;flex-direction:column;gap:4px"><span class="note">${r.quick?(res.chal?(res.own?'Your challenge':`Challenge from ${esc(res.chal.host)}`):'Quick play'):`Daily #${pad3(r.n)}`}${res.why==='paused'?' · ended by pausing':''}</span>
+        <b class="score num">${fmt(res.total)}</b><span style="font-size:14px">out of ${ROUNDS*MAX_PTS} · ${marks}</span></div>
+      <div class="r">${r.quick?'':`<span>${streak()} day streak</span>`}<span>${spot} spot on</span></div>
+    </div>
+    ${(res.badges||[]).length?`<div class="badge-new in" style="--d:2"><b>New badge${res.badges.length>1?'s':''} · ${res.badges.map(id=>BADGES.find(x=>x.id===id).name).join(', ')}</b><span>${res.badges.map(id=>BADGES.find(x=>x.id===id).how).join(' · ')}</span></div>`:''}
+    <div class="in" style="--d:2"><div class="eyebrow" style="margin-bottom:4px">Your rounds</div>
+      <div class="path">${r.qs.map((q,i)=>{const a=res.answers[i]||{};
+        return`<div class="prow round"><span class="i num">${i+1}</span><span class="w"><b>${esc(question(q))}</b><br>
+          <span class="t">answer: about ${fmt(nice(q.ans))} · ${a.guess!=null?`you: ${fmt(nice(a.guess))} · ${esc(offLabel(a).replace(/\.$/,'').toLowerCase())}`:'no guess'}</span></span>
+          <span class="num">${mark(a.p||0)} ${a.p||0}</span></div>`}).join('')}
+      </div></div>
+    ${r.quick?`<div class="in" style="--d:3" id="chalbox"></div>`:''}
+    <div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(shareTxt)}</div>
+    <button class="btn main in" style="--d:5" id="cp"><span id="cpl">Share results</span>${ICON.copy}</button>
+    <div class="two in" style="--d:6"><button class="btn" id="again">Quick play</button><button class="btn" id="homeb">Home</button></div>
+    <div class="disclaim in" style="--d:7">All sizes are estimates: typical sizes drawn from publicly available sources, and rounded. Real things vary, so answers are approximate.</div>
+    <div class="foot in" style="--d:7">${r.quick?'':`Next daily in <span class="num" id="cd">${untilMidnight()}</span> · `}${LEGEND} · © 2026 · <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a></div>
+  </div>`;
+  window.scrollTo(0,0);wireNav();
+  tick=setInterval(()=>{const cd=document.getElementById('cd');if(cd)cd.textContent=untilMidnight();else clearInterval(tick)},1000);
+  document.getElementById('again').onclick=()=>quick();
+  if(r.quick)chalBox(res);
+  document.getElementById('homeb').onclick=showStart;
+  document.getElementById('cp').onclick=async()=>{
+    const lab=document.getElementById('cpl');
+    try{if(navigator.share&&matchMedia('(pointer:coarse)').matches){await navigator.share({text:shareTxt});return}}catch(_){}
+    try{await navigator.clipboard.writeText(shareTxt);lab.textContent='Copied!'}catch(_){
+      const rg=document.createRange();rg.selectNodeContents(document.getElementById('sh'));const s=getSelection();s.removeAllRanges();s.addRange(rg);lab.textContent='Selected: copy it'}
+  };
+}
+
+// ---------- challenges ----------
+const CH=`${API}/challenge`;
+const chalLink=code=>`${location.origin}${location.pathname.replace(/index\.html$/,'')}?c=${code}`;
+async function chalApi(body){
+  const r=await fetch(CH,{method:body?'POST':'GET',headers:{'content-type':'application/json'},body:body?JSON.stringify({device:DEVICE,...body}):undefined});
+  const j=await r.json().catch(()=>({}));return{ok:r.ok,status:r.status,...j};
+}
+const getChal=code=>fetch(`${CH}?code=${encodeURIComponent(code)}&device=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():null).catch(()=>null);
+const myOpen=()=>fetch(`${CH}?host=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():{}).catch(()=>({}));
+const nameField=()=>`<input class="namein" id="nm" maxlength="16" placeholder="Your name for the scoreboard" value="${esc(store.get('name',''))}" autocomplete="nickname">`;
+const readName=()=>{const el=document.getElementById('nm');const v=(el?el.value:'').trim().slice(0,16);if(v)store.set('name',v);return v};
+function board(c){
+  if(c.entries.some(e=>e.you)&&c.entries.length>1){const me=c.entries.find(e=>e.you);if(c.entries.some(e=>!e.you&&e.score<me.score))earnBadge('beat')}
+  return`<div class="board">${c.entries.map((e,i)=>`<div class="${e.you?'you':''}"><span class="n num">${i+1}</span><span class="nm">${esc(e.name)}${e.you?' (you)':''}</span><span>${esc(e.marks||'')}</span><b class="num">${fmt(e.score)}</b></div>`).join('')}</div>`;
+}
+const status=c=>c.open?`Open · closes in ${leftLabel(c.closes-Date.now())}`:'Closed';
+function shareLinkRow(code){return`<div class="linkbox"><code id="lk">${esc(chalLink(code))}</code><button class="sq" id="cplk">Copy</button></div>`}
+function wireLink(code,host){
+  const b=document.getElementById('cplk');if(!b)return;
+  b.onclick=async()=>{const url=chalLink(code),text=`Daily Banana challenge from ${host}: can you beat me? Same 6 questions, open for 24 hours.`;
+    try{if(navigator.share&&matchMedia('(pointer:coarse)').matches){await navigator.share({text,url});return}}catch(_){}
+    try{await navigator.clipboard.writeText(url);b.textContent='Copied!'}catch(_){const rg=document.createRange();rg.selectNodeContents(document.getElementById('lk'));const s=getSelection();s.removeAllRanges();s.addRange(rg)}};
+}
+// the box under a quick game's results
+async function chalBox(res){
+  const box=document.getElementById('chalbox');if(!box||!API)return;
+  const put=h=>{const b=document.getElementById('chalbox');if(b)b.innerHTML=`<div class="chal">${h}</div>`;return!!b};
+  if(res.chal){   // a challenge game (yours or a friend's): show the scoreboard
+    const c=await getChal(res.chal.code);if(!c)return;
+    if(!put(`<h3>${res.own?'Your challenge':`${esc(c.host)}'s challenge`}</h3><span class="note">${status(c)}</span>${board(c)}${c.open?shareLinkRow(c.code):''}
+      <div class="two">${c.mine&&c.open?'<button class="btn" id="closech">Close it</button>':''}<button class="btn" id="viewch">Scoreboard</button></div>`))return;
+    wireLink(c.code,c.host);
+    document.getElementById('viewch').onclick=()=>showChallenge(c.code);
+    const cl=document.getElementById('closech');if(cl)cl.onclick=async()=>{cl.disabled=true;await chalApi({action:'close',code:c.code});chalBox(res)};
+    return;
+  }
+  if(Date.now()-res.at>CHALLENGE_WITHIN){put(`<span class="note">Challenge links can be made up to an hour after a quick game. This one has passed.</span>`);return}
+  const mine=await myOpen();
+  if(mine.code){
+    if(!put(`<h3>Challenge your friends</h3><span class="note">You already have an open challenge (closes in ${leftLabel(mine.closes-Date.now())}). You can run one at a time: close it to turn this game into a new one.</span>
+      <button class="btn" id="viewch">See your open challenge</button>`))return;
+    document.getElementById('viewch').onclick=()=>showChallenge(mine.code);return;
+  }
+  if(!put(`<h3>Challenge your friends</h3><span class="note">Send a link to these exact 6 questions. It stays open for 24 hours. Link available for ${leftLabel(CHALLENGE_WITHIN-(Date.now()-res.at))} more.</span>
+    ${nameField()}<button class="btn main" id="mkch"><span>Make a challenge link</span><span aria-hidden="true">→</span></button><span class="note" id="cherr"></span>`))return;
+  document.getElementById('mkch').onclick=async e=>{
+    const name=readName();if(!name){document.getElementById('nm').focus();document.getElementById('cherr').textContent='Add a name so friends know who to beat.';return}
+    e.currentTarget.disabled=true;
+    const c=await chalApi({action:'create',name,rounds:res.rounds,score:res.total,marks:res.answers.map(a=>mark(a.p||0)).join(''),playedAt:res.at});
+    if(!c.ok){document.getElementById('cherr').textContent=c.error||'Could not make a link right now. Try again.';e.currentTarget.disabled=false;return}
+    res.chal={code:c.code,host:c.host};res.own=true;saveQuick(res);earnBadge('host');chalBox(res);
+  };
+}
+// the page a challenge link opens
+async function showChallenge(code){
+  clearInterval(tick);S=null;
+  app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:14px"><div class="note" style="padding:30px 0">Loading the challenge…</div></div>`;wireNav();
+  const c=await getChal(code);
+  if(!c){alertBox('That challenge link didn\'t work. Check the code, or ask for a new link.');return}
+  const me=c.entries.find(e=>e.you);
+  const played=me||quickList().some(q=>q.chal&&q.chal.code===c.code);
+  app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:14px">
+    <div class="head in" style="--d:1"><h2>${c.mine?'Your challenge':`${esc(c.host)}'s challenge`}</h2><button class="sq" id="back">Home</button></div>
+    <div class="note in" style="--d:1">${status(c)} · 6 rounds, the same for everyone · ${c.entries.length} played</div>
+    <div class="in" style="--d:2">${board(c)}</div>
+    ${c.open&&!played?`<div class="chal in" style="--d:3"><h3>Your turn</h3><span class="note">Six questions, 20 seconds each. You get one try.</span>${nameField()}<button class="btn main" id="playch"><span>Play the challenge</span><span aria-hidden="true">→</span></button><span class="note" id="cherr"></span></div>`:''}
+    ${c.open&&c.mine?`<div class="chal in" style="--d:3"><h3>Share it</h3>${shareLinkRow(c.code)}<button class="btn" id="closech">Close challenge now</button></div>`:''}
+    ${!c.open?`<div class="note in" style="--d:3">This challenge is closed. ${c.entries[0]?`${esc(c.entries[0].name)} came out on top.`:''}</div>`:''}
+  </div>${footer(5)}`;
+  wireNav();wireLink(c.code,c.host);
+  document.getElementById('back').onclick=showStart;
+  const cl=document.getElementById('closech');if(cl)cl.onclick=async()=>{cl.disabled=true;await chalApi({action:'close',code:c.code});showChallenge(c.code)};
+  const pl=document.getElementById('playch');if(pl)pl.onclick=()=>{
+    const name=readName();if(!name){document.getElementById('nm').focus();document.getElementById('cherr').textContent='Add a name for the scoreboard.';return}
+    quick(c);
+  };
+}
+// a finished challenge game posts its score (one try per person)
+async function postChallenge(res){
+  if(!res.chal||res.own)return;
+  await chalApi({action:'play',code:res.chal.code,name:store.get('name','')||'Someone',score:res.total,marks:res.answers.map(a=>mark(a.p||0)).join('')});
+}
+
+// ---------- boot ----------
+document.getElementById('bgb').innerHTML=[[8,14,90,0],[78,8,64,3],[18,62,72,6],[84,70,100,2],[50,88,56,5]].map(([x,y,s,d])=>`<span style="left:${x}%;top:${y}%;--s:${s}px;--d:${d}s">${BANANA(s)}</span>`).join('');
+app.innerHTML='<div class="note" style="padding:40px 0">Loading…</div>';
+loadData().then(()=>{
+  // a daily left mid-round (tab closed or reloaded) counts as a pause
+  const live=liveSaved(TODAY.n);
+  if(live&&!Array.isArray(live.answers))store.del('live:'+TODAY.n);   // an unfinished round from an older version
+  else if(live&&live.running){live.running=false;live.pauses++;store.set('live:'+TODAY.n,live)}
+  const l2=liveSaved(TODAY.n);
+  if(l2&&l2.pauses>MAX_PAUSES&&!saved(TODAY.n)){
+    S={r:puzzleFor(TODAY),answers:l2.answers,score:l2.score,pauses:MAX_PAUSES};
+    return finish('paused');
+  }
+  const code=new URLSearchParams(location.search).get('c');
+  if(code){history.replaceState(null,'',location.pathname);showChallenge(code)}else showStart();
+  log('visit',{device:DEVICE});
+}).catch(e=>{
+  console.error(e);
+  app.innerHTML='<div style="padding:40px 0">Could not load the game data.<div class="note">Check that the data folder is published next to this page.</div></div>';
+});
+</script>
+</body>
+</html>

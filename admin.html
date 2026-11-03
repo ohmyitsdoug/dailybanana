@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Daily Banana Admin</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
+<script>(function(){var t;try{t=JSON.parse(localStorage.getItem('snug:theme'))}catch(e){}if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t})();</script>
+<style>
+:root,:root[data-theme="light"]{--bg:#EFEEEA;--fg:#222220;--dim:#5F5E5A;--line:#D6D5CF;--card:#F7F6F2;--hot:#EA5D00;--hot-ink:#222220;color-scheme:light}
+:root[data-theme="dark"]{--bg:#1E1E1C;--fg:#ECEBE6;--dim:#A3A29C;--line:#3A3A37;--card:#262624;--hot:#EA5D00;--hot-ink:#1E1E1C;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:'Space Grotesk',system-ui,sans-serif;font-size:15px}
+a{color:var(--fg)}
+.top{border-bottom:2px solid var(--fg)}
+.top>div{max-width:1100px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:19px}
+.logo .m{display:inline-flex;width:26px;height:26px;border:2px solid var(--fg);box-shadow:2px 2px 0 var(--fg);align-items:center;justify-content:center;font-size:13px;background:var(--hot);color:var(--hot-ink)}
+.logo .a{font-size:12px;padding:1px 6px;border:2px solid var(--fg)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{background:var(--bg);color:var(--dim);border:2px solid transparent;box-shadow:none;font-size:15px;height:38px}
+.tabs button.on{color:var(--fg);border-color:var(--fg);box-shadow:3px 3px 0 var(--fg)}
+main{max-width:1100px;margin:0 auto;padding:24px 20px 60px;display:flex;flex-direction:column;gap:14px}
+h1{font-weight:700;font-size:32px;letter-spacing:-1px;margin:0;line-height:1}
+h2{font-weight:500;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin:16px 0 0}
+.dim{color:var(--dim)} .small{font-size:13px}
+button{font-family:inherit;font-size:13px;font-weight:700;height:34px;background:var(--fg);color:var(--bg);border:2px solid var(--fg);box-shadow:3px 3px 0 var(--hot);padding:0 12px;cursor:pointer;white-space:nowrap}
+button.ghost{background:var(--bg);color:var(--fg);box-shadow:none}
+button[disabled]{opacity:.5}
+input,select{font-family:inherit;font-size:15px;background:var(--card);color:var(--fg);border:2px solid var(--fg);height:34px;padding:0 8px}
+input.sz{width:8ch}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{border:2px solid var(--fg);padding:12px 14px;display:flex;flex-direction:column}
+.stat b{font-size:26px;font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--dim)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:10px 0}
+.row .w{font-size:17px;font-weight:700}
+.row .meta{font-size:13px;color:var(--dim)}
+.acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:8px 6px;border-bottom:1px solid var(--line)}
+th{font-size:12px;letter-spacing:1px;color:var(--dim);font-weight:500;border-bottom:2px solid var(--fg)}
+th:first-child,td:first-child{text-align:left}
+.wrap{overflow-x:auto}
+.card{border:2px solid var(--fg);box-shadow:5px 5px 0 var(--fg);background:var(--card);padding:16px}
+.addform{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:end}
+.addform label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700}
+.addform input,.addform select{width:100%;background:var(--bg)}
+.pair{display:flex;gap:6px}.pair select{width:72px}
+.msg{border:2px solid var(--fg);box-shadow:3px 3px 0 var(--hot);padding:10px 12px;font-weight:500}
+.gate{max-width:380px;margin:80px auto;display:flex;flex-direction:column;gap:12px}
+.gate input{width:100%;height:44px}
+.gate button{height:46px;font-size:15px}
+.pill{display:inline-block;border:2px solid var(--fg);padding:0 6px;font-size:12px;font-weight:700;margin-left:6px}
+@media (max-width:560px){.row{grid-template-columns:1fr}.acts{justify-content:flex-start}}
+</style>
+</head>
+<body>
+<div id="m"></div>
+<script>
+// Daily Banana admin. Protected by the ADMIN_PASSWORD you set in Netlify (Site configuration → Environment variables).
+// Stats come from Netlify Blobs via /.netlify/functions/admin. No AI anywhere: new words are added by you,
+// or automatically once enough different players type the same word in one day.
+const API=(window.MATRYO_CONFIG&&window.MATRYO_CONFIG.api)||'/.netlify/functions';
+const m=document.getElementById('m');
+const UNITS={mm:.1,cm:1,m:100,km:100000};
+const BASE=0.001,STEP=1.5,tierOf=cm=>Math.max(1,Math.round(Math.log(cm/BASE)/Math.log(STEP))+1),cmOfEx=x=>+(BASE*STEP**(x-1)).toPrecision(2);
+const U=s=>{s=String(s||'').replace(/_/g,' ');return s.length<=2?s.toUpperCase():s.charAt(0).toUpperCase()+s.slice(1)};
+const key=s=>String(s||'').toLowerCase().trim().replace(/[^a-z' -]/g,'').replace(/'/g,'').replace(/[\s-]+/g,'_');
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtDay=d=>{const [y,mo,dd]=d.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo-1]+' '+(+dd)};
+let KNOWN={};   // bundled words: word -> exact size, for "same size as", "kind of" and size suggestions
+fetch('data/words.json').then(r=>r.json()).then(w=>{w.words.forEach(r=>KNOWN[r[0]]=r[1])}).catch(()=>{});
+let PASS='';try{PASS=sessionStorage.getItem('matryo-admin')||''}catch(_){}
+let TAB='words',DATA=null,MSG='';
+
+async function call(method,body){
+  const r=await fetch(`${API}/admin`,{method,headers:{'x-admin-key':PASS,'content-type':'application/json'},body:body?JSON.stringify(body):undefined});
+  if(r.status===401){PASS='';try{sessionStorage.removeItem('matryo-admin')}catch(_){}gate('Wrong password.');throw new Error('401')}
+  const j=await r.json().catch(()=>({error:'Server error'}));if(!r.ok)throw new Error(j.error||'Server error');return j;
+}
+function gate(msg){
+  m.innerHTML=`<div class="gate"><div class="logo"><span class="m">🍌</span>dailybanana <span class="a">ADMIN</span></div>
+    ${msg?`<div class="msg">${esc(msg)}</div>`:''}
+    <form id="pf" style="display:flex;flex-direction:column;gap:12px"><label class="small dim" for="pw">Admin password</label>
+    <input id="pw" type="password" autocomplete="current-password" required><button>Open admin</button></form>
+    <div class="small dim">Set the password as ADMIN_PASSWORD in Netlify (at least 8 characters).</div></div>`;
+  document.getElementById('pf').onsubmit=e=>{e.preventDefault();PASS=document.getElementById('pw').value;try{sessionStorage.setItem('matryo-admin',PASS)}catch(_){}load()};
+}
+async function load(){
+  if(!PASS)return gate();
+  m.innerHTML='<main><div class="dim">Loading…</div></main>';
+  try{DATA=await call('GET')}catch(e){if(e.message!=='401')m.innerHTML=`<main><div class="msg">${esc(e.message)}. Is the site deployed with its functions?</div></main>`;return}
+  draw();
+}
+function draw(){
+  const d=DATA,today=d.days[0]||{};
+  const tp=d.puzzles.find(p=>p.date===today.day);
+  m.innerHTML=`<div class="top"><div><div class="logo"><span class="m">🍌</span>dailybanana <span class="a">ADMIN</span></div>
+    <div class="tabs"><button data-t="overview" class="${TAB==='overview'?'on':''}">Overview</button><button data-t="words" class="${TAB==='words'?'on':''}">Words${d.review.length?` · ${d.review.length}`:''}</button><button data-t="dailies" class="${TAB==='dailies'?'on':''}">Dailies</button></div>
+    <div style="flex:1"></div><a href="./" class="small">← Back to game</a><button class="ghost" id="lo">Lock</button></div></div>
+  <main>${MSG?`<div class="msg">${esc(MSG)}</div>`:''}
+    <div class="stats">
+      <div class="stat"><b>${today.uniques??0}</b><span>unique visitors today</span></div>
+      <div class="stat"><b>${today.completions??0}</b><span>finished today's daily</span></div>
+      <div class="stat"><b>${tp&&tp.avg_score!=null?tp.avg_score:'–'}</b><span>avg score today</span></div>
+      <div class="stat"><b>${d.review.length}</b><span>words need a decision</span></div>
+      <div class="stat"><b>${d.auto.length}</b><span>auto-approved (recent)</span></div>
+    </div>
+    ${TAB==='overview'?overview():TAB==='dailies'?dailies():words()}
+  </main>`;
+  m.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;MSG='';draw()});
+  document.getElementById('lo').onclick=()=>{PASS='';try{sessionStorage.removeItem('matryo-admin')}catch(_){}gate()};
+  wire();
+}
+function overview(){
+  return`<h2>Last 14 days</h2><div class="wrap"><table><thead><tr><th>Day</th><th>Unique visitors</th><th>Finished the daily</th><th>Returning players</th></tr></thead>
+    <tbody>${DATA.days.map(x=>`<tr><td>${fmtDay(x.day)}</td><td>${x.uniques}</td><td>${x.completions}</td><td>${x.returning}</td></tr>`).join('')}</tbody></table></div>
+    <div class="small dim">Days are UTC. Returning = players who finished that daily and had finished one on an earlier day. Daily stats refresh hourly and whenever you open this page.</div>`;
+}
+function dailies(){
+  return`<h2>Each daily</h2>${DATA.puzzles.slice().reverse().map(p=>`<div class="card" style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><b>#${String(p.puzzle).padStart(3,'0')} · ${esc(p.cat)}</b><span class="dim small">${fmtDay(p.date)}</span></div>
+    <div class="stats" style="margin-top:10px">
+      <div class="stat"><b>${p.plays}</b><span>rounds</span></div><div class="stat"><b>${p.players}</b><span>players</span></div>
+      <div class="stat"><b>${p.avg_score??'–'}</b><span>avg score</span></div><div class="stat"><b>${p.high??'–'}</b><span>high</span></div>
+      <div class="stat"><b>${p.median??'–'}</b><span>median</span></div><div class="stat"><b>${p.avg_steps??'–'}</b><span>avg words</span></div>
+    </div>
+    ${p.top.length?`<div class="small" style="margin-top:10px"><span class="dim">Most played:</span> ${p.top.map(([w,c])=>`${esc(U(w))} ${c}%`).join(' · ')}</div>`:''}
+  </div>`).join('')||'<div class="dim">No dailies yet.</div>'}`;
+}
+function words(){
+  const meta=w=>`${w.size_cm} cm · size ${w.tier}${w.parent?' · kind of '+esc(U(w.parent)):''}${w.players&&!(w.note||'').includes('players')?' · '+w.players+' players':''}${w.note?' · '+esc(w.note):''}`;
+  const row=(w,acts)=>`<div class="row" data-w="${esc(w.word)}"><div><div class="w">${esc(U(w.word))}</div><div class="meta">${meta(w)}</div></div><div class="acts">${acts}</div></div>`;
+  const sz=w=>`<input class="sz" aria-label="size in cm" value="${w.size_cm}"> cm`;
+  return`<div class="card"><h2 style="margin:0 0 10px">Add a word</h2>
+      <form id="add" class="addform">
+        <label>Word<input id="aw" required placeholder="tongue depressor"></label>
+        <label>Size (longest side)<span class="pair"><input id="as" type="number" step="any" min="0" placeholder="15"><select id="au">${Object.keys(UNITS).map(u=>`<option ${u==='cm'?'selected':''}>${u}</option>`).join('')}</select></span></label>
+        <label>or same size as<input id="ar" placeholder="thermometer"></label>
+        <label>Kind of (optional)<input id="ap" placeholder="stick"></label>
+        <button type="submit" style="height:36px">Add word</button>
+      </form>
+      <div class="small dim" style="margin-top:8px">"Kind of" makes it a more specific word (surgeon is a kind of doctor), and with no size it takes that word's size. New words go live the next time players open the game.</div></div>
+    <h2>Needs a decision · ${DATA.review.length}</h2>
+    <div class="small dim">Typed by 2–4 different players in one day, or players disagreed on its size. The size is a guess from what they typed it after.</div>
+    ${DATA.review.map(w=>row(w,`${sz(w)}<button data-a="approve">Approve</button><button class="ghost" data-a="reject">Reject</button>`)).join('')||'<div class="dim">Nothing waiting.</div>'}
+    <h2>Auto-approved · latest</h2>
+    <div class="small dim">Typed by 5+ different players on the same day. Already live: fix the size or undo.</div>
+    ${DATA.auto.map(w=>row(w,`${sz(w)}<button class="ghost" data-a="approve">Save size</button><button class="ghost" data-a="reject">Undo</button>`)).join('')||'<div class="dim">None yet.</div>'}
+    <h2>Added by you · latest</h2>
+    ${DATA.mine.map(w=>row(w,`${sz(w)}<button class="ghost" data-a="approve">Save size</button><button class="ghost" data-a="reject">Remove</button>`)).join('')||'<div class="dim">None yet.</div>'}
+    <h2>Unknown words · last 7 days</h2>
+    <div class="small dim">Words players typed that the game didn't know, by how many different players typed them.</div>
+    ${DATA.unknown.map(x=>`<div class="row"><div><div class="w">${esc(U(x.word))}<span class="pill">${x.players} player${x.players===1?'':'s'}</span></div><div class="meta">last ${fmtDay(x.last)}</div></div><div class="acts"><button class="ghost" data-fill="${esc(x.word)}" data-lo="${x.lo??''}" data-hi="${x.hi??''}">Add…</button><button class="ghost" data-ignore="${esc(x.word)}">Ignore</button></div></div>`).join('')||'<div class="dim">None yet.</div>'}`;
+}
+async function act(body,done){
+  try{await call('POST',body);MSG=done;DATA=await call('GET');draw()}catch(e){if(e.message!=='401'){MSG=e.message;draw()}}
+}
+function wire(){
+  m.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
+    const r=b.closest('[data-w]'),word=r.dataset.w,cm=+r.querySelector('input').value;b.disabled=true;
+    act({action:b.dataset.a,word,size_cm:cm},b.dataset.a==='reject'?`${U(word)} removed from the game.`:`${U(word)} saved at ${cm} cm.`);
+  });
+  m.querySelectorAll('[data-ignore]').forEach(b=>b.onclick=()=>{b.disabled=true;act({action:'ignore',word:b.dataset.ignore},`Ignoring ${U(b.dataset.ignore)}.`)});
+  m.querySelectorAll('[data-fill]').forEach(b=>b.onclick=()=>{
+    document.getElementById('aw').value=U(b.dataset.fill);
+    const lo=+b.dataset.lo,hi=+b.dataset.hi;   // suggest the middle of the gap it was typed into
+    if(lo&&hi){document.getElementById('as').value=cmOfEx((lo+hi)/2);document.getElementById('au').value='cm'}
+    document.getElementById('aw').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('as').focus();
+  });
+  const f=document.getElementById('add');if(!f)return;
+  f.onsubmit=e=>{
+    e.preventDefault();
+    const word=key(document.getElementById('aw').value),ref=key(document.getElementById('ar').value),parent=key(document.getElementById('ap').value)||null;
+    let cm=+document.getElementById('as').value*UNITS[document.getElementById('au').value];
+    const fail=t=>{MSG=t;draw()};
+    if(!cm&&ref){if(KNOWN[ref]==null)return fail(`"${U(ref)}" isn't in the word list, so it can't be used for the size.`);cm=cmOfEx(KNOWN[ref])}
+    if(parent&&KNOWN[parent]==null)return fail(`"${U(parent)}" isn't in the word list, so it can't be the "kind of" word.`);
+    if(!cm&&parent)cm=cmOfEx(KNOWN[parent]);
+    if(!word||!cm)return fail('Give the word a size, a word it is the same size as, or a word it is a kind of.');
+    if(KNOWN[word]!=null)return fail(`"${U(word)}" is already in the game.`);
+    act({action:'add',word,size_cm:cm,parent},`Added ${U(word)} at ${cm} cm (size ${tierOf(cm)}).`);
+  };
+}
+load();
+</script>
+</body>
+</html>

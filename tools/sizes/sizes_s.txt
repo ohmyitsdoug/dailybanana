@@ -1,0 +1,21 @@
+# ---- words added for the starter categories ----
+20000: toy_store pet_store music_store hardware_store movie_theater
+3000: grandstand bleachers scoreboard lifeguard_tower sail stage
+1500: concession_stand zamboni picnic_table diving_board sandcastle sculpture
+1200: container aisle rack
+200: captain umpire referee player waiter acrobat mascot lifeguard
+150: unicycle anchor inner_tube pool_noodle
+100: spacesuit seat
+80: skate kickboard
+60: stump x_ray
+50: coral
+40: puzzle egg_carton
+30: plunger record party_hat light
+25: stethoscope ticket_book sheet_music
+15: tweezers soda ticket boarding_pass toy_car
+10: snack treat freeze_dried_food mustard ketchup nachos meteorite
+6: mouthguard red_nose arrowhead garlic
+4: gumball match cotton_ball toy_block
+3: berry gum
+1: rice floss hay
+60: mini_fridge

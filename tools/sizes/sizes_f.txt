@@ -1,0 +1,159 @@
+# ---- more everyday words to round out the list ----
+# trees and plants
+3000: sequoia cedar birch elm ash_tree fir spruce cypress eucalyptus beech sycamore poplar chestnut_tree walnut_tree apple_tree cherry_tree magnolia baobab
+2000: palm_tree coconut_tree christmas_tree evergreen
+600: sapling young_tree hedge
+300: sunflower_stalk cornstalk bamboo
+200: rosebush hedge_small tumbleweed
+100: fern_big shrub_small
+60: cactus_big
+40: houseplant_big
+30: flower bouquet sunflower lily tulip rose orchid daisy carnation daffodil lotus iris_flower peony hydrangea poppy_flower lavender_bunch
+20: pinecone_big leaf_big branch twig stick
+10: leaf clover four_leaf_clover petal dandelion buttercup daisy_small violet
+5: acorn_small seed_pod pod
+3: bud
+# creatures
+2000: whale_shark
+800: giant_squid
+500: crocodile_big
+300: horse_drawn_carriage
+150: alligator_small
+100: wild_boar warthog hyena_small wolf_small
+80: koala_bear
+60: beagle_small corgi dachshund chihuahua_big pug shih_tzu terrier schnauzer pomeranian yorkie
+30: chihuahua
+50: turkey_vulture
+40: penguin_small puffin_big
+30: magpie_big crow_big
+25: squirrel_red
+20: bat_fruit
+12: rat_small
+10: hamster_dwarf
+8: snail mouse_tiny
+6: butterfly_big moth_big
+5: cicada_big
+4: bumble_bee
+2: housefly_small
+# sea
+3000: blue_whale_big
+300: dolphin_bottlenose
+150: seal_harbor
+100: sea_turtle_big
+60: tuna_fish
+40: lobster_big
+30: octopus_small
+25: pufferfish blowfish clownfish_big angelfish
+10: clownfish seahorse sea_horse
+8: crab_hermit
+5: shrimp_small sea_snail
+1: krill
+# buildings and rooms not yet listed
+8000: school_building gym_building
+4000: farmhouse_small chalet bungalow_small
+2500: garage_double
+1200: guest_room spare_room den family_room rec_room game_room sunroom playroom mudroom
+800: bathroom_small powder_room walk_in_closet
+500: shower_stall elevator_car
+300: bunk_bed_frame
+# furniture & household
+250: bookshelf_tall wardrobe_tall
+200: china_cabinet curio_cabinet filing_cabinet file_cabinet gun_safe safe
+180: headboard
+150: desk_chair office_chair
+120: coffee_table_big
+100: bean_bag_chair
+90: crib_small
+80: cedar_chest hope_chest blanket_chest
+70: bar_cart tea_cart
+60: magazine_rack shoe_rack wine_rack spice_rack dish_rack towel_rack
+50: laundry_hamper clothes_hamper
+45: trash_compactor
+40: bucket_big mop_bucket watering_can
+35: tissue_holder
+30: cookie_tin biscuit_tin bread_box breadbox
+30: napkin_holder
+25: spice_jar_rack
+20: soap_dish toothbrush_holder
+15: coaster_set
+12: napkin coaster doily
+10: pot_holder potholder oven_mitt
+10: toilet_paper toilet_roll paper_towel_roll
+# kitchen
+60: microwave_oven
+50: dish_drainer dish_rack_big
+40: cutting_board_large
+30: muffin_tin cupcake_tin loaf_pan cake_pan pie_dish pie_plate
+25: teapot_small sugar_bowl creamer gravy_boat
+20: spatula_big whisk_big ladle_big
+15: measuring_cup
+10: ice_cream_scoop scoop
+8: spice_jar jar_small
+6: tea_infuser
+# clothing & accessories
+40: backpack_purse
+30: hat_box
+25: beanie_hat
+20: wallet_chain
+15: sock_pair
+12: handkerchief_folded
+10: glove_finger
+8: bow hair_bow ribbon
+6: hairclip hair_clip barrette
+5: cufflink cufflinks tie_clip
+3: earring_stud
+# sports & toys
+400: trampoline
+300: canoe_small
+250: goal soccer_goal hockey_net basketball_hoop
+150: surfboard_small boogie_board_big
+120: tent_small pup_tent
+100: kayak_small
+80: sled_wood toboggan_small
+60: rocking_horse_small toy_box
+50: drum_set
+40: dollhouse_small toy_chest_small
+35: kite
+30: board_game_box
+25: yo_yo_box
+20: frisbee_small
+15: slinky
+12: spinning_top top_toy
+10: yo_yo yoyo
+8: rubber_duck rubber_ducky
+6: whistle_toy
+4: jack jacks
+3: marble_toy
+# tools & garage
+150: wheelbarrow_big
+120: rake_big leaf_blower
+100: chainsaw
+80: lawn_mower push_mower
+60: power_saw circular_saw table_saw
+50: toolbox_big tool_box
+40: hammer_big
+30: drill_bit_case
+25: hand_saw
+20: pliers_big wrench_big
+15: tape_measure_small
+10: flashlight_tiny
+8: screwdriver_small
+6: nail_box
+4: nail_big
+3: screw_big
+# office & school
+120: filing_cabinet_tall
+60: printer_small
+45: briefcase_big
+40: whiteboard_small
+35: binder_big
+30: folder file_folder
+25: clipboard_small
+20: calculator_big
+15: stapler_small
+12: notepad_small
+10: post_it sticky_note
+8: eraser_big
+6: paper_clip_big
+4: thumb_tack
+3: staple_big

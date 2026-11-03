@@ -1,0 +1,9 @@
+{
+  "name": "matryo",
+  "private": true,
+  "type": "module",
+  "description": "Matryo daily word game. The only dependency is for the Netlify server functions.",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

@@ -1,0 +1,32 @@
+# ---- final batch ----
+2000: carousel merry_go_round ferris_wheel_car billboard mast roller_coaster_car
+1500: windshield_big
+800: tank army_tank trailer shipping_container container_ship_box
+600: missile torpedo
+500: satellite mammoth woolly_mammoth
+400: fountain column pillar guillotine sauna_room
+300: cockpit sauna boulder
+250: hot_air_balloon_basket
+200: propeller dumpster grand_father boulder_small
+150: windshield rug shield
+120: grill barbecue bbq parachute
+100: engine net fishing_net spade tombstone gravestone headstone antenna
+80: roulette_wheel shield_small
+75: arrow
+70: saddle
+60: basin
+50: wreath
+40: bugle bomb shawl
+30: bell horn hose jersey wig cable diaper globe cleaver cooler_bag
+25: handcuffs cheesecake
+20: toy blade fez blindfold smoothie milkshake faucet tube asparagus fossil
+18: toothpaste
+15: cigar razor zipper dart saucer scalpel yarn funnel mortar pestle cannonball lid
+12: ashtray pretzel
+10: lollipop syringe inhaler gauge wedge gadget pastry
+8: cigarette doorbell puck bandage latch charger
+6: pager vial doorknob nacho
+5: magnet amulet plug bubble
+4: pepperoni
+2: macaroni
+1: splinter

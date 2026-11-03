@@ -1,0 +1,51 @@
+# ---- extra places so big-band dailies have enough fresh start words ----
+# countries (rough longest span)
+400000000: kazakhstan
+300000000: algeria saudi_arabia libya sudan congo mongolia
+250000000: peru_country bolivia chad niger mali angola ethiopia south_africa namibia
+200000000: pakistan tanzania mozambique zambia somalia madagascar venezuela
+150000000: afghanistan iraq myanmar burma thailand ukraine
+120000000: morocco kenya_country botswana zimbabwe ecuador paraguay
+100000000: finland new_guinea malaysia
+90000000: uzbekistan cameroon
+80000000: syria romania uruguay
+70000000: ghana guinea laos yemen oman
+60000000: belarus nepal cambodia tunisia
+50000000: korea south_korea north_korea bangladesh senegal uganda
+45000000: austria hungary bulgaria nicaragua honduras sri_lanka
+40000000: iceland serbia croatia guatemala panama costa_rica
+30000000: czechia lithuania latvia estonia slovakia jordan
+25000000: taiwan haiti dominican_republic
+20000000: israel switzerland_country albania jamaica puerto_rico
+15000000: slovenia kuwait lebanon cyprus qatar fiji
+10000000: bahamas trinidad bali sicily sardinia corsica crete
+# US states not yet listed
+150000000: oregon_state
+130000000: new_mexico arizona colorado wyoming utah idaho
+110000000: oregon washington_state minnesota nebraska kansas dakota north_dakota south_dakota oklahoma
+90000000: missouri iowa wisconsin arkansas louisiana mississippi alabama tennessee kentucky
+80000000: north_carolina south_carolina
+70000000: indiana maine
+50000000: west_virginia vermont new_hampshire
+# regions, landforms and water
+400000000: siberia
+300000000: amazon_rainforest outback
+200000000: alps rockies rocky_mountains andes himalayas caribbean caribbean_sea
+150000000: great_lakes mississippi_river nile congo_river
+100000000: gobi great_plains appalachians
+80000000: lake_superior hudson_bay
+50000000: great_barrier_reef
+30000000: grand_canyon_park yellowstone yosemite
+20000000: lake_michigan lake_erie
+10000000: chesapeake_bay
+5000000: long_island cape_cod
+3000000: mount_kilimanjaro kilimanjaro mount_fuji fuji
+1500000: matterhorn mount_rushmore_park
+# cities
+5000000: mexico_city sao_paulo jakarta seoul delhi cairo
+3500000: dallas atlanta phoenix miami philadelphia
+3000000: toronto_city montreal istanbul bangkok
+2500000: baltimore denver seattle san_diego
+2000000: london_city dublin amsterdam barcelona vienna prague
+1500000: san_francisco washington boston_city
+1000000: annapolis

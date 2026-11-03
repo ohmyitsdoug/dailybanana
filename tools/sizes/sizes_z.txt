@@ -1,0 +1,55 @@
+# ---- overrides from sanity tests (loaded last) ----
+1: pea chickpea garbanzo edamame corn_kernel kernel
+40: shoebox shoe_box
+110: guitar_case
+40: pizza
+55: pizza_box
+0.5: ant
+0.6: mosquito
+0.3: gnat fruit_fly fruitfly
+0.7: ladybug ladybird fly housefly
+1.2: bee honeybee
+1.5: firefly
+2: wasp bumblebee bumble_bee
+3.5: hornet horsefly
+3000: campsite
+10000: campground
+10000: space_station
+30000: terminal
+2000: shark_tank
+# rooms at real-world sizes so a fridge is a fair step from a kitchen
+500: kitchen dining_room bedroom_big
+600: living_room family_room cellar
+900: classroom basement attic loft
+1000: lobby hallway corridor courtroom
+3000: gymnasium
+450: bedroom
+300: bathroom office
+# category starts and big category things at believable sizes
+3000: toy_store big_top enclosure
+2000: pet_store aviary reptile_house
+1500: music_store reading_room
+6000: hardware_store
+4000: movie_theater
+5000: library
+1200: pavilion
+800: conference_room
+600: jungle_gym
+400: slide swing_set seesaw
+200: sandbox
+# fixes from the camping playtest and a common-sense sweep
+300: tent family_tent
+700: camper rv motorhome
+450: car taxi cab sedan
+45: cat housecat tomcat
+22: bowl
+15: spoon
+50: backpack rucksack knapsack
+350: kayak
+35: hatchet
+75: axe
+8: compass
+250: dolphin
+0.3: seed
+150: campfire fire_pit firepit fire_ring
+300: bonfire

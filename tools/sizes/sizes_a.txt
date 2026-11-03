@@ -1,0 +1,95 @@
+# size in cm (rough longest "fit" dimension) : words. Multi-word words use underscores.
+# ---- planet / continents / oceans ----
+1270000000: earth world globe
+1000000000: ocean pacific pacific_ocean
+900000000: atlantic atlantic_ocean asia
+800000000: indian_ocean russia
+750000000: africa
+700000000: continent north_america south_america
+600000000: canada china
+500000000: antarctica
+450000000: america usa united_states brazil australia sahara arctic_ocean chile
+400000000: europe
+350000000: moon argentina
+300000000: india mexico japan mediterranean
+260000000: greenland
+200000000: alaska sea
+150000000: indonesia peru
+120000000: texas california egypt nigeria iran colombia italy
+100000000: country nation desert france spain sweden norway turkey
+90000000: kenya
+80000000: germany poland montana
+70000000: florida nevada
+60000000: england britain virginia vietnam philippines
+50000000: state province
+45000000: ireland portugal greece cuba
+40000000: scotland ohio georgia
+35000000: maryland new_jersey
+30000000: wales river amazon rainforest grand_canyon
+20000000: jungle massachusetts
+15000000: hawaii
+10000000: gulf mountain_range
+8000000: metropolis
+5000000: county
+3000000: city capital megacity
+2000000: island
+1500000: bay forest
+1000000: mountain volcano valley canyon glacier peninsula reef
+800000: lake
+500000: town district suburb lagoon swamp marsh
+400000: airport
+300000: plantation savannah prairie
+200000: ranch neighborhood neighbourhood downtown uptown village hometown woods
+150000: beach coast shore coastline cliff
+100000: university campus creek stream canal waterfall vineyard orchard estate
+80000: hill seaside
+60000: golf_course racetrack
+50000: farm zoo park graveyard cemetery harbor harbour marina dam highway freeway interstate railway railroad runway boulevard avenue road
+30000: meadow pasture mall marketplace bazaar fairground amusement_park theme_park skyscraper tower field quarry
+25000: stadium ballpark cruise_ship aircraft_carrier battleship
+20000: arena palace train subway warship destroyer freighter tanker street parking_lot pier wharf dock boardwalk
+15000: hospital factory prison penitentiary fortress fort monastery ship ocean_liner submarine ferry iceberg pond lake_house
+12000: cathedral castle school college warehouse hotel library museum mansion manor chateau lighthouse bridge
+10000: block city_block office_building apartment_building courthouse capitol embassy temple mosque synagogue airfield hangar shipyard brewery observatory greenhouse
+8000: supermarket store department_store gym casino theater theatre cinema auditorium ballroom pool swimming_pool
+6000: church chapel restaurant bank station fire_station police_station post_office bakery pharmacy drugstore cafeteria motel inn hostel clinic farmhouse barn stable
+5000: rocket spaceship spacecraft yacht jet airplane aeroplane plane aircraft blimp space_shuttle shuttle tennis_court
+4000: house home building cottage bungalow villa lodge clubhouse saloon tavern pub bar diner cafe shop boutique bookstore salon
+3000: whale blue_whale apartment condo penthouse townhouse duplex trailer_park dinosaur t_rex tree oak pine palm willow maple redwood
+2500: helicopter bus school_bus tram trolley train_car boxcar
+2000: barge sailboat schooner caravan mobile_home rv motorhome limo limousine semi tractor_trailer fire_truck dump_truck garbage_truck hearse
+1500: classroom gymnasium courtroom kitchen living_room dining_room basement attic cellar loft lobby hallway corridor
+1200: truck lorry pickup pickup_truck boat speedboat motorboat sailboat_small tugboat ambulance tractor cement_mixer
+1000: garage carport shed barn_door shack hut cabin igloo yurt teepee tent treehouse gazebo greenhouse_small chicken_coop
+800: room bedroom bathroom office study nursery pantry laundry_room storeroom elevator stairwell staircase porch balcony patio deck
+600: van minivan suv jeep car taxi cab sedan convertible police_car racecar race_car hummer wagon station_wagon golf_cart
+500: canoe kayak raft rowboat dinghy gondola carriage chariot stagecoach sleigh bobsled snowmobile camper
+450: elephant giraffe hippo hippopotamus rhino rhinoceros orca shark great_white walrus crocodile alligator anaconda python
+400: moose camel bison buffalo horse giraffe_baby polar_bear grizzly grizzly_bear bear dolphin manatee seal sea_lion tiger lion
+300: cow bull ox yak elk zebra donkey mule pony reindeer deer stag gorilla ostrich emu kangaroo panda leopard jaguar cheetah
+300: closet wardrobe armoire bunk_bed bed mattress couch sofa piano grand_piano pool_table ping_pong_table billiard_table
+250: motorcycle motorbike moped scooter_big jet_ski snowboard surfboard ladder door gate fence_panel coffin casket
+200: person human man woman adult soldier astronaut knight pirate ninja wizard giant robot mummy zombie vampire ghost statue mannequin scarecrow snowman
+200: fridge refrigerator freezer vending_machine arcade_machine jukebox grandfather_clock bookcase bookshelf shelf dresser cabinet hutch desk table dining_table workbench counter bench pew
+180: bicycle bike tandem stretcher gurney hammock tent_pole kayak_paddle canoe_paddle oar spear pole flagpole broom mop rake shovel hoe pitchfork
+170: bathtub tub hot_tub jacuzzi shower crib cradle sled toboggan wheelchair stroller pram walker treadmill rowing_machine
+150: teenager teen bear_cub lion_cub pig hog boar sheep goat ram llama alpaca deer_fawn fawn calf foal colt seal_pup chimpanzee chimp orangutan baboon
+150: sword lance rifle shotgun bazooka cannon harpoon bow crossbow longbow javelin pole_vault fishing_rod fishing_pole golf_club hockey_stick lacrosse_stick baseball_bat bat cane walking_stick umbrella
+120: child kid boy girl toddler dwarf elf goblin troll scarecrow_small
+120: tv television flatscreen monitor_big mirror window painting poster whiteboard chalkboard blackboard
+120: wolf hyena coyote jackal dog_big great_dane husky labrador golden_retriever german_shepherd rottweiler mastiff greyhound doberman sheepdog
+120: swordfish marlin tuna sturgeon stingray manta_ray barracuda tarpon salmon_big
+100: dog hound mutt pooch mongrel retriever collie poodle bulldog boxer beagle dalmatian bloodhound pitbull spaniel setter pointer terrier_big
+100: guitar cello bass double_bass harp drum_kit drums keyboard_instrument tuba trombone saxophone bagpipes accordion organ_pipe
+100: chair armchair recliner rocking_chair stool barstool ottoman beanbag highchair high_chair throne loveseat
+100: oven stove range dishwasher washer washing_machine dryer furnace boiler water_heater generator air_conditioner
+100: scooter kick_scooter wheelbarrow cart shopping_cart trolley_cart lawnmower mower snowblower vacuum vacuum_cleaner
+100: trash_can garbage_can dumpster_small recycling_bin barrel keg drum_barrel crate chest trunk footlocker cooler icebox
+100: ostrich_egg_nest turkey eagle vulture condor albatross pelican heron crane stork flamingo swan goose peacock emu_chick
+90: kangaroo_joey koala sloth otter beaver badger wolverine raccoon fox lynx bobcat cougar puma panther ocelot
+90: suitcase luggage trunk_small duffel duffel_bag golf_bag hockey_bag laundry_basket hamper bin tote_bin toy_chest
+90: fireplace sink bathroom_sink kitchen_sink toilet urinal bidet radiator heater space_heater aquarium fish_tank terrarium
+80: lamp floor_lamp coat_rack hat_rack easel tripod music_stand podium lectern pedestal
+80: skateboard longboard scooter_board skis ski snowshoe sled_small boogie_board bodyboard
+80: penguin emperor_penguin sheepdog_puppy monkey ape lemur seal_baby beaver_kit armadillo anteater porcupine opossum possum
+80: sack sandbag potato_sack bean_bag pillowcase sleeping_bag yoga_mat rug carpet doormat mat blanket quilt comforter duvet sheet bedsheet curtain drape tablecloth towel beach_towel flag banner

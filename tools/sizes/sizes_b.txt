@@ -1,0 +1,69 @@
+# ---- 40–80 cm ----
+70: microwave_big oven_toaster printer_big tv_small computer desktop pc tower_pc server monitor screen fish_tank_small birdcage cage kennel crate_small dog_crate pet_carrier
+70: backpack rucksack knapsack bag gym_bag sports_bag tote tote_bag shopping_bag grocery_bag garbage_bag trash_bag paper_bag laundry_bag pillow cushion bolster throw_pillow
+70: cat housecat tomcat kitty siamese persian_cat maine_coon fox_kit coyote_pup rabbit_big hare jackrabbit
+70: tire tyre wheel steering_wheel hubcap spare_tire life_preserver life_ring hula_hoop hoop
+60: microwave toaster_oven printer copier fax fax_machine scanner projector speaker subwoofer amplifier amp stereo boombox record_player turntable
+60: box cardboard_box moving_box package parcel shipment carton crate_wood toolbox tackle_box tool_chest suitcase_small carry_on briefcase attache_case
+60: drawer nightstand bedside_table end_table side_table coffee_table stepstool step_stool footstool cabinet_small
+60: guitar_case violin_case accordion_small banjo ukulele_big mandolin violin viola trumpet trombone_small clarinet oboe flute bassoon french_horn
+60: turkey_bird goose_bird duck_big swan_young owl_big hawk falcon eagle_young raven crow vulture_young parrot macaw cockatoo
+60: lamb kid_goat piglet puppy pup kitten_big bunny rabbit raccoon_kit skunk weasel ferret mink marten mongoose meerkat
+60: watermelon pumpkin squash_big jackfruit turkey_roast ham_whole
+50: car_seat booster_seat baby_seat bassinet playpen highchair_small rocking_horse dollhouse
+50: helmet football_helmet motorcycle_helmet hard_hat hardhat sombrero cowboy_hat top_hat bowler_hat
+50: basket picnic_basket wicker_basket fruit_basket hamper_small bucket pail washtub tub_small bin_small wastebasket wastepaper_basket trash_bin
+50: lamp_shade lampshade desk_lamp table_lamp lantern_big chandelier ceiling_fan fan electric_fan heater_small humidifier dehumidifier air_purifier
+50: cooler_small lunch_cooler ice_chest thermos_jug water_cooler water_jug jerry_can gas_can
+50: drone robot_toy rc_car toy_car_big tricycle trike pogo_stick
+50: sword_short machete axe ax hatchet sledgehammer crowbar pickaxe sickle scythe
+50: crib_mattress pizza_box pizza cake_board cutting_board_big tray serving_tray platter baking_sheet cookie_sheet
+45: laptop notebook_computer chromebook keyboard computer_keyboard piano_keyboard keyboard_small
+45: tablet_big drawing_tablet easel_small canvas painting_small picture_frame frame poster_tube map atlas globe_desk
+45: cat_bed dog_bed pet_bed litter_box
+40: turtle tortoise sea_turtle snapping_turtle iguana komodo_baby monitor_lizard lizard_big
+40: salmon trout bass carp catfish pike cod haddock halibut flounder mackerel snapper grouper tuna_small eel octopus squid
+40: chicken hen rooster cockerel duck mallard goose_small pheasant grouse partridge seagull gull pigeon_big
+40: boot boots rain_boot rainboot cowboy_boot hiking_boot ski_boot wader
+40: jacket coat parka raincoat blazer suit_jacket sweater jumper hoodie sweatshirt cardigan vest_folded
+40: pants trousers jeans slacks shorts_folded skirt dress gown robe bathrobe kimono tuxedo uniform costume outfit pajamas pyjamas onesie overalls jumpsuit wetsuit
+40: blanket_folded towel_folded sheet_folded curtain_folded flag_folded quilt_folded tablecloth_folded
+40: blanket quilt comforter duvet bedsheet sheet curtain drape tablecloth towel beach_towel flag banner rug_small bathmat
+40: cello_bow bow_violin pool_cue cue tennis_racket racket racquet badminton_racket paddle oar_small lacrosse field_hockey_stick
+40: bird_bath birdhouse bird_feeder flower_pot planter pot_plant houseplant potted_plant cactus fern bonsai shrub bush
+40: fire_extinguisher extinguisher propane_tank scuba_tank oxygen_tank tank_small
+40: drum snare_drum bongo bongos tambourine djembe gong cymbal
+40: brick_stack cinder_block cinderblock concrete_block paver
+35: kettle teapot_big pot stockpot saucepan pan frying_pan skillet wok dutch_oven pressure_cooker slow_cooker crockpot rice_cooker colander strainer mixing_bowl
+35: blender toaster coffee_maker coffee_machine espresso_machine mixer stand_mixer food_processor juicer waffle_iron iron steam_iron sewing_machine
+35: ham_leg roast turkey_breast chicken_whole loaf_big bread_loaf baguette french_bread
+35: football soccer_ball basketball volleyball rugby_ball beach_ball dodgeball kickball medicine_ball bowling_ball exercise_ball
+35: hat cap baseball_cap beanie beret bonnet hood fedora visor crown tiara headband_wide
+35: purse handbag clutch_big satchel messenger_bag shoulder_bag diaper_bag camera_bag lunch_bag lunchbox lunch_box pencil_case_big
+35: binder folder_big clipboard notebook_big sketchbook scrapbook photo_album album yearbook dictionary encyclopedia textbook
+35: teddy_bear teddy stuffed_animal plush plushie doll ragdoll puppet marionette action_figure_big
+35: skull skeleton_small ribcage pelvis spine
+30: shoe shoes sneaker sneakers trainer trainers loafer loafers sandal sandals flip_flop flip_flops slipper slippers high_heel heels pump moccasin clog cleat ballet_slipper
+30: shoebox shoe_box gift_box present gift jewelry_box_big hatbox tissue_box cereal_box
+30: thermos bottle wine_bottle beer_bottle water_bottle soda_bottle milk_jug jug pitcher carafe decanter vase urn flask_big canteen
+30: book novel paperback hardcover hardback diary journal notebook notepad sketchpad magazine comic comic_book newspaper catalog catalogue manual cookbook bible
+30: tablet ipad kindle e_reader laptop_small
+30: cat_small kitten pup_small hamster_cage guinea_pig chinchilla hedgehog squirrel chipmunk prairie_dog groundhog gopher mole rat
+30: rabbit_small bunny_small duckling_big hen_small cockatiel parakeet_big pigeon dove crow_small magpie jay bluejay blue_jay cardinal robin_big woodpecker kingfisher
+30: owl hawk_small kestrel sparrowhawk seagull_small puffin toucan hornbill lovebird budgie_big
+30: frog bullfrog toad snake rattlesnake cobra viper adder garter_snake boa lizard gecko chameleon newt salamander axolotl
+30: lobster crab_big crayfish crawfish king_crab
+30: pineapple coconut cabbage lettuce cauliflower broccoli eggplant zucchini cucumber butternut squash melon cantaloupe honeydew papaya mango_big
+30: cake pie tart quiche pizza_small casserole lasagna meatloaf brisket roast_beef steak ribs rack_of_lamb
+30: brick block_wood log firewood plank board_small 2x4 lumber
+30: hammer mallet wrench spanner saw handsaw hacksaw drill power_drill screwdriver_big level tape_measure toolbelt
+30: plate dinner_plate platter_small dish serving_dish bowl_big salad_bowl tray_small cutting_board chopping_board placemat
+30: keyboard_mini mouse_pad game_console xbox playstation nintendo console router modem
+30: heart_big lung liver stomach intestine brain_big
+25: brain lung_small kidney_pair
+25: helmet_bike bike_helmet goggles_ski ski_goggles
+25: violin_small fiddle ukulele harmonica_big recorder piccolo kazoo_big
+25: lamp_small nightlight night_light alarm_clock clock wall_clock cuckoo_clock hourglass metronome
+25: vase_small jar_big mason_jar cookie_jar canister pitcher_small teapot coffee_pot coffeepot french_press thermos_small
+25: sock socks stocking stockings tights glove gloves mitten mittens scarf tie necktie bow_tie belt suspenders bandana handkerchief hanky
+25: shirt t_shirt tshirt tee polo blouse tank_top top camisole bra underwear briefs boxers panties knickers swimsuit bikini leotard

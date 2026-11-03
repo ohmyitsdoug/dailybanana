@@ -1,0 +1,103 @@
+# ---- 8–25 cm ----
+22: football_american rugby_small soccer_ball_small volleyball_small softball_big
+22: brick paver_small tile roof_tile cinder
+22: loaf bread sourdough rye_bread cornbread banana_bread
+22: purse_small wallet_big clutch pouch toiletry_bag makeup_bag cosmetic_bag pencil_case pencil_pouch fanny_pack bum_bag
+22: hairdryer hair_dryer blow_dryer straightener curling_iron flashlight_big lantern torch
+22: banana plantain cucumber_small corn corncob ear_of_corn zucchini_small leek celery rhubarb carrot_big parsnip
+22: rat_big squirrel_small chipmunk_small hamster_big
+20: bowl soup_bowl cereal_bowl mixing_bowl_small salad_bowl_small ramekin_big
+20: plate_small saucer_big side_plate frisbee flying_disc
+20: newspaper_folded magazine_folded book_small paperback_small booklet pamphlet brochure menu map_folded
+20: envelope letter card_big greeting_card postcard_big birthday_card
+20: phone_big landline telephone walkie_talkie radio transistor_radio
+20: remote remote_control controller game_controller joystick gamepad
+20: spatula whisk ladle tongs grater peeler rolling_pin masher potato_masher can_opener corkscrew bottle_opener
+20: knife kitchen_knife chef_knife steak_knife butter_knife pocketknife pocket_knife dagger switchblade scalpel_big
+20: fork spoon tablespoon teaspoon soup_spoon chopsticks chopstick spork
+20: pencil pen marker crayon_big paintbrush brush toothbrush hairbrush comb ruler chalk_big highlighter fountain_pen ballpoint quill
+20: scissors shears pliers tweezers_big wrench_small screwdriver chisel file nail_file trowel
+20: candle candlestick candle_big pillar_candle taper
+20: foot hand forearm shin thigh_small
+20: pigeon_small dove_small blackbird starling thrush robin sparrow_big finch_big
+20: rat ratty mouse_big gerbil hamster guinea_pig_baby
+20: trout_small perch bluegill sunfish goldfish_big koi tilapia sardine_big herring
+20: crab starfish sea_star jellyfish sea_urchin urchin conch shell_big
+20: sandwich sub hoagie hotdog hot_dog burrito taco wrap calzone hamburger burger cheeseburger
+20: cabbage_small lettuce_head grapefruit pomelo coconut_small
+20: mug_big stein beer_mug tankard pint_glass jar mason_jar_small
+18: shoe_baby baby_shoe bootie slipper_small
+18: camera camcorder video_camera binoculars telescope_small microscope_small
+18: clock_small alarm_clock_small watch_box music_box jewelry_box jewellery_box trinket_box
+18: thermometer_big flashlight torch_small headlamp
+17: brain_small heart_human
+15: phone cellphone cell_phone mobile smartphone iphone android
+15: wallet billfold checkbook passport passport_book
+15: heart kidney stomach_small eyeball_big
+15: hamster_small mouse field_mouse vole shrew bat_animal
+15: duckling chick chicken_chick gosling hatchling baby_bird fledgling
+15: hummingbird_big finch canary sparrow wren budgie budgerigar parakeet lovebird_small chickadee
+15: goldfish guppy_big minnow sardine anchovy_big
+15: banana_small hot_pepper chili chilli pepper bell_pepper jalapeno capsicum
+15: apple_big orange_big grapefruit_small
+15: avocado mango pear potato sweet_potato yam turnip beet beetroot onion_big artichoke
+15: sandwich_small toast bagel muffin cupcake croissant donut doughnut scone biscuit roll bun pancake waffle crepe tortilla pita
+15: cup coffee_cup teacup mug glass tumbler wine_glass goblet chalice beaker cup_holder
+15: can soda_can beer_can tin_can tin soup_can paint_can
+15: bottle_small water_bottle_small flask hip_flask perfume_bottle shampoo shampoo_bottle lotion conditioner sunscreen
+15: sponge soap bar_of_soap washcloth loofah
+15: spray_can spray_paint aerosol hairspray deodorant
+15: candy_bar chocolate_bar granola_bar energy_bar
+15: harmonica kazoo whistle_big ocarina
+15: bird_egg_nest nest bird_nest
+12: apple orange tangerine clementine mandarin grapefruit_tiny peach nectarine plum_big pomegranate quince persimmon
+12: onion potato_small tomato beet_small radish_big turnip_small garlic_head
+12: ball tennis_ball baseball softball cricket_ball lacrosse_ball hacky_sack juggling_ball stress_ball
+12: egg_ostrich ostrich_egg
+12: hand_baby fist tongue nose ear
+12: lightbulb light_bulb bulb battery_big flashlight_small
+12: stapler hole_punch tape_dispenser calculator stopwatch timer kitchen_timer
+12: glasses eyeglasses spectacles sunglasses shades goggles
+12: deck_of_cards deck cards playing_cards dice_cup
+12: mouse_computer computer_mouse earbuds_case headphones earphones
+12: candle_small votive tealight_big
+12: soap_dispenser salt_shaker pepper_shaker shaker saltshaker pepper_mill grinder
+12: yogurt yoghurt pudding_cup jello cup_noodles
+12: tarantula spider_big crab_small hermit_crab scorpion
+12: sock_baby mitten_baby bib
+10: egg goose_egg duck_egg
+10: lemon lime kiwi kiwifruit fig plum apricot passion_fruit lychee_big
+10: cookie cracker biscuit_small brownie macaron donut_hole muffin_mini
+10: mouse_small baby_mouse frog_small tree_frog toad_small lizard_small gecko_small skink
+10: hummingbird bee_hummingbird
+10: harmonica_small whistle
+10: lipstick_case compact mirror_compact makeup lipstick mascara eyeliner nail_polish perfume cologne
+10: lighter zippo matchbox_big
+10: cassette tape cassette_tape vhs videotape floppy floppy_disk cd dvd disc disk record_small
+10: wallet_small card_holder coin_purse change_purse
+10: ink_cartridge cartridge usb_hub
+10: candy box_of_matches
+10: eye eyeball heart_mouse
+10: tooth_big molar
+10: shot_glass espresso_cup egg_cup
+10: snail slug caterpillar_big leech
+9: finger thumb toe_big
+9: key_big padlock lock
+9: computer_chip circuit_board
+9: credit_card card id_card business_card library_card gift_card debit_card playing_card trading_card baseball_card
+9: photo photograph picture snapshot polaroid
+9: sticker stamp_big postage label tag price_tag
+9: cupcake_mini cookie_small
+9: strawberry_big plum_small apricot_small
+8: egg_chicken chicken_egg
+8: walnut_big
+8: mushroom acorn_big pinecone pine_cone
+8: carrot cucumber_mini pickle gherkin
+8: banana_baby
+8: baseball_small golf_ball_big
+8: mouse_toy
+8: crayon chalk eraser rubber
+8: lipstick nail_clippers clippers
+8: matchbox
+8: domino dominoes
+8: lemon_small lime_small

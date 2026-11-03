@@ -1,0 +1,100 @@
+# ---- under 8 cm ----
+7: golf_ball pool_ball billiard_ball ping_pong_ball table_tennis_ball squash_ball racquetball
+7: egg_small quail_egg_big
+7: apricot_tiny kiwi_small lime_tiny fig_small date_fruit
+7: walnut_whole peach_pit
+7: computer_mouse_small usb_drive_big
+7: mouse_baby baby_rat
+7: toe ear nostril eyelid
+7: chess_piece king queen_piece rook bishop knight_piece pawn checker checkers
+7: spool spool_of_thread thread yarn_ball ball_of_yarn
+7: teabag tea_bag sugar_cube_box
+7: strawberry egg_yolk
+6: key keys car_key house_key skeleton_key
+6: lip_balm chapstick glue_stick lipstick_small
+6: whistle_small ocarina_small
+6: battery batteries aa_battery aaa_battery
+6: usb usb_drive flash_drive thumb_drive memory_stick
+6: walnut chestnut buckeye acorn hazelnut_big
+6: cherry_tomato_big cherry_big plum_tiny
+6: clam oyster mussel scallop shell seashell sea_shell
+6: cookie_mini cracker_small chicken_nugget nugget meatball dumpling sushi ravioli tater_tot
+6: lego_big rubik_cube rubiks_cube
+6: snail_small slug_small earthworm worm
+6: shrimp prawn crayfish_small
+6: tooth_animal claw fang talon
+6: mushroom_small button_mushroom brussels_sprout radish
+6: candle_tiny tealight tea_light
+6: spoon_baby measuring_spoon
+6: sugar_cube cube ice_cube dice_big
+6: ring_box locket_box
+5: egg_quail quail_egg
+5: finger_tip fingertip
+5: cockroach roach beetle stag_beetle locust grasshopper cricket mantis praying_mantis dragonfly moth butterfly cicada katydid
+5: goldfish_small minnow_small tadpole_big
+5: strawberry_small raspberry_big blackberry_big
+5: cork bottle_cap cap_bottle lid_small thimble_big
+5: eraser_small pencil_sharpener sharpener paperclip_box
+5: computer_chip_small microchip sim_card memory_card sd_card
+5: lighter_small match_box
+5: nail screw bolt nut_hardware washer_small hook fishhook fish_hook
+5: earring_big brooch pendant medallion badge pin_badge
+5: candy_bar_mini chocolate_square truffle bonbon praline
+4: golf_tee tee peg clothespin clothes_pin
+4: walnut_half almond_big
+4: cherry grape_big olive_big date
+4: coin_big medal poker_chip chip token casino_chip
+4: whistle_tiny
+4: thimble
+4: wasp hornet bumblebee bee honeybee fly housefly horsefly firefly ladybug ladybird
+4: frog_baby froglet tadpole
+4: stamp postage_stamp
+4: button_big
+4: tooth teeth
+4: toe_small pinky pinkie
+4: dice die
+4: lego lego_brick block_toy
+4: marshmallow gumdrop caramel jelly_bean_big mint candy_small lozenge cough_drop
+4: hair_tie scrunchie bobby_pin_box
+3: ring wedding_ring engagement_ring band_ring signet_ring
+3: coin quarter half_dollar dollar_coin euro pound_coin penny_big
+3: marble
+3: grape cherry_small olive cranberry gooseberry kumquat lychee
+3: peanut almond cashew pecan pistachio hazelnut macadamia brazil_nut
+3: bead_big pearl_big
+3: button
+3: earring stud hoop_earring
+3: eye_mouse
+3: pill capsule tablet_pill vitamin aspirin
+3: tick_big spider spider_small ant_big
+3: snail_baby
+3: candy_corn jelly_bean gummy gummy_bear skittle m&m mm chocolate_chip_big
+3: paperclip paper_clip staple_box safety_pin pushpin thumbtack tack
+3: battery_watch watch_battery
+3: key_small
+2: penny dime nickel cent coin_small
+2: pea blueberry chickpea garbanzo edamame corn_kernel kernel bean kidney_bean lima_bean
+2: bead pearl gem gemstone jewel diamond ruby emerald sapphire crystal_small
+2: pebble stone_small
+2: pill_small tic_tac
+2: ladybug_small bee_small fly_small mosquito gnat ant fruit_fly
+2: tooth_baby baby_tooth
+2: seed sunflower_seed pumpkin_seed watermelon_seed apple_seed orange_seed
+2: raisin cranberry_dried
+1.5: pea_small lentil rice_grain_big
+1.5: fingernail toenail nail_finger
+1.5: sprinkle chocolate_chip
+1.5: staple pin needle sewing_needle
+1: grain_of_rice rice_grain sesame_seed_big caper peppercorn
+0.8: flea louse lice mite_big tick
+0.7: crumb breadcrumb
+0.5: grain sand_grain grain_of_sand speck freckle mustard_seed poppy_seed sesame_seed salt_grain sugar_grain
+0.3: chia_seed
+0.2: dust_mite mite
+0.1: hair_strand strand_of_hair eyelash
+0.05: dust speck_of_dust dust_particle pollen_grain pollen
+0.02: amoeba
+0.01: egg_cell human_egg
+0.005: cell skin_cell
+0.002: red_blood_cell blood_cell
+0.001: bacteria bacterium germ microbe

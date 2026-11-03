@@ -1,0 +1,49 @@
+# extra meanings: word: other sizes in cm (the main size stays in the size files)
+wing: 5000 15
+trunk: 300 100 150
+bat: 15
+mouse: 10
+crane: 3000 100
+seal: 3
+bow: 10 150
+glasses: 10
+pitcher: 190
+ring: 3000
+deck: 600 9
+chest: 40
+palm: 1500 15
+organ: 15 300
+tank: 60
+plane: 25
+club: 1000 100
+watch: 4
+nail: 1.5
+pupil: 0.5
+iris: 1
+bulb: 5
+cap: 3
+case: 30
+cell: 300
+chip: 3
+fan: 200
+jack: 4
+kid: 150
+mole: 15
+nut: 1
+pen: 1000
+pipe: 15
+pot: 50
+record: 30
+shell: 30
+spring: 4
+stamp: 4
+tie: 150
+trailer: 200
+yard: 3000
+port: 50000
+bank: 1000
+crown: 2
+key: 1
+mint: 1
+ball: 20
+egg: 0.1

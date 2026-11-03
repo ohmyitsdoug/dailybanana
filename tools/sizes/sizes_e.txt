@@ -1,0 +1,169 @@
+# ---- additions: common words missed above, plus fillers for the very big and very small tiers ----
+# big places and landmarks (300 m – 300 km)
+25000000: united_kingdom uk new_zealand japan_island
+12000000: new_york_state pennsylvania illinois michigan
+8000000: switzerland netherlands holland denmark belgium
+6000000: rhode_island delaware connecticut
+5000000: tokyo metro_area metropolitan_area
+4000000: london los_angeles
+3000000: new_york new_york_city nyc chicago houston beijing shanghai mumbai
+2500000: lake_tahoe everglades
+2000000: paris berlin madrid rome moscow sydney toronto mount_everest everest
+1500000: manhattan brooklyn las_vegas boston
+1000000: luxembourg singapore hong_kong island_city
+600000: fjord estuary national_park state_park
+500000: venice washington_dc dc
+400000: central_park golden_gate_bridge golden_gate
+250000: disney_world disneyland monaco
+200000: niagara_falls niagara harbor_town hamlet
+100000: vatican vatican_city resort campground campsite
+80000: theme_park_small water_park
+60000: neighborhood_park playground_park
+40000: empire_state_building eiffel_tower eiffel cn_tower burj_khalifa
+30000: pentagon colosseum great_pyramid pyramid titanic aircraft_hangar
+20000: football_field soccer_field baseball_field ball_field
+10000: statue_of_liberty big_ben white_house parthenon taj_mahal leaning_tower windmill water_tower silo
+8000: mansion_house dam_small
+5000: stonehenge temple_small sphinx totem_pole
+# common words from the frequency list
+5000: playground skatepark skate_park ice_rink rink parking_garage gas_station
+3000: lawn backyard yard garden courtyard terrace driveway alley alleyway sidewalk
+2000: tunnel cave cavern bunker vault dungeon crypt tomb mausoleum
+1500: classroom_big chapel_small studio workshop lab laboratory morgue dorm dormitory cubicle
+1000: booth phone_booth kiosk stall tollbooth cell jail_cell prison_cell
+800: chimney fireplace_big doorway archway arch
+600: sports_car hatchback coupe buggy dune_buggy go_kart gokart atv quad
+500: cannon_big catapult trebuchet
+400: shark_small tuna_big dolphin_small porpoise swordfish_big
+300: mattress_big futon king_bed queen_bed twin_bed cot bunk
+300: dragon dinosaur_small raptor velociraptor stegosaurus triceratops
+250: camel_young moose_calf horse_young stallion mare pony_big mustang
+250: coffin_small sarcophagus
+200: zombie_small skeleton corpse body cadaver
+150: punching_bag heavy_bag
+120: grandma granny grandpa grandmother grandfather mom mother dad father sister brother wife husband baby_big teenager_small student teacher doctor nurse police_officer cop firefighter chef farmer sailor pilot clown cowboy princess prince king queen
+100: suit_of_armor armor armour
+80: baby infant newborn
+70: saddle sleeping_bag_rolled tent_bag
+60: monkey_small chimp_baby
+60: fish_big
+50: lamb_small goat_kid
+50: torso
+45: thigh leg
+40: arm
+35: snowball_big
+30: fish
+30: head
+25: skateboard_small
+20: neck
+20: liver
+15: hand_small palm
+12: heart_small
+10: ear_human
+6: ear lip lips eyebrow chin cheek
+5: eye_human
+3: eye
+# animals not yet listed
+600: humpback humpback_whale sperm_whale killer_whale
+350: horse_big clydesdale draft_horse
+250: hippo_baby
+150: cheetah_cub antelope gazelle impala
+100: coyote_small
+80: fox_small
+60: beaver
+45: skunk_small
+40: platypus
+35: owl_small
+30: rabbit_wild
+25: rattlesnake_coiled
+25: pigeon_wild
+20: bat bat_animal_wings
+15: frog_big
+12: sparrow_small
+10: hummingbird_small
+8: crab_tiny
+5: goldfish_tiny
+# food not yet listed
+50: turkey_dinner
+30: pizza_pie
+25: cheese_wheel wheel_of_cheese
+20: salami sausage bratwurst kielbasa
+15: steak_small pork_chop chicken_breast fillet filet
+15: corn_on_the_cob burrito_small
+12: sandwich_half
+10: hamburger_bun hotdog_bun bun_small
+10: popsicle ice_cream_cone cone ice_cream_bar
+8: cheese_slice slice_of_cheese
+8: chicken_wing wing drumstick
+6: onion_ring french_fry fry fries_one
+5: cookie_dough_ball
+4: grape_tomato cherry_tomato
+4: candy_cane_piece
+3: popcorn popcorn_kernel
+2: rice_ball_small
+# objects not yet listed
+200: ironing_board
+120: easel_big coat_stand
+100: suit_of_armour
+60: microphone_stand mic_stand
+40: shredder paper_shredder
+35: typewriter sewing_kit_box
+30: compass_box chessboard chess_board checkerboard board_game game_board puzzle_box jigsaw jigsaw_puzzle
+30: picture_frame_small mirror_small
+30: whip lasso rope noose leash chain
+25: telescope microscope
+25: helmet_small mask gas_mask ski_mask scuba_mask snorkel_mask
+20: microphone mic
+20: hairbrush_big
+20: pistol handgun revolver gun water_gun squirt_gun nerf_gun
+20: grenade
+20: trophy award plaque medal_case
+20: apron
+15: compass
+15: stapler_big
+15: balloon water_balloon
+15: kite_small
+15: bandage_box first_aid_kit
+12: thermometer
+12: stopwatch_big
+10: walkie_talkie_small
+10: locket pocket_watch watch wristwatch stopwatch
+10: necklace bracelet anklet chain_necklace
+10: wallet_tiny
+8: ornament christmas_ornament bauble
+8: matches box_of_crayons
+6: bullet shell_casing cartridge_bullet
+6: spark_plug
+5: earbud earbuds hearing_aid
+5: thimble_big
+5: candle_wick
+4: guitar_pick pick
+4: button_battery
+3: contact_lens lens
+3: sim
+2: screw_small
+1: staple_tiny
+# tiny world
+2: mosquito_big
+1.5: grain_of_corn
+1.2: coffee_bean bean_coffee
+1: ant_small termite aphid bedbug bed_bug gnat_big fruitfly larva maggot grub
+1: snowflake raindrop rain_drop dewdrop dew_drop teardrop tear
+1: eyelash lash
+0.8: quinoa couscous confetti glitter_big
+0.6: sprinkles
+0.5: sand salt sugar crystal_of_salt
+0.4: plankton krill_small
+0.3: poppyseed
+0.2: flea_small
+0.15: glitter
+0.1: pinhead pin_head
+0.08: crumb_small
+0.05: spore spores
+0.03: pore
+0.02: speck_dust
+0.01: flour
+0.005: dust_speck
+0.003: sperm_cell
+0.002: microorganism
+0.001: virus germ_cell
