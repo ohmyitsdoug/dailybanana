@@ -4,8 +4,8 @@
 # u = can be the counting unit ("how many BANANAS long..."). Everything can be the thing measured.
 # Pick things that don't vary much, and use a typical adult/standard size. Landmarks use their official height.
 grain of rice | grains of rice | a | long | 0.65 | u
-sesame seed | sesame seeds | a | long | 0.3 | u
-ant | ants | an | long | 0.5 | u
+sesame seed | sesame seeds | a | long | 0.3 |
+ant | ants | an | long | 0.5 |
 ladybug | ladybugs | a | long | 0.7 | u
 coffee bean | coffee beans | a | long | 1.2 | u
 jelly bean | jelly beans | a | long | 2 | u
@@ -471,15 +471,15 @@ adult hand | adult hands | an | long | 19 | u
 adult foot | adult feet | an | long | 26 | u
 human arm span | arm spans | a | across | 170 | 
 strand of hair | strands of hair | a | across | 0.007 | 
-eyelash | eyelashes | an | long | 1 | u
+eyelash | eyelashes | an | long | 1 |
 human heart | human hearts | a | tall | 12 | 
 human femur | femurs | a | long | 48 | 
 small intestine | small intestines | a | long | 600 | 
 tallest man ever | tallest men ever | the | tall | 272 | 
 # ---- animals ----
-flea | fleas | a | long | 0.25 | u
-mosquito | mosquitoes | a | long | 0.6 | u
-housefly | houseflies | a | long | 0.7 | u
+flea | fleas | a | long | 0.25 |
+mosquito | mosquitoes | a | long | 0.6 |
+housefly | houseflies | a | long | 0.7 |
 cricket | crickets | a | long | 2.5 | u
 grasshopper | grasshoppers | a | long | 5 | u
 butterfly | butterflies | a | across | 8 | u
@@ -656,7 +656,7 @@ Panama Canal | Panama Canals | the | long | 8200000 |
 English Channel | English Channels | the | across | 3400000 | 
 Lake Tahoe | Lake Tahoes |  | long | 3500000 | 
 # ---- nature ----
-grain of sand | grains of sand | a | across | 0.05 | u
+grain of sand | grains of sand | a | across | 0.05 |
 pea | peas | a | across | 0.8 | u
 acorn | acorns | an | long | 2.5 | u
 pinecone | pinecones | a | long | 8 | u

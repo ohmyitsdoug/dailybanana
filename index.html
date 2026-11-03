@@ -320,7 +320,7 @@ const VERSION='0.6';
 const ROUNDS=6, ROUND_SECONDS=25, HEADSTART_MS=1000, MAX_PAUSES=2;
 const MAX_PTS=100;
 // answer ranges, one per round, small to huge (keep in sync with tools/make_scale.py)
-const BUCKETS=[[3,20],[15,80],[50,300],[150,1500],[500,6000],[2000,50000]];
+const BUCKETS=[[2,12],[8,40],[25,120],[80,400],[200,1200],[600,3000]];   // answers never past ~3,000, so the two things stay comparable
 const HOUR=3600e3, CHALLENGE_WITHIN=HOUR;
 // a 16-bit style banana, drawn pixel by pixel (b outline, y yellow, l highlight, d shade, s stem and tip)
 const BANANA_PX=[
@@ -393,7 +393,7 @@ async function loadData(){
 const fmtDate=iso=>{const [y,m,dd]=iso.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1]+' '+(+dd)};
 const the=b=>b.art?`${b.art} ${b.name}`:b.name;
 // "How many bananas long is a school bus?"
-const question=q=>`How many ${q.A.plural} ${q.B.dim} is ${the(q.B)}?`;
+const question=q=>`Approximately how many ${q.A.plural} ${q.B.dim} is ${the(q.B)}?`;
 // a friendly rounded answer: 61, 140, 1,900, 13,000
 function nice(n){if(n<10)return Math.round(n*10)/10;const p=10**Math.max(0,Math.floor(Math.log10(n))-1);return Math.round(n/p)*p}
 // lengths for the reveal, metric with imperial alongside
@@ -676,7 +676,7 @@ function showQuestion(){
         <span class="tag pts num">${S.i+1}/${ROUNDS} · ${fmt(S.score)}</span>
       </div>
       <div class="in" style="--d:1">${squares(S.answers,S.i)}</div>
-      <div class="ask in" style="--d:1"><span class="lab">How many</span><b>${esc(q.A.plural)}</b><span class="lab">${esc(q.B.dim)} is</span><b>${esc(the(q.B))}?</b></div>
+      <div class="ask in" style="--d:1"><span class="lab">Approximately how many</span><b>${esc(q.A.plural)}</b><span class="lab">${esc(q.B.dim)} is</span><b>${esc(the(q.B))}?</b></div>
       <form id="f" class="in" style="--d:2" autocomplete="off">
         <label for="g" class="field"><span class="mut">≈</span><span class="mirror num" id="m"></span><span class="caret"></span>
           <button type="submit" class="go" id="go" aria-label="Enter guess">Enter</button>

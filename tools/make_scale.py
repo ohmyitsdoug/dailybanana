@@ -1,6 +1,6 @@
 """Build data/items.json and data/dailies.json for Daily Banana.
 Items come from tools/scale_items.txt. Each daily has 6 rounds: "How many [unit] [long/tall/across] is [thing]?"
-Each day has one answer from each size range, from small (3-20) to big (2,000-50,000), the unit is always something smaller and
+Each day has one answer from each size range, from small (2-12) to big (600-3,000), the unit is always something smaller and
 familiar, and a thing being measured doesn't come back within 10 days.
 Hyper-specific items (tools/specific.txt: landmarks, niche gear) show up in only 1-2 rounds a day.
 Dailies up to FROZEN (already played) are kept exactly as they are in data/dailies.json.
@@ -23,7 +23,7 @@ for i in items:
     if i['name'] in SPECIFIC: i['x'] = True   # hyper-specific
 json.dump(items, open(os.path.join(HERE, '..', 'data', 'items.json'), 'w'), separators=(',', ':'))
 units = [i for i in items if i['unit']]
-BUCKETS = [(3, 20), (15, 80), (50, 300), (150, 1500), (500, 6000), (2000, 50000)]  # keep in sync with BUCKETS in index.html
+BUCKETS = [(2, 12), (8, 40), (25, 120), (80, 400), (200, 1200), (600, 3000)]  # keep in sync with BUCKETS in index.html
 pairs = {k: [] for k in range(len(BUCKETS))}
 for a in units:
     for b in items:
