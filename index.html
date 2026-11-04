@@ -547,7 +547,14 @@ function log(kind,payload){
 // ---------- puzzles ----------
 function puzzleFor(d){const it=v=>typeof v==='object'?v:ITEMS[v],v2=(d.date||todayISO())>=SCORE_V2;
   return{...d,qs:d.rounds.map(x=>{const A=it(x.a),B=it(x.b),ans=B.cm/A.cm;return{A,B,ans,v2,show:v2?shownAns(ans):nice(ans)}})}}
-let QUICK=null;   // a paused quick game (kept in memory only)
+// a quick game left mid-way (paused, or the app closed): kept on the phone and, when signed in, on the account,
+// so the home screen offers Resume. A finished or replaced game leaves a 'cleared' marker so other devices drop it too.
+function quickLive(){const v=store.get('qlive',null);if(!v||v.cleared||!Array.isArray(v.rounds))return null;
+  const unit=v.chal&&v.chal.weekend&&v.chal.weekend.unit,rounds=fromNames(v.rounds,unit);if(rounds.some(x=>x.a==null||x.b==null))return null;
+  return{r:{...puzzleFor({rounds,date:v.date}),n:0,quick:true,date:v.date,chal:v.chal||null},answers:v.answers,score:v.score,i:v.i,left:v.left,pauses:0,phase:v.phase}}
+function quickKeep(){if(!S||!S.r.quick)return;const left=S.clock?Math.max(0,S.end-Date.now()):S.left;
+  store.set('qlive',{at:Date.now(),rounds:toNames(S.r.rounds),date:S.r.date,chal:S.r.chal||null,answers:S.answers,score:S.score,i:S.i,left,phase:S.phase})}
+const quickDrop=()=>store.set('qlive',{cleared:true,at:Date.now()});
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 // skips any question from a daily (past or future) and the last 300 quick-play questions on this device
 function randomRounds(){
@@ -692,7 +699,7 @@ function showStart(){
       </div>
       <div class="cta in" style="--d:4">
         <button class="btn main" id="daily">${play}</button>
-        <div class="cta2"><button class="btn" id="quick">${QUICK?'Resume quick play':'Quick play'}</button><button class="btn" id="joinch" aria-label="Join a challenge with a code">Join</button></div>
+        <div class="cta2"><button class="btn" id="quick">${quickLive()?'Resume quick play':'Quick play'}</button><button class="btn" id="joinch" aria-label="Join a challenge with a code">Join</button></div>
       </div>
       ${live&&!res?`<div class="note in" style="--d:5">${pausesLeft>0?`${pausesLeft} pause${pausesLeft===1?'':'s'} left today.`:'No pauses left: pausing again ends your daily.'}</div>`:''}
     </div>
@@ -700,7 +707,7 @@ function showStart(){
   ${footer(6)}`;
   wireNav();
   document.getElementById('daily').onclick=()=>res?showResults(p,res):live?leave(p,live):leave(p);
-  document.getElementById('quick').onclick=()=>QUICK?leave(QUICK.r,QUICK):quick();
+  document.getElementById('quick').onclick=()=>{const q=quickLive();q?leave(q.r,q):quick()};
   document.getElementById('joinch').onclick=()=>showJoin();
   preload();
   // after today's daily, count down to the next one (and roll over to it at midnight)
@@ -804,13 +811,14 @@ function leave(r,resume){
   els.forEach((el,i)=>{el.classList.remove('in');el.style.setProperty('--d',Math.min(i,8));el.classList.add('out')});
   setTimeout(()=>startGame(r,resume),reduced()?0:250+Math.min(els.length,8)*35);
 }
-function saveLive(){ // dailies only: what's needed to resume, and to stop a reload from restarting a round
-  if(!S||S.r.quick)return;
+function saveLive(){ // what's needed to resume, and to stop a reload from restarting a round
+  if(S&&S.r.quick)return quickKeep();
+  if(!S)return;
   const left=S.clock?Math.max(0,S.end-Date.now()):S.left;
   store.set('live:'+S.r.n,{answers:S.answers,score:S.score,i:S.i,left,pauses:S.pauses,phase:S.phase,running:S.live});
 }
 function startGame(r,resume){
-  if(r.quick)QUICK=null;
+  if(r.quick&&!resume)quickDrop();
   S={r,i:0,answers:[],score:0,left:ROUND_SECONDS*1000,pauses:0,phase:'play',live:false,clock:false,end:0,
      ...(resume?{answers:resume.answers,score:resume.score,i:resume.i,left:resume.left,pauses:resume.pauses,phase:resume.phase}:{})};
   if(!resume)log('start',{mode:r.quick?'quick':'daily',puzzle:r.quick?null:r.n,chal:!!r.chal,device:DEVICE});   // for the admin's starts and completion rate
@@ -870,7 +878,7 @@ function pause(){
   if(!S)return;
   const playing=S.phase==='play';
   if(playing){S.left=S.clock?Math.max(0,S.end-Date.now()):S.left;clearInterval(tick)}
-  if(S.r.quick){QUICK={r:S.r,answers:S.answers,score:S.score,i:S.i,left:S.left,pauses:0,phase:S.phase};S=null;showStart();return}
+  if(S.r.quick){S.clock=false;quickKeep();pushSync();S=null;showStart();return}
   if(playing){
     if(S.pauses>=MAX_PAUSES){
       const b=document.getElementById('pause');
@@ -955,7 +963,7 @@ function finish(why){
     pushSync();stale('st:'+r.n);
     log('play',{puzzle:r.n,points:R.answers.map(a=>a.p||0),guesses:R.answers.map(a=>a.guess==null?null:+a.guess),score:total,ms:R.answers.reduce((t,a)=>t+(a.t||0),0),device:DEVICE});
   }else{
-    QUICK=null;
+    quickDrop();
     Object.assign(res,{id:'q'+Date.now().toString(36),at:Date.now(),rounds:toNames(r.rounds),chal:r.chal||null,own:false});
     res.badges=[];saveQuick(res);pushSync();
     {const t=store.get('qstats',null);if(t){t.g++;t.t+=total;t.b+=R.answers.filter(a=>(a.p||0)>=90).length;store.set('qstats',t)}else store.set('qstats',quickTotalsFromList())}   // the list already includes this game   // quick games and challenges don't earn the daily badges
@@ -1102,13 +1110,14 @@ async function signInReturn(){
 function localData(){
   const results={};
   try{Object.keys(localStorage).forEach(k=>{const m=k.match(/^snug:v07:(\d+)$/);if(m)results[m[1]]=JSON.parse(localStorage.getItem(k))})}catch(_){}
-  return{results,quick:quickList(),badges:store.get('badges',{}),name:store.get('name','')};
+  return{results,quick:quickList(),badges:store.get('badges',{}),name:store.get('name',''),qlive:store.get('qlive',null)};
 }
 function applyData(d){
   Object.entries(d.results||{}).forEach(([n,res])=>{if(!saved(+n))store.set('v07:'+n,res)});
   const ids=new Set(quickList().map(q=>q.id)),q=[...quickList(),...(d.quick||[]).filter(x=>!ids.has(x.id))].sort((a,b)=>(b.at||0)-(a.at||0));store.set('quick',q.slice(0,60));
   const b=store.get('badges',{});Object.entries(d.badges||{}).forEach(([k,v])=>{if(!b[k]||v<b[k])b[k]=v});store.set('badges',b);
   if(d.name&&!store.get('name',''))store.set('name',d.name);
+  const ql=store.get('qlive',null);if(d.qlive&&d.qlive.at&&(!ql||(ql.at||0)<d.qlive.at)&&!(S&&S.r.quick))store.set('qlive',d.qlive);   // the newest unfinished quick game wins
 }
 // redraw the current screen in place, without replaying the entrance animations
 function redrawQuietly(fn){const h=document.documentElement,y=scrollY;h.classList.add('still');fn();scrollTo(0,y);requestAnimationFrame(()=>requestAnimationFrame(()=>h.classList.remove('still')))}
@@ -1407,6 +1416,9 @@ function preload(){   // today's ranking, your open challenges, the fun facts: f
 const idle=f=>(window.requestIdleCallback||(g=>setTimeout(g,300)))(f,{timeout:2000});
 idle(preload);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')idle(preload)});
+// leaving the app mid-game: save where you are right now (quick games also go to the account)
+addEventListener('pagehide',()=>{if(S){saveLive();if(S.r.quick)pushSync()}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&S){saveLive();if(S.r.quick)pushSync()}});
 const myOpen=()=>API?cached('host',30e3,()=>fetch(`${CH}?host=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():null)).then(v=>v||{}):Promise.resolve({});
 // the scoreboard name: your account name when signed in, otherwise this device's guest name (set in the Menu)
 const nameNow=()=>SESSION?SESSION.user.name:(store.get('name','')||GUEST);

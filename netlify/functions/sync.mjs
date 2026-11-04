@@ -13,7 +13,9 @@ export function merge(a = {}, b = {}) {
   const quick = [...byId.values()].sort((x, y) => (y.at || 0) - (x.at || 0)).slice(0, 200);
   const badges = { ...(a.badges || {}) };
   for (const [k, v] of Object.entries(b.badges || {})) if (!badges[k] || v < badges[k]) badges[k] = v;
-  return { results, quick, badges, name: b.name || a.name || '' };
+  // the unfinished quick game: whichever is newest (a finished one leaves { cleared, at })
+  const qlive = [a.qlive, b.qlive].filter((x) => x && x.at).sort((x, y) => y.at - x.at)[0] || null;
+  return { results, quick, badges, name: b.name || a.name || '', ...(qlive ? { qlive } : {}) };
 }
 
 export default async (req) => {
