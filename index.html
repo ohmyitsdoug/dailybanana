@@ -635,6 +635,7 @@ function showStart(){
   wireNav();
   document.getElementById('daily').onclick=()=>res?showResults(p,res):live?leave(p,live):leave(p);
   document.getElementById('quick').onclick=()=>QUICK?leave(QUICK.r,QUICK):quick();
+  preload();
   // after today's daily, count down to the next one (and roll over to it at midnight)
   if(res)tick=setInterval(()=>{const el=document.getElementById('hcd');if(!el)return clearInterval(tick);
     if(todayISO()!==TODAY.date){clearInterval(tick);location.reload();return}el.textContent=untilMidnight()},1000);
@@ -738,6 +739,7 @@ function startGame(r,resume){
   if(r.quick)QUICK=null;
   S={r,i:0,answers:[],score:0,left:ROUND_SECONDS*1000,pauses:0,phase:'play',live:false,clock:false,end:0,
      ...(resume?{answers:resume.answers,score:resume.score,i:resume.i,left:resume.left,pauses:resume.pauses,phase:resume.phase}:{})};
+  if(!resume)log('start',{mode:r.quick?'quick':'daily',puzzle:r.quick?null:r.n,chal:!!r.chal,device:DEVICE});   // for the admin's starts and completion rate
   S.phase==='reveal'?showReveal():showQuestion();
 }
 function showQuestion(){
@@ -817,6 +819,7 @@ function submit(raw){
 function endRound(a){
   clearInterval(tick);
   const ans=a||{guess:null,p:0};
+  ans.t=Math.round(ROUND_SECONDS*1000-(S.clock?Math.max(0,S.end-Date.now()):S.left));   // time spent on this round
   S.answers[S.i]=ans;S.score+=ans.p||0;
   S.phase='reveal';S.clock=false;S.live=false;S.left=ROUND_SECONDS*1000;
   saveLive();showReveal();
@@ -873,14 +876,14 @@ function finish(why){
     store.del('live:'+r.n);
     store.set('v07:'+r.n,res);
     res.badges=awardBadges(res,r);if(res.badges.length)store.set('v07:'+r.n,res);
-    pushSync();
-    log('play',{puzzle:r.n,points:R.answers.map(a=>a.p||0),guesses:R.answers.map(a=>a.guess==null?null:+a.guess),score:total,device:DEVICE});
+    pushSync();CACHE.delete('st:'+r.n);
+    log('play',{puzzle:r.n,points:R.answers.map(a=>a.p||0),guesses:R.answers.map(a=>a.guess==null?null:+a.guess),score:total,ms:R.answers.reduce((t,a)=>t+(a.t||0),0),device:DEVICE});
   }else{
     QUICK=null;
     Object.assign(res,{id:'q'+Date.now().toString(36),at:Date.now(),rounds:toNames(r.rounds),chal:r.chal||null,own:false});
     res.badges=[];saveQuick(res);pushSync();
     {const t=store.get('qstats',null);if(t){t.g++;t.t+=total;t.b+=R.answers.filter(a=>(a.p||0)>=90).length;store.set('qstats',t)}else store.set('qstats',quickTotalsFromList())}   // the list already includes this game   // quick games and challenges don't earn the daily badges
-    log('quick',{score:total,points:R.answers.map(a=>a.p||0),chal:!!res.chal,device:DEVICE});
+    log('quick',{score:total,points:R.answers.map(a=>a.p||0),chal:!!res.chal,ms:R.answers.reduce((t,a)=>t+(a.t||0),0),device:DEVICE});
     if(res.chal){showResults(r,res);postChallenge(res).then(()=>chalBox(res));return}
   }
   showResults(r,res);
@@ -890,7 +893,7 @@ function untilMidnight(){const n=new Date(),m=new Date(n);m.setHours(24,0,0,0);c
 // a measurement fun fact under every result (dailies get the same one for everyone)
 let FACTS=null;
 async function showFact(r){
-  try{if(!FACTS)FACTS=await fetch('data/facts.json').then(x=>x.json())}catch(_){return}
+  if(!FACTS)FACTS=await getFacts();if(!FACTS)return;
   const el=document.getElementById('factt');if(!el||!FACTS.length)return;
   if(!r.quick&&r.n<1)return;   // #000 has no fun fact; #001 starts the list (the barleycorn one)
   el.textContent=FACTS[r.quick?Math.floor(Math.random()*FACTS.length):(r.n-1)%FACTS.length];document.getElementById('fact').hidden=false;
@@ -901,7 +904,6 @@ function showResults(r,res){
   const title=r.quick?(res.chal?'Daily Banana · challenge':'Daily Banana · quick play'):`Daily Banana #${pad3(r.n)}`;
   const marks=res.answers.map(markA).join('');
   const shareTxt=`${title} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n${marks}\n${location.host||'dailybanana.io'}`;
-  const spot=res.answers.filter(a=>(a.p||0)>=100).length;
   const SHARE=`<div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(title)} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n<span class="emo">${marks}</span>\n${esc(location.host||'dailybanana.io')}</div>
     <div class="legend-row in" style="--d:4">${LEGEND.split(' · ').map(x=>{const [e,...t]=x.split(' ');return`<span><span class="emo">${e}</span> ${t.join(' ')}</span>`}).join('')}</div>
     <div class="cprow in" style="--d:5"><button class="btn main" id="cp"><span id="cpl">Copy results</span>${ICON.copy}</button><button class="btn sharebtn" id="shr" aria-label="Share">${ICON.share}</button></div>`;
@@ -912,7 +914,7 @@ function showResults(r,res){
   const top=`    <div class="sumrow in" style="--d:1">
       <div style="display:flex;flex-direction:column;gap:4px"><span class="note">${r.quick?(res.chal?(res.own?'Your challenge':`Challenge from ${esc(res.chal.host)}`):'Quick play'):`Daily #${pad3(r.n)}`}${res.why==='paused'?' · ended by pausing':''}</span>
         <b class="score num">${fmt(res.total)}</b><span style="font-size:14px">out of ${ROUNDS*MAX_PTS} · <span class="emo">${marks}</span></span></div>
-      <div class="r">${r.quick?'':`<span>${streak()} day streak</span>`}<span>${spot} spot on</span></div>
+      <div class="r">${r.quick?'':`<span>${streak()} day streak</span>`}</div>
     </div>
     ${r.quick?'':`<div class="in" style="--d:1;display:flex;flex-direction:column;gap:2px"><b id="rank" style="font-size:17px">&nbsp;</b></div>`}
     ${(res.badges||[]).length?`<div class="badge-new in" style="--d:2"><b>New badge${res.badges.length>1?'s':''} · ${res.badges.map(id=>BADGES.find(x=>x.id===id).name).join(', ')}</b><span>${res.badges.map(id=>BADGES.find(x=>x.id===id).how).join(' · ')}</span></div>`:''}
@@ -1061,7 +1063,7 @@ function simCrowd(r){
 }
 const beat=(xs,v)=>{if(!xs.length)return null;let lo=0,eq=0;for(const x of xs){if(x<v)lo++;else if(x===v)eq++}return Math.min(99,Math.max(1,Math.round(100*(lo+eq/2)/xs.length)))};
 async function showRank(r,res){
-  let st=null;if(API)st=await fetch(`${API}/stats?n=${r.n}`).then(x=>x.ok?x.json():null).catch(()=>null);
+  const st=await getStats(r.n);
   const real=st&&st.players>=REAL_AFTER,d=real?st:simCrowd(r);
   const el=document.getElementById('rank');if(!el)return;
   const b=beat(d.totals,res.total);
@@ -1079,10 +1081,21 @@ async function showRank(r,res){
 const CH=`${API}/challenge`;
 const chalLink=code=>`${location.origin}${location.pathname.replace(/index\.html$/,'')}?c=${code}`;
 async function chalApi(body){
+  for(const k of CACHE.keys())if(k.startsWith('ch:'))CACHE.delete(k);   // a challenge changed: fetch fresh
   const r=await fetch(CH,{method:body?'POST':'GET',headers:{'content-type':'application/json'},body:body?JSON.stringify({device:DEVICE,...body}):undefined});
   const j=await r.json().catch(()=>({}));return{ok:r.ok,status:r.status,...j};
 }
-const getChal=code=>fetch(`${CH}?code=${encodeURIComponent(code)}&device=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():null).catch(()=>null);
+// fetched once and kept briefly, so screens open with their numbers already there (preloaded from the home screen)
+const CACHE=new Map();
+function cached(key,ms,fn){const c=CACHE.get(key);if(c&&Date.now()-c.at<ms)return c.p;const p=fn().catch(()=>null);CACHE.set(key,{at:Date.now(),p});return p}
+const getChal=code=>cached('ch:'+code,30e3,()=>fetch(`${CH}?code=${encodeURIComponent(code)}&device=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():null));
+const getStats=n=>API?cached('st:'+n,60e3,()=>fetch(`${API}/stats?n=${n}`).then(x=>x.ok?x.json():null)):Promise.resolve(null);
+const getFacts=()=>cached('facts',864e5,()=>fetch('data/facts.json').then(x=>x.json()));
+function preload(){   // while the home screen is up: today's ranking, open challenges, the fun facts
+  if(saved(TODAY.n))getStats(TODAY.n);
+  getFacts();
+  if(API)[...new Set(quickList().filter(q=>q.chal&&Date.now()-q.at<25*HOUR).map(q=>q.chal.code))].forEach(getChal);
+}
 const myOpen=()=>fetch(`${CH}?host=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():{}).catch(()=>({}));
 // the scoreboard name: your account name when signed in, otherwise this device's guest name (set in the Menu)
 const nameNow=()=>SESSION?SESSION.user.name:(store.get('name','')||GUEST);
