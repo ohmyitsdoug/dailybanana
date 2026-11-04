@@ -547,7 +547,7 @@ function log(kind,payload){
 // ---------- puzzles ----------
 function puzzleFor(d){const it=v=>typeof v==='object'?v:ITEMS[v],v2=(d.date||todayISO())>=SCORE_V2;
   return{...d,qs:d.rounds.map(x=>{const A=it(x.a),B=it(x.b),ans=B.cm/A.cm;return{A,B,ans,v2,show:v2?shownAns(ans):nice(ans)}})}}
-// a quick game left mid-way (paused, or the app closed): kept on the phone and, when signed in, on the account,
+// a quick game left mid-way: saved at the end of each round (and on pause), on the phone and, when signed in, the account,
 // so the home screen offers Resume. A finished or replaced game leaves a 'cleared' marker so other devices drop it too.
 function quickLive(){const v=store.get('qlive',null);if(!v||v.cleared||!Array.isArray(v.rounds))return null;
   const unit=v.chal&&v.chal.weekend&&v.chal.weekend.unit,rounds=fromNames(v.rounds,unit);if(rounds.some(x=>x.a==null||x.b==null))return null;
@@ -870,7 +870,7 @@ function startClock(){
     const bar=document.getElementById('bar');
     bar.firstElementChild.style.width=(left/(ROUND_SECONDS*10))+'%';
     bar.classList.toggle('low',s<=5);
-    if(++n%10===0)saveLive();
+    if(++n%10===0&&!S.r.quick)saveLive();   // dailies keep the clock; quick games save once a round
     if(!left)endRound(null);
   },100);
 }
@@ -905,7 +905,7 @@ function endRound(a){
   ans.t=Math.round(ROUND_SECONDS*1000-(S.clock?Math.max(0,S.end-Date.now()):S.left));   // time spent on this round
   S.answers[S.i]=ans;S.score+=ans.p||0;
   S.phase='reveal';S.clock=false;S.live=false;S.left=ROUND_SECONDS*1000;
-  saveLive();showReveal();
+  saveLive();if(S.r.quick)pushSync();showReveal();
 }
 // where the guess landed: the answer in the middle, each side counts down from 100 points to 0 at the edge,
 // so the distance from the middle is exactly the points lost
@@ -1416,9 +1416,9 @@ function preload(){   // today's ranking, your open challenges, the fun facts: f
 const idle=f=>(window.requestIdleCallback||(g=>setTimeout(g,300)))(f,{timeout:2000});
 idle(preload);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')idle(preload)});
-// leaving the app mid-game: save where you are right now (quick games also go to the account)
-addEventListener('pagehide',()=>{if(S){saveLive();if(S.r.quick)pushSync()}});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&S){saveLive();if(S.r.quick)pushSync()}});
+// leaving the app mid-daily: save where you are right now (quick games save at the end of each round instead)
+addEventListener('pagehide',()=>{if(S&&!S.r.quick)saveLive()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&S&&!S.r.quick)saveLive()});
 const myOpen=()=>API?cached('host',30e3,()=>fetch(`${CH}?host=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():null)).then(v=>v||{}):Promise.resolve({});
 // the scoreboard name: your account name when signed in, otherwise this device's guest name (set in the Menu)
 const nameNow=()=>SESSION?SESSION.user.name:(store.get('name','')||GUEST);
