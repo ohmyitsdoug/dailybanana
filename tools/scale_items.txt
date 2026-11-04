@@ -3,10 +3,6 @@
 # "how it's measured" is the word used in the question: long, tall, across or deep.
 # u = can be the counting unit ("how many BANANAS long..."). Everything can be the thing measured.
 # Pick things that don't vary much, and use a typical adult/standard size. Landmarks use their official height.
-grain of rice | grains of rice | a | long | 0.65 | u
-sesame seed | sesame seeds | a | long | 0.3 |
-ant | ants | an | long | 0.5 |
-ladybug | ladybugs | a | long | 0.7 | u
 coffee bean | coffee beans | a | long | 1.2 | u
 jelly bean | jelly beans | a | long | 2 | u
 penny | pennies | a | across | 1.9 | u
@@ -131,7 +127,6 @@ anaconda | anacondas | an | long | 500 |
 chicken | chickens | a | tall | 40 | 
 hamster | hamsters | a | long | 12 | u
 goldfish | goldfish | a | long | 6 | u
-honeybee | honeybees | a | long | 1.3 | u
 hummingbird | hummingbirds | a | long | 8 | u
 redwood tree | redwood trees | a | tall | 9100 | 
 Christmas tree | Christmas trees | a | tall | 210 | 
@@ -369,7 +364,6 @@ mailbox post | mailbox posts | a | tall | 110 |
 nail | nails | a | long | 6 | u
 screw | screws | a | long | 3 | u
 bolt | bolts | a | long | 5 | u
-washer | washers | a | across | 2 | u
 hammer | hammers | a | long | 33 | u
 screwdriver | screwdrivers | a | long | 20 | u
 wrench | wrenches | a | long | 25 | u
@@ -465,22 +459,15 @@ volleyball net | volleyball nets | a | long | 950 |
 newborn baby | newborn babies | a | long | 50 | u
 toddler | toddlers | a | tall | 85 | u
 10-year-old | 10-year-olds | a | tall | 140 | u
-fingernail | fingernails | a | long | 1.2 | u
 thumb | thumbs | a | long | 6 | u
 adult hand | adult hands | an | long | 19 | u
 adult foot | adult feet | an | long | 26 | u
 human arm span | arm spans | a | across | 170 | 
-strand of hair | strands of hair | a | across | 0.007 | 
-eyelash | eyelashes | an | long | 1 |
 human heart | human hearts | a | tall | 12 | 
 human femur | femurs | a | long | 48 | 
 small intestine | small intestines | a | long | 600 | 
 tallest man ever | tallest men ever | the | tall | 272 | 
 # ---- animals ----
-flea | fleas | a | long | 0.25 |
-mosquito | mosquitoes | a | long | 0.6 |
-housefly | houseflies | a | long | 0.7 |
-cricket | crickets | a | long | 2.5 | u
 grasshopper | grasshoppers | a | long | 5 | u
 butterfly | butterflies | a | across | 8 | u
 dragonfly | dragonflies | a | long | 7 | u
@@ -656,8 +643,6 @@ Panama Canal | Panama Canals | the | long | 8200000 |
 English Channel | English Channels | the | across | 3400000 | 
 Lake Tahoe | Lake Tahoes |  | long | 3500000 | 
 # ---- nature ----
-grain of sand | grains of sand | a | across | 0.05 |
-pea | peas | a | across | 0.8 | u
 acorn | acorns | an | long | 2.5 | u
 pinecone | pinecones | a | long | 8 | u
 maple leaf | maple leaves | a | across | 12 | u
@@ -667,9 +652,7 @@ tulip | tulips | a | tall | 45 |
 rose | roses | a | long | 50 | 
 pebble | pebbles | a | across | 3 | u
 boulder | boulders | a | across | 200 | 
-snowflake | snowflakes | a | across | 0.5 | 
 hailstone | hailstones | a | across | 2.5 | u
-raindrop | raindrops | a | across | 0.2 | 
 icicle | icicles | an | long | 30 | 
 snowman | snowmen | a | tall | 150 | 
 cactus | cacti | a | tall | 300 | 
@@ -729,8 +712,6 @@ poker chip | poker chips | a | across | 3.9 | u
 gold bar | gold bars | a | long | 25 | 
 piggy bank | piggy banks | a | long | 15 | 
 sim card | SIM cards | a | long | 1.5 | u
-microchip | microchips | a | across | 1 | 
-grain of salt | grains of salt | a | across | 0.03 | 
 # ---- space & science ----
 Moon | Moons | the | across | 347400000 | 
 Earth | Earths | the | across | 1274200000 | 

@@ -34,7 +34,7 @@ One open challenge per person (per device); joining others is unlimited. Server:
 ## Daily schedule
 Items live in `tools/scale_items.txt` (`name | plural | article | long/tall/across/deep | cm | u`, where `u` means it can be the counting unit).
 Edit sizes there, then run `python3 tools/make_scale.py` to rebuild `data/items.json` and `data/dailies.json` (365 days; Daily #000 is 2026-11-03, #001 the next day).
-Each day has one answer from each size range (2-12 up to 600-3,000) in a random order, and the thing measured doesn't repeat within 10 days.
+Each day has one answer from each size range (2-10 up to 300-1,000) in a random order, and the thing measured doesn't repeat within 10 days.
 Hyper-specific items are listed in `tools/specific.txt` (landmarks, niche gear): only 1-2 rounds a day, in dailies and quick play. Dailies up to `FROZEN` in make_scale.py are never regenerated.
 Challenges store item names, so keep names stable once live (changing a size is fine).
 

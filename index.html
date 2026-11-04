@@ -337,7 +337,7 @@ const VERSION='0.7';
 const ROUNDS=6, ROUND_SECONDS=25, HEADSTART_MS=1000, MAX_PAUSES=2;
 const MAX_PTS=100;
 // answer ranges, one per round, small to huge (keep in sync with tools/make_scale.py)
-const BUCKETS=[[2,12],[8,40],[25,120],[80,400],[200,1200],[600,3000]];   // answers never past ~3,000, so the two things stay comparable
+const BUCKETS=[[2,10],[6,30],[20,80],[50,200],[120,500],[300,1000]];   // answers never past ~1,000, so the two things stay comparable
 const HOUR=3600e3, CHALLENGE_WITHIN=HOUR;
 // a 16-bit style banana, drawn pixel by pixel (b outline, y yellow, l highlight, d shade, s stem and tip)
 const BANANA_PX=[

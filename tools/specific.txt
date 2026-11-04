@@ -60,7 +60,6 @@ javelin
 golf hole cup
 cricket pitch
 volleyball net
-strand of hair
 human heart
 human femur
 small intestine
@@ -155,8 +154,6 @@ school bus seat
 gym floor
 gold bar
 sim card
-microchip
-grain of salt
 Moon
 Earth
 Hubble telescope
