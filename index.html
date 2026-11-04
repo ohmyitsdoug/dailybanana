@@ -517,6 +517,12 @@ const BADGES=[
   {id:'tester',name:'Playtester',how:'Played a daily in the first two weeks',secret:true},
 ];
 const PLAYTEST_LAST=13;   // anyone who finishes a daily from #000–#013 gets the secret Playtester badge
+// one time: send the guesses from dailies finished before the game started sending them (for the typical-guess marks)
+function backfillGuesses(){
+  if(!API||store.get('backfill1',false))return;
+  playedDailies().forEach(({d,res})=>{if(Array.isArray(res.answers))log('backfill',{puzzle:d.n,score:res.total,points:res.answers.map(a=>a.p||0),guesses:res.answers.map(a=>a&&a.guess!=null?+a.guess:null),device:DEVICE})});
+  store.set('backfill1',true);
+}
 function testerCheck(){if(SESSION&&earnBadge('linked'))pushSync();if(TODAY&&TODAY.n<=PLAYTEST_LAST&&playedDailies().length&&earnBadge('tester'))pushSync()}
 const shownBadges=have=>BADGES.filter(b=>!b.secret||have[b.id]);
 const badgeCount=have=>`${shownBadges(have).filter(b=>have[b.id]).length}/${shownBadges(have).length}`;
@@ -866,7 +872,7 @@ function showResults(r,res){
       ${r.quick?'':`<div class="mlegend" id="mleg" hidden><span><i style="width:10px;height:10px;border-radius:50%;background:var(--ink)"></i>you</span><span><i style="width:8px;height:8px;background:var(--acc);border:2px solid var(--ink);transform:rotate(45deg)"></i>typical player</span><span><i style="width:2px;height:12px;background:var(--accsh)"></i>answer</span></div>`}
       <div class="path">${r.qs.map((q,i)=>{const a=res.answers[i]||{};
         return`<div class="prow round"><span class="i num">${i+1}</span><span class="w"><b>${esc(question(q).replace(/^Approximately h/,'H'))}</b><br>
-          <span class="t">answer: about ${fmt(nice(q.ans))} · ${a.guess!=null?`you: ${fmt(nice(a.guess))} · ${esc(offLabel(a).replace(/\.$/,'').toLowerCase())}`:'no guess'}<span id="pr${i}"></span></span>
+          <span class="t">answer: about ${fmt(nice(q.ans))} · ${a.guess!=null?`you: ${fmt(nice(a.guess))}`:'no guess'}<span id="pr${i}"></span></span>
           ${r.quick?'':`<span class="mini" id="mini${i}" hidden><span class="c"></span>${a.guess!=null?`<span class="you" style="left:${posOf(a.guess,q.ans).toFixed(1)}%"></span>`:''}</span>`}</span>
           <span class="num">${a.guess==null?'–':a.p||0}</span></div>`}).join('')}
       </div></div>
@@ -1152,7 +1158,7 @@ loadData().then(()=>{
     if(SESSION)syncNow().then(()=>{testerCheck();if(!S&&document.querySelector('.home'))showStart()});
   });
   log('visit',{device:DEVICE});
-  testerCheck();
+  testerCheck();backfillGuesses();
 }).catch(e=>{
   console.error(e);
   app.innerHTML='<div style="padding:40px 0">Could not load the game data.<div class="note">Check that the data folder is published next to this page.</div></div>';
