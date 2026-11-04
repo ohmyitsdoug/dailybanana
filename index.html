@@ -280,6 +280,8 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 .chip{background:var(--acc);color:var(--acc-ink);border:2px solid var(--ink);font-size:12px;font-weight:700;padding:1px 7px;white-space:nowrap}
 .pager{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 0}
 .pager .sq[disabled]{opacity:.35;cursor:default}
+.emo{filter:drop-shadow(1px 1px 0 var(--ink))}
+:root[data-theme="dark"] .emo{filter:none}
 .legend-row{display:flex;justify-content:space-between;gap:6px;font-size:12px;color:var(--mut);white-space:nowrap}
 @media (max-width:370px){.legend-row{font-size:10.5px;gap:3px;letter-spacing:-.2px}}
 .cprow{display:flex;gap:10px}
@@ -882,8 +884,8 @@ function showResults(r,res){
   const marks=res.answers.map(markA).join('');
   const shareTxt=`${title} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n${marks}\n${location.host||'dailybanana.io'}`;
   const spot=res.answers.filter(a=>(a.p||0)>=100).length;
-  const SHARE=`<div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(shareTxt)}</div>
-    <div class="legend-row in" style="--d:4">${LEGEND.split(' · ').map(x=>`<span>${x}</span>`).join('')}</div>
+  const SHARE=`<div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(title)} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n<span class="emo">${marks}</span>\n${esc(location.host||'dailybanana.io')}</div>
+    <div class="legend-row in" style="--d:4">${LEGEND.split(' · ').map(x=>{const [e,...t]=x.split(' ');return`<span><span class="emo">${e}</span> ${t.join(' ')}</span>`}).join('')}</div>
     <div class="cprow in" style="--d:5"><button class="btn main" id="cp"><span id="cpl">Copy results</span>${ICON.copy}</button><button class="btn sharebtn" id="shr" aria-label="Share">${ICON.share}</button></div>`;
   const PLAYBTN=`<button class="btn in" style="--d:6;width:100%" id="again">Play again</button>`;
   const PLAY=`<div class="fact in" style="--d:7" id="fact" hidden><span class="eyebrow">Fun fact</span><p id="factt"></p></div>
@@ -891,7 +893,7 @@ function showResults(r,res){
     <div class="foot in" style="--d:7">${r.quick?'':`Next daily in <span class="num" id="cd">${untilMidnight()}</span> · `}© 2026 · <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a></div>`;
   const top=`    <div class="sumrow in" style="--d:1">
       <div style="display:flex;flex-direction:column;gap:4px"><span class="note">${r.quick?(res.chal?(res.own?'Your challenge':`Challenge from ${esc(res.chal.host)}`):'Quick play'):`Daily #${pad3(r.n)}`}${res.why==='paused'?' · ended by pausing':''}</span>
-        <b class="score num">${fmt(res.total)}</b><span style="font-size:14px">out of ${ROUNDS*MAX_PTS} · ${marks}</span></div>
+        <b class="score num">${fmt(res.total)}</b><span style="font-size:14px">out of ${ROUNDS*MAX_PTS} · <span class="emo">${marks}</span></span></div>
       <div class="r">${r.quick?'':`<span>${streak()} day streak</span>`}<span>${spot} spot on</span></div>
     </div>
     ${r.quick?'':`<div class="in" style="--d:1;display:flex;flex-direction:column;gap:2px"><b id="rank" style="font-size:17px">&nbsp;</b></div>`}
