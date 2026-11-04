@@ -102,6 +102,7 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .cta{display:flex;flex-direction:column;gap:12px}
 .cta2{display:grid;grid-template-columns:2fr 1fr;gap:12px}
 .cta2 .btn{padding:0 12px;justify-content:center}
+.wkhint{margin:-4px 0 0;text-align:center;color:var(--mut);font-size:15px}
 .codein{height:64px;border:2px solid var(--ink);box-shadow:4px 4px 0 var(--accsh);background:var(--card);color:var(--ink);font:700 30px/1 inherit;font-family:inherit;letter-spacing:6px;text-transform:uppercase;text-align:center;padding:0 12px;width:100%;box-sizing:border-box}
 .codein:focus{outline:3px solid var(--acc);outline-offset:2px}
 .codechip{display:inline-flex;align-items:center;gap:8px;border:2px solid var(--ink);background:var(--acc);color:var(--acc-ink);font-weight:700;font-size:15px;letter-spacing:2px;padding:4px 10px;cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
@@ -540,7 +541,7 @@ function log(kind,payload){
 }
 
 // ---------- puzzles ----------
-function puzzleFor(d){return{...d,qs:d.rounds.map(x=>{const A=ITEMS[x.a],B=ITEMS[x.b];return{A,B,ans:B.cm/A.cm}})}}
+function puzzleFor(d){const it=v=>typeof v==='object'?v:ITEMS[v];return{...d,qs:d.rounds.map(x=>{const A=it(x.a),B=it(x.b);return{A,B,ans:B.cm/A.cm}})}}
 let QUICK=null;   // a paused quick game (kept in memory only)
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 // skips any question from a daily (past or future) and the last 300 quick-play questions on this device
@@ -561,12 +562,16 @@ function randomRounds(){
 }
 // challenges travel by item name, so they keep working if the item list grows
 const BYNAME=()=>Object.fromEntries(ITEMS.map(i=>[i.name,i.id]));
-const toNames=rounds=>rounds.map(x=>({a:ITEMS[x.a].name,b:ITEMS[x.b].name}));
-const fromNames=rounds=>{const m=BYNAME();return rounds.map(x=>({a:m[x.a],b:m[x.b]}))};
+const nameOf=v=>typeof v==='object'?v.name:ITEMS[v].name;
+const toNames=rounds=>rounds.map(x=>({a:nameOf(x.a),b:nameOf(x.b)}));
+// a weekend challenge measures in its own unit, which isn't in the item list
+const fromNames=(rounds,unit)=>{const m=BYNAME(),f=n=>unit&&n===unit.name?unit:m[n];return rounds.map(x=>({a:f(x.a),b:f(x.b)}))};
+const chalName=c=>c.weekend?`Weekend challenge · ${esc(W(c.weekend.unit.plural))}`:`${esc(c.host)}'s challenge`;
 function quick(chal){
-  const rounds=chal?fromNames(chal.rounds):randomRounds();
+  const wk=chal&&chal.weekend||null;
+  const rounds=chal?fromNames(chal.rounds,wk&&wk.unit):randomRounds();
   if(rounds.some(x=>x.a==null||x.b==null))return alertBox('This challenge uses items this version of the game doesn\'t have.');
-  leave({...puzzleFor({rounds}),n:0,quick:true,date:todayISO(),chal:chal?{code:chal.code,host:chal.host}:null});
+  leave({...puzzleFor({rounds}),n:0,quick:true,date:todayISO(),chal:chal?{code:chal.code,host:chal.host,...(wk?{weekend:wk}:{})}:null});
 }
 const quickList=()=>store.get('quick',[]);
 const quickTotalsFromList=()=>{const l=quickList();return{g:l.length,t:l.reduce((a,q)=>a+(q.total||0),0),b:l.reduce((a,q)=>a+(q.answers||[]).filter(x=>(x&&x.p||0)>=90).length,0)}};
@@ -735,6 +740,7 @@ function showMenu(jump){
   app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:18px">
     <div class="head in" style="--d:1"><h2>Menu</h2><button class="sq" id="back">Back</button></div>
     <div id="opench" class="in" style="--d:2;display:flex;flex-direction:column;gap:10px"></div>
+    <div id="wkmenu"></div>
     <div class="eyebrow in" style="--d:2">Account</div>
     <div class="acct in" style="--d:2" id="acct">${acctHtml()}</div>
     <div class="eyebrow in" style="--d:3">Your stats</div>
@@ -775,6 +781,9 @@ function showMenu(jump){
   document.getElementById('opt-help').onclick=showHelp;
   const so=document.getElementById('opt-social');if(so)so.onclick=()=>showSocial();
   wireAcct();openChallenges();
+  weekendNow().then(w=>{const el=document.getElementById('wkmenu');if(!el||!w||!w.open)return;
+    el.innerHTML=`<div class="list in" style="--d:1"><button class="lrow" id="wkm" style="border:2px solid var(--ink);background:var(--acc);color:var(--acc-ink,#2A1A0E)"><span>Weekend challenge · ${esc(W(w.plural))}</span><span class="mut">closes in ${leftLabel(w.closes-Date.now())} →</span></button></div>`;
+    document.getElementById('wkm').onclick=()=>showJoin()});
   if(jump==='badges')setTimeout(()=>{const el=document.getElementById('badges');if(el)window.scrollTo(0,el.getBoundingClientRect().top+scrollY-12)},50);
   app.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const r=puzzleFor(DAILIES.find(x=>x.n===+b.dataset.n)),s=saved(r.n);s?showResults(r,s):r.n===TODAY.n?showStart():leave(r,liveSaved(r.n))});
   document.getElementById('back').onclick=showStart;
@@ -816,6 +825,7 @@ function showQuestion(){
       </div>
       <div class="in" style="--d:1">${squares(S.answers,S.i)}</div>
       <div class="ask in" style="--d:1"><span class="lab">Approximately how many</span><b>${esc(q.A.plural)}</b><span class="lab">${esc(q.B.dim)} is</span><b>${esc(the(q.B))}?</b></div>
+      ${S.r.chal&&S.r.chal.weekend?`<p class="wkhint in" style="--d:1">(${esc(S.r.chal.weekend.hint)})</p>`:''}
       <form id="f" class="in" style="--d:2" autocomplete="off">
         <label for="g" class="field"><span class="mut">≈</span><span class="mirror num" id="m"></span><span class="caret"></span>
           <button type="submit" class="go" id="go" aria-label="Enter guess">Enter</button>
@@ -976,7 +986,7 @@ function showResults(r,res){
     <div class="disclaim in" style="--d:7">All sizes are estimates: typical sizes drawn from publicly available sources, and rounded. Real things vary, so answers are approximate.</div>
     <div class="foot in" style="--d:7">${r.quick?'':`Next daily in <span class="num" id="cd">${untilMidnight()}</span> · `}© 2026 · <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a></div>`;
   const top=`    <div class="sumrow in" style="--d:1">
-      <div style="display:flex;flex-direction:column;gap:4px"><span class="note">${r.quick?(res.chal?(res.own?'Your challenge':`Challenge from ${esc(res.chal.host)}`):'Quick play'):`Daily #${pad3(r.n)}`}${res.why==='paused'?' · ended by pausing':''}</span>
+      <div style="display:flex;flex-direction:column;gap:4px"><span class="note">${r.quick?(res.chal?(res.own?'Your challenge':(res.chal.weekend?'Weekend challenge':`Challenge from ${esc(res.chal.host)}`)):'Quick play'):`Daily #${pad3(r.n)}`}${res.why==='paused'?' · ended by pausing':''}</span>
         <b class="score num">${fmt(res.total)}</b><span style="font-size:14px">out of ${ROUNDS*MAX_PTS} · <span class="emo">${marks}</span></span></div>
       <div class="r">${r.quick?'':`<span>${streak()} day streak</span>`}</div>
     </div>
@@ -1263,7 +1273,14 @@ async function showSocial(pick){
   if(!(SESSION&&SESSION.user.admin))return showStart();
   const cur=pick||socialPick();
   app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:14px">
-    <div class="head"><h2>Social post</h2><button class="sq" id="back">Back</button></div>
+    <div class="head"><h2>Social posts</h2><button class="sq" id="back">Back</button></div>
+    <div class="eyebrow">Auto-posting</div>
+    <button class="lrow" id="aplive" style="border:2px solid var(--ink)"><span><b>Post for real</b><br><span class="mut" id="aplivesub">Loading…</span></span><span class="toggle" id="apltog" aria-hidden="true"></span></button>
+    <span class="note">Make one now to see it (saved as a preview, never posted on its own):</span>
+    <div style="display:flex;flex-wrap:wrap;gap:8px" id="apkinds">${[['mon','Mon carousel'],['tue','Tue fact'],['wed','Wed guess'],['thu_story','Thu answer story'],['thu','Thu scale'],['fri','Fri review'],['sat','Sat challenge'],['sun_story','Sun last call'],['sun','Sun closest'],['milestone','Milestone']].map(([k,l])=>`<button class="btn" style="height:44px;padding:0 12px;font-size:14px" data-k="${k}">${l}</button>`).join('')}</div>
+    <div id="apout" class="note" aria-live="polite"></div>
+    <div id="aplist" style="display:flex;flex-direction:column;gap:14px"></div>
+    <div class="eyebrow" style="margin-top:12px">One-off image</div>
     <span class="note">A random quick-play question and a random score from 40 to 100. Only you can see this.</span>
     <img id="soimg" alt="Post preview" style="width:100%;aspect-ratio:4/5;border:2px solid var(--ink);background:var(--card)">
     <div class="cprow"><button class="btn main" id="sodl" style="flex:1"><span>Download</span>${ICON.download}</button><button class="btn" id="sonew">New one</button></div>
@@ -1273,6 +1290,7 @@ async function showSocial(pick){
   wireNav();
   document.getElementById('back').onclick=()=>showMenu();
   document.getElementById('sonew').onclick=()=>showSocial();
+  wireAutopost();
   document.getElementById('someta').onclick=async()=>{const o=document.getElementById('sometaout');o.textContent='Checking…';
     const j=await fetch(`${API}/meta`,{headers:authHdr()}).then(x=>x.json()).catch(()=>({error:'Could not reach the server.'}));
     o.innerHTML=j.ok?(j.pages.length?j.pages.map(p=>`<b>${esc(p.name)}</b> · Page ID ${esc(p.id)}<br>Instagram: ${p.instagram?`@${esc(p.instagram.username)} · ID ${esc(p.instagram.id)}`:'none linked'}`).join('<br><br>'):'The token works, but it can\'t see any Pages. Check the system user\'s assets.'):esc(j.error||'Something went wrong.')};
@@ -1281,6 +1299,31 @@ async function showSocial(pick){
   const img=document.getElementById('soimg');if(img)img.src=c.toDataURL('image/png');
   document.getElementById('sodl').onclick=()=>c.toBlob(b=>{const u=URL.createObjectURL(b),el=document.createElement('a');el.href=u;el.download=`daily-banana-post-${todayISO()}.png`;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)},'image/png');
   window.scrollTo(0,0);
+}
+// the auto-poster's queue (admin): practice posts, what was posted, and the switch to post for real
+const SKIND={mon:'Monday carousel',tue:'Fun fact',wed:'Guess this',thu_story:'Answer story',thu:'Banana for scale',fri:'Week in review',fri_fact:'Fun fact (Friday)',sat:'Weekend challenge',sun_story:'Last-call story',sun:'Closest guess',milestone:'Milestone'};
+async function wireAutopost(){
+  const api=(body)=>fetch(`${API}/social`,body?{method:'POST',headers:{...authHdr(),'content-type':'application/json'},body:JSON.stringify(body)}:{headers:authHdr()}).then(r=>r.json()).catch(()=>({error:'Could not reach the server.'}));
+  const card=p=>`<div class="chal" style="gap:10px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${esc(SKIND[p.kind]||p.kind)}</b><span class="chip">${esc(p.status)}</span></div>
+    <span class="note">${esc(new Date(p.at).toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}))}${p.results&&p.results.length?' · '+p.results.map(r=>esc(r.where)+(r.ok?' ✓':' ✗ '+esc(r.error))).join(' · '):''}</span>
+    <div style="display:flex;gap:8px;overflow-x:auto">${[...p.images,...p.story].map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener" style="flex:none"><img src="${esc(u)}" alt="${i<p.images.length?'Post image':'Story image'} ${i+1}" loading="lazy" style="height:${i<p.images.length?160:180}px;border:2px solid var(--ink);display:block"></a>`).join('')}</div>
+    ${p.caption?`<p style="margin:0;white-space:pre-wrap;font-size:14px">${esc(p.caption)}</p>`:'<span class="note">Story only, no caption.</span>'}
+    ${p.status==='posted'||p.status==='preview'?'':`<button class="btn" data-pub="${esc(p.id)}" style="height:44px;font-size:14px">Post this now</button>`}</div>`;
+  const draw=j=>{
+    const sub=document.getElementById('aplivesub'),tog=document.getElementById('apltog');if(!sub)return;
+    if(j.error){sub.textContent=j.error;return}
+    tog.classList.toggle('on',!!j.live);sub.textContent=j.live?'On: due posts go to Instagram and Facebook.':'Off (practice): due posts are made and listed here, nothing is published.';
+    document.getElementById('aplist').innerHTML=j.posts.length?j.posts.map(card).join(''):'<span class="note">Nothing yet. Posts show up here as they come due.</span>';
+    document.querySelectorAll('[data-pub]').forEach(b=>b.onclick=async()=>{
+      if(!await confirmBox({title:'Post this now?',body:'It goes to Instagram (and its story) and the Facebook Page right away.',yes:'Post it',no:'Not now'}))return;
+      b.disabled=true;b.textContent='Posting…';const r=await api({action:'publish',id:b.dataset.pub});if(r.error)toast(r.error);draw(await api())});
+    J=j};
+  let J=null;draw(await api());
+  document.getElementById('aplive').onclick=async()=>{if(!J||J.error)return;const on=!J.live;
+    if(on&&!await confirmBox({title:'Start posting for real?',body:'From the next scheduled time, posts go to Instagram and the Facebook Page automatically.',yes:'Turn it on',no:'Keep practicing'}))return;
+    await api({action:'live',on});draw(await api())};
+  document.querySelectorAll('#apkinds [data-k]').forEach(b=>b.onclick=async()=>{const o=document.getElementById('apout');o.textContent='Making it…';b.disabled=true;
+    const r=await api({action:'preview',kind:b.dataset.k});b.disabled=false;o.textContent=r.error||'';draw(await api())});
 }
 async function roundImage(q,a,btn){
   btn.disabled=true;
@@ -1347,6 +1390,8 @@ function refill(key){
   if(key.startsWith('ch:')&&document.getElementById('opench'))openChallenges();
   if(key.startsWith('ch:')&&document.getElementById('hist'))renderHistory();
 }
+// this weekend's themed challenge (or last weekend's, once it closes)
+const weekendNow=()=>API?cached('wk',5*60e3,()=>fetch('/weekend?json=1').then(r=>r.ok?r.json():null)).catch(()=>null):Promise.resolve(null);
 const getChal=code=>cached('ch:'+code,30e3,()=>fetch(`${CH}?code=${encodeURIComponent(code)}&device=${encodeURIComponent(DEVICE)}`,{headers:authHdr()}).then(r=>r.ok?r.json():null));
 const getStats=n=>API?cached('st:'+n,60e3,()=>fetch(`${API}/stats?n=${n}`).then(x=>x.ok?x.json():null)):Promise.resolve(null);
 const getFacts=()=>cached('facts',864e5,()=>fetch('data/facts.json').then(x=>x.json()));
@@ -1381,7 +1426,7 @@ async function chalBox(res){
   const put=h=>{const b=document.getElementById('chalbox');if(b)b.innerHTML=`<div class="chal">${h}</div>`;return!!b};
   if(res.chal){   // a challenge game (yours or a friend's): show the scoreboard
     const c=await getChal(res.chal.code);if(!c)return;
-    if(!put(`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>${res.own?'Your challenge':`${esc(c.host)}'s challenge`}</h3><button class="codechip" id="cpcode" aria-label="Copy challenge code ${esc(c.code)}">${esc(c.code)} ${ICON.copy}</button></div><span class="note">${status(c)}</span>${board(c)}${c.open?shareLinkRow(c.code):''}
+    if(!put(`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>${res.own?'Your challenge':chalName(c)}</h3><button class="codechip" id="cpcode" aria-label="Copy challenge code ${esc(c.code)}">${esc(c.code)} ${ICON.copy}</button></div><span class="note">${status(c)}</span>${board(c)}${c.open?shareLinkRow(c.code):''}
       <div class="two">${c.mine&&c.open?'<button class="btn" id="closech">Close it</button>':''}<button class="btn" id="viewch">Scoreboard</button></div>`))return;
     wireLink(c.code,c.host);wireCode(c.code);
     document.getElementById('viewch').onclick=()=>showChallenge(c.code);
@@ -1421,7 +1466,7 @@ function renderHistory(){
   }).join('')||'<div class="note" style="padding:10px 2px">Your finished games will show up here.</div>')
   +(pages>1?`<div class="pager"><button class="sq" id="hprev" ${HPAGE?'':'disabled'}>← Newer</button><span class="mut">Page ${HPAGE+1} of ${pages}</span><button class="sq" id="hnext" ${HPAGE<pages-1?'':'disabled'}>Older →</button></div>`:'');
   box.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const r=puzzleFor(DAILIES.find(x=>x.n===+b.dataset.n)),s=saved(r.n);s?showResults(r,s):r.n===TODAY.n?showStart():leave(r,liveSaved(r.n))});
-  box.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const q=quickList().find(x=>x.id===b.dataset.q);if(q)showResults({...puzzleFor({rounds:fromNames(q.rounds)}),n:0,quick:true,chal:q.chal},q)});
+  box.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const q=quickList().find(x=>x.id===b.dataset.q);if(q)showResults({...puzzleFor({rounds:fromNames(q.rounds,q.chal&&q.chal.weekend&&q.chal.weekend.unit)}),n:0,quick:true,chal:q.chal},q)});
   box.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>showChallenge(b.dataset.ch));
   const pv=document.getElementById('hprev'),nx=document.getElementById('hnext');
   if(pv)pv.onclick=()=>{HPAGE--;renderHistory()};if(nx)nx.onclick=()=>{HPAGE++;renderHistory()};
@@ -1441,7 +1486,7 @@ async function openChallenges(){
   const b=document.getElementById('opench');if(!b||!cs.length)return;
   b.innerHTML=`<div class="eyebrow">Open challenges</div>`+cs.map(c=>{const i=c.entries.findIndex(e=>e.you);
     return`<button class="chal" data-ch="${esc(c.code)}" style="text-align:left;font:inherit;color:inherit;cursor:pointer">
-      <h3>${(c.mine||ownChal(c.code))?'Your challenge':`${esc(c.host)}'s challenge`}</h3>
+      <h3>${(c.mine||ownChal(c.code))?'Your challenge':chalName(c)}</h3>
       <span class="note">Closes in ${leftLabel(c.closes-Date.now())} · ${c.entries.length} played${i>=0?` · you're ${ordinal(i+1)} of ${c.entries.length}`:''}</span></button>`}).join('');
   b.querySelectorAll('[data-ch]').forEach(x=>x.onclick=()=>showChallenge(x.dataset.ch));
 }
@@ -1456,7 +1501,7 @@ async function showChallenge(code){
   const me=c.entries.find(e=>e.you);
   const played=me||quickList().some(q=>q.chal&&q.chal.code===c.code);
   app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:14px">
-    <div class="head in" style="--d:1"><h2>${(c.mine||ownChal(c.code))?'Your challenge':`${esc(c.host)}'s challenge`}</h2><button class="sq" id="back">Home</button></div>
+    <div class="head in" style="--d:1"><h2>${(c.mine||ownChal(c.code))?'Your challenge':chalName(c)}</h2><button class="sq" id="back">Home</button></div>
     <div class="in" style="--d:1;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="codechip" id="cpcode" aria-label="Copy challenge code ${esc(c.code)}">${esc(c.code)} ${ICON.copy}</button><span class="note">${status(c)} · 6 rounds, the same for everyone · ${c.entries.length} played</span></div>
     <div class="in" style="--d:2">${board(c)}</div>
     ${c.open&&!played?`<div class="chal in" style="--d:3"><h3>Your turn</h3><span class="note">Six questions, 25 seconds each. You get one try.</span>${nameNote()}<button class="btn main" id="playch"><span>Play the challenge</span><span aria-hidden="true">→</span></button><span class="note" id="cherr"></span></div>`:''}
@@ -1484,8 +1529,15 @@ function showJoin(prefill=''){
       <button class="btn main" type="submit"><span>Find challenge</span><span aria-hidden="true">→</span></button>
     </form>
     <div id="joinres" aria-live="polite"></div>
+    <div id="wkcard"></div>
   </div>${footer(4)}`;
   wireNav();document.getElementById('back').onclick=showStart;
+  weekendNow().then(w=>{const el=document.getElementById('wkcard');if(!el||!w||!w.code)return;
+    el.innerHTML=`<div class="chal in" style="--d:1"><span class="eyebrow">${w.open?'This weekend':'Last weekend'}</span><h3>${esc(w.tagline)}</h3>
+      <span class="note">${w.open?`6 questions, all measured in ${esc(w.plural)} · closes in ${leftLabel(w.closes-Date.now())}`:`Measured in ${esc(w.plural)} · closed`}</span>
+      <button class="btn ${w.open?'main':''}" id="wkgo"><span>${w.open?'Play the weekend challenge':'See the final scoreboard'}</span><span aria-hidden="true">→</span></button></div>`;
+    document.getElementById('wkgo').onclick=async()=>{if(!w.open)return showChallenge(w.code);const c=await getChal(w.code);if(!c)return;
+      const played=c.entries.some(x=>x.you)||quickList().some(q=>q.chal&&q.chal.code===c.code);played?showChallenge(c.code):quick(c)}});
   const inp=document.getElementById('code');inp.focus();
   inp.oninput=()=>{inp.value=inp.value.toUpperCase().replace(/[^A-Z0-9]/g,'')};
   document.getElementById('joinf').onsubmit=async e=>{
@@ -1496,7 +1548,7 @@ function showJoin(prefill=''){
     if(!c){out.innerHTML=`<p class="note">We couldn't find a challenge with the code <b>${esc(code)}</b>. Check the letters and try again.</p>`;return}
     const played=c.entries.some(x=>x.you)||quickList().some(q=>q.chal&&q.chal.code===c.code);
     out.innerHTML=`<div class="chal in" style="--d:1"><h3>Challenge found!</h3>
-      <span class="note">${c.host?`${esc(c.host)}'s challenge`:'Daily Banana challenge'} · ${status(c)} · ${c.entries.length} played</span>
+      <span class="note">${c.host||c.weekend?chalName(c):'Daily Banana challenge'} · ${status(c)} · ${c.entries.length} played</span>
       ${c.open&&!played?`${nameNote()}<button class="btn main" id="startch"><span>Start challenge</span><span aria-hidden="true">→</span></button>`
         :`<span class="note">${c.open?'You\'ve already played this one.':'This challenge has closed.'}</span><button class="btn" id="viewch">See the scoreboard</button>`}</div>`;
     const st=document.getElementById('startch');if(st)st.onclick=()=>quick(c);

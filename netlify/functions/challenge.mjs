@@ -28,7 +28,7 @@ async function view(store, code, device, user) {
   const entries = (await getAll(store, `entries/${code}/`))
     .map((e) => ({ name: e.name, score: e.score, marks: e.marks, at: e.at, you: e.key.endsWith('/' + device) }))
     .sort((a, b) => b.score - a.score || a.at - b.at);
-  return { code, host: c.host, rounds: c.rounds, created: c.created, closes: c.closes, open: isOpen(c), closed: !!c.closed, mine: owns(c, device, user), entries };
+  return { code, host: c.host, weekend: c.weekend || null, rounds: c.rounds, created: c.created, closes: c.closes, open: isOpen(c), closed: !!c.closed, mine: owns(c, device, user), entries };
 }
 
 export default async (req) => {
@@ -80,7 +80,7 @@ export default async (req) => {
     return json(await view(store, code, device, user));
   }
   if (b.action === 'close') {
-    if (!owns(c, device, user)) return json({ error: 'Only the person who started it can close it.' }, 403);
+    if (c.creator === 'weekend' || !owns(c, device, user)) return json({ error: 'Only the person who started it can close it.' }, 403);
     c.closed = true; c.closes = Math.min(c.closes, now);
     await store.setJSON(`challenges/${code}`, c);
     await store.delete(`hosting/${c.creator}`).catch(() => {});
