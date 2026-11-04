@@ -241,6 +241,9 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .badge .bi{flex:none;display:flex;filter:grayscale(1);opacity:.35}
 .badge.on .bi{filter:none;opacity:1}
 .badge .bt{display:flex;flex-direction:column;gap:2px;min-width:0}
+
+.tip{position:absolute;z-index:30;max-width:260px;display:flex;gap:8px;align-items:flex-start;background:var(--ink);color:var(--bg);padding:10px 12px;font-size:14px;line-height:1.4;box-shadow:4px 4px 0 var(--accsh)}
+.tip svg{flex:none;margin-top:1px}
 button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cursor:pointer}
 .chal{border:2px solid var(--ink);box-shadow:4px 4px 0 var(--accsh);background:var(--card);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 .chal h3{margin:0;font-size:18px}
@@ -412,6 +415,7 @@ const ICON={
   right:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
   left:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
   check:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>',
+  download:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 20h14"/></svg>',
   copy:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
 };
 
@@ -470,6 +474,18 @@ function judge(guess,q){
   return{guess,p,off:guess/q.ans};
 }
 const mark=p=>p>=90?'🍌':p>=70?'🟫':p>=40?'🟨':'⬜';   // darker the closer you get, then the banana
+// small tip under the bananas box
+function banTip(el){
+  const old=document.getElementById('banpop');if(old){old.remove();el.setAttribute('aria-expanded','false');return}
+  const t=document.createElement('div');t.id='banpop';t.className='tip';t.setAttribute('role','tooltip');
+  t.innerHTML=`${BANANA(18)}<span>You earn a banana for every daily round you score <b>90 or more</b>, meaning your guess was within about 10% of the answer.</span>`;
+  document.body.appendChild(t);const b=el.getBoundingClientRect(),w=t.offsetWidth;
+  t.style.left=Math.max(12,Math.min(innerWidth-w-12,b.right+scrollX-w))+'px';t.style.top=(b.bottom+scrollY+10)+'px';
+  el.setAttribute('aria-expanded','true');
+  const off=()=>{t.remove();el.setAttribute('aria-expanded','false');removeEventListener('click',off);removeEventListener('keydown',esc_);removeEventListener('resize',off)};
+  const esc_=e=>{if(e.key==='Escape')off()};
+  setTimeout(()=>{addEventListener('click',off);addEventListener('keydown',esc_);addEventListener('resize',off)});
+}
 function toast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.className='toast';t.setAttribute('role','status');document.body.appendChild(t)}
   t.textContent=msg;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2200)}
 const markA=a=>!a||a.guess==null?'❌':mark(a.p||0);   // ❌ = no guess (time ran out)
@@ -581,12 +597,14 @@ const nav=(right='')=>`<header class="nav in" style="--d:0">
 const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · v${VERSION}<br><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></div>`;
 function wireNav(){
   const on=(id,f)=>{const el=document.getElementById(id);if(el)el.onclick=f};
-  on('home',showStart);on('menu',()=>showMenu());on('theme',toggleTheme);on('tobadges',()=>showMenu('badges'));
+  on('home',showStart);on('menu',()=>showMenu());on('theme',toggleTheme);on('banhelp',e=>{e.stopPropagation();banTip(e.currentTarget)});
 }
 const statBoxes=()=>{const sc=playedDailies().map(x=>x.res.total);return`
   <div class="stat"><b class="num">${streak()}</b><span>day streak</span></div>
   <div class="stat"><b class="num">${sc.length?fmt(Math.max(...sc)):'–'}</b><span>best</span></div>
-  <button class="stat" id="tobadges"><b class="num">${badgeCount(store.get('badges',{}))}</b><span>badges</span></button>`};
+  <button class="stat" id="banhelp" aria-expanded="false" aria-describedby="banpop"><b class="num">${fmt(dailyBananas())}</b><span>bananas</span></button>`};
+// lifetime bananas (rounds scored 90+) from dailies only, so it can't be farmed in quick play
+const dailyBananas=()=>playedDailies().reduce((t,x)=>t+(x.res.answers||[]).filter(a=>(a&&a.p||0)>=90).length,0);
 // one square per round
 function squares(answers,cur){
   let h='';
@@ -906,7 +924,7 @@ function showResults(r,res){
   const shareTxt=`${title} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n${marks}\n${location.host||'dailybanana.io'}`;
   const SHARE=`<div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(title)} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n<span class="emo">${marks}</span>\n${esc(location.host||'dailybanana.io')}</div>
     <div class="legend-row in" style="--d:4">${LEGEND.split(' · ').map(x=>{const [e,...t]=x.split(' ');return`<span><span class="emo">${e}</span> ${t.join(' ')}</span>`}).join('')}</div>
-    <div class="cprow in" style="--d:5"><button class="btn main" id="cp"><span id="cpl">Copy results</span>${ICON.copy}</button><button class="btn sharebtn" id="shr" aria-label="Share">${ICON.share}</button></div>`;
+    <div class="cprow in" style="--d:5"><button class="btn main" id="cp"><span id="cpl">Copy results</span>${ICON.copy}</button><button class="btn sharebtn" id="shr" aria-label="Share">${ICON.share}</button>${r.quick?'':`<button class="btn sharebtn" id="dl" aria-label="Download share image">${ICON.download}</button>`}</div>`;
   const PLAYBTN=`<button class="btn in" style="--d:6;width:100%" id="again">Play again</button>`;
   const PLAY=`<div class="fact in" style="--d:7" id="fact" hidden><span class="eyebrow">Fun fact</span><p id="factt"></p></div>
     <div class="disclaim in" style="--d:7">All sizes are estimates: typical sizes drawn from publicly available sources, and rounded. Real things vary, so answers are approximate.</div>
@@ -944,6 +962,7 @@ function showResults(r,res){
     toast('Link copied');
   };
   showFact(r);
+  const dl=document.getElementById('dl');if(dl)dl.onclick=()=>shareImage(r,res,dl);
   document.getElementById('cp').onclick=async()=>{
     const lab=document.getElementById('cpl');
     try{await navigator.clipboard.writeText(shareTxt);lab.textContent='Copied!';toast('Results copied to your clipboard');log('share',{what:'results',device:DEVICE})}catch(_){
@@ -1062,12 +1081,65 @@ function simCrowd(r){
   return{players:0,totals,rounds};
 }
 const beat=(xs,v)=>{if(!xs.length)return null;let lo=0,eq=0;for(const x of xs){if(x<v)lo++;else if(x===v)eq++}return Math.min(99,Math.max(1,Math.round(100*(lo+eq/2)/xs.length)))};
+async function rankText(r,res){
+  const st=await getStats(r.n),d=st&&st.players>=REAL_AFTER?st:simCrowd(r),b=beat(d.totals,res.total);
+  return b>=50?`Top ${Math.max(1,100-b)}% of players today`:`Better than ${b}% of players today`;
+}
+// ---------- share image: a 1080×1350 card (Instagram portrait), no answers or item names ----------
+async function shareImage(r,res,btn){
+  btn.disabled=true;
+  try{
+    const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+    const INK='#3B2412',MUT='#6B4F30',CARD='#FFFAE0',ACC='#FFD43B',ACCSH='#B97E00',F='"Space Grotesk",system-ui,sans-serif';
+    await Promise.all(['500','700'].map(w=>document.fonts.load(`${w} 60px "Space Grotesk"`).catch(()=>{})));
+    const font=(w,px)=>{x.font=`${w} ${px}px ${F}`};
+    const ban=(px,cx,cy,rot=0,alpha=1)=>{const C={b:INK,y:'#FFD43B',l:'#FFEC8C',d:'#E8A317',s:'#7A4A1E'},u=px/16;
+      x.save();x.globalAlpha=alpha;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.translate(-px/2,-px*17/32);
+      BANANA_PX.forEach((row,yy)=>[...row].forEach((k,xx)=>{if(C[k]){x.fillStyle=C[k];x.fillRect(xx*u,yy*u,u+.5,u+.5)}}));x.restore()};
+    const box=(X,Y,w,h,fill,sh=6,shc=INK,bw=4)=>{x.fillStyle=shc;x.fillRect(X+sh,Y+sh,w,h);x.fillStyle=fill;x.fillRect(X,Y,w,h);x.lineWidth=bw;x.strokeStyle=INK;x.strokeRect(X+bw/2,Y+bw/2,w-bw,h-bw)};
+    const L=84,R=W-84,ans=res.answers||[];
+    x.fillStyle='#FFE36E';x.fillRect(0,0,W,H);
+    ban(200,890,370,16,.35);                              // the floating banana, behind everything
+    box(L,84,84,84,CARD);ban(56,L+42,126);
+    font(700,46);x.fillStyle=INK;x.textBaseline='middle';x.fillText('dailybanana.io',L+104,128);
+    const chip=`Daily #${pad3(r.n)}`;font(700,36);const cw=x.measureText(chip).width+48;
+    box(R-cw-6,92,cw,68,ACC);x.fillStyle=INK;x.fillText(chip,R-cw-6+24,128);
+    x.textBaseline='alphabetic';
+    const [yy,mm,dd]=r.date.split('-');font(500,44);x.fillStyle=MUT;x.fillText(`${fmtDate(r.date)}, ${yy}`,L,300);
+    font(700,230);x.fillStyle=INK;try{x.letterSpacing='-6px'}catch(_){}x.fillText(fmt(res.total),L-6,505);const sw=x.measureText(fmt(res.total)).width;try{x.letterSpacing='0px'}catch(_){}
+    font(700,72);x.fillStyle=MUT;x.fillText(`/ ${ROUNDS*MAX_PTS}`,L+sw+12,505);
+    font(700,52);x.fillStyle=INK;x.fillText(await rankText(r,res),L,610);
+    const g=20,sq=(R-L-g*(ROUNDS-1))/ROUNDS,sy=680;
+    for(let i=0;i<ROUNDS;i++){const a=ans[i]||{},p=a.p||0,X=L+i*(sq+g),miss=a.guess==null||p<40,bull=!miss&&p>=90;
+      const fill=bull?CARD:miss?CARD:p>=70?'#8A5A2B':ACC,col=p>=70&&!bull?'#FFF3C9':miss?MUT:INK;
+      if(miss){x.fillStyle=fill;x.fillRect(X,sy,sq,sq);x.lineWidth=4;x.strokeStyle=MUT;x.strokeRect(X+2,sy+2,sq-4,sq-4)}else box(X,sy,sq,sq,fill,5);
+      x.fillStyle=col;x.textAlign='center';
+      if(bull){ban(54,X+sq/2,sy+sq/2-20);font(700,34);x.fillText(String(p),X+sq/2,sy+sq/2+46)}
+      else{font(700,44);x.fillText(a.guess==null?'–':String(p),X+sq/2,sy+sq/2+16)}
+      x.textAlign='left'}
+    x.fillStyle=INK;x.fillRect(L,878,R-L,4);
+    // three stats spread evenly across the width
+    const today=ans.filter(a=>(a&&a.p||0)>=90).length,stats=[[fmt(today),'bananas today',true],[fmt(dailyBananas()),'bananas all time'],[fmt(streak()),'day streak']];
+    const ws=stats.map(([v,l,ic])=>{font(700,80);const vw=x.measureText(v).width+(ic?78:0);font(400,34);return Math.max(vw,x.measureText(l).width)});
+    const gap=(R-L-ws.reduce((a,b)=>a+b,0))/(stats.length-1);let sx=L;
+    stats.forEach(([v,l,ic],i)=>{let vx=sx;if(ic){ban(64,sx+32,972);vx+=78}font(700,80);x.fillStyle=INK;x.fillText(v,vx,1000);font(400,34);x.fillStyle=MUT;x.fillText(l,sx,1050);sx+=ws[i]+gap});
+    x.fillStyle=ACCSH;x.fillRect(L+8,1156,R-L,118);x.fillStyle=INK;x.fillRect(L,1148,R-L,118);
+    font(700,44);x.textBaseline='middle';x.fillStyle='#FFF0A0';x.fillText('Can you beat me?',L+44,1208);
+    x.fillStyle=ACC;x.textAlign='right';x.fillText('dailybanana.io',R-44,1208);
+    const blob=await new Promise(ok=>c.toBlob(ok,'image/png'));
+    const name=`daily-banana-${pad3(r.n)}.png`,file=new File([blob],name,{type:'image/png'});
+    log('share',{what:'image',device:DEVICE});
+    if(navigator.canShare&&navigator.canShare({files:[file]})&&matchMedia('(pointer:coarse)').matches){
+      try{await navigator.share({files:[file],title:'Daily Banana'})}catch(_){}
+    }else{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Image saved')}
+  }catch(e){toast('Couldn\'t make the image')}
+  btn.disabled=false;
+}
 async function showRank(r,res){
   const st=await getStats(r.n);
   const real=st&&st.players>=REAL_AFTER,d=real?st:simCrowd(r);
   const el=document.getElementById('rank');if(!el)return;
-  const b=beat(d.totals,res.total);
-  el.textContent=b>=50?`Top ${Math.max(1,100-b)}% of players today`:`Better than ${b}% of players today`;
+  el.textContent=await rankText(r,res);
   res.answers.forEach((a,i)=>{const sp=document.getElementById('pr'+i);if(sp&&d.rounds[i])sp.textContent=` · better than ${beat(d.rounds[i],a.p||0)}%`});
   // where the typical player guessed (median guess), once a few people have played
   if(st&&st.guess_n>=3&&Array.isArray(st.guesses)){
