@@ -399,7 +399,9 @@ const BANANA_PX=[
 '.bbbbbbbbb......',
 ''];
 const BANANA=(px=16)=>{const C={b:'#3B2412',y:'#FFD43B',l:'#FFEC8C',d:'#E8A317',s:'#7A4A1E'};let r='';
-  BANANA_PX.forEach((row,y)=>[...row].forEach((c,x)=>{if(C[c])r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${C[c]}"/>`}));
+  // one path per colour, each pixel a hair oversized, so a tilted or faded banana shows no seams between pixels
+  const P={};BANANA_PX.forEach((row,y)=>[...row].forEach((c,x)=>{if(C[c])P[c]=(P[c]||'')+`M${x-.03} ${y-.03}h1.06v1.06h-1.06z`}));
+  Object.entries(P).forEach(([c,d])=>r+=`<path d="${d}" fill="${C[c]}"/>`);
   return`<svg width="${px}" height="${Math.round(px*17/16)}" viewBox="0 0 16 17" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`};
 const SITE='https://playsmidgen.com/?utm_source=dailybanana&utm_medium=game&utm_campaign=footer';
 const app=document.getElementById('app');
@@ -1091,6 +1093,12 @@ async function rankText(r,res){
   return b>=50?`Top ${Math.max(1,100-b)}% of players today`:`Better than ${b}% of players today`;
 }
 // ---------- share image: a 1080×1350 card (Instagram portrait), no answers or item names ----------
+// the pixel banana as a small image (16×17, each pixel blown up 16×), cached per palette
+const SPRITES={};
+function bananaSprite(C){const key=JSON.stringify(C);if(SPRITES[key])return SPRITES[key];
+  const S=16,o=document.createElement('canvas');o.width=16*S;o.height=17*S;const g=o.getContext('2d');
+  BANANA_PX.forEach((row,yy)=>[...row].forEach((k,xx)=>{if(C[k]){g.fillStyle=C[k];g.fillRect(xx*S,yy*S,S,S)}}));
+  return SPRITES[key]=o}
 async function shareImage(r,res,btn){
   btn.disabled=true;
   try{
@@ -1099,8 +1107,8 @@ async function shareImage(r,res,btn){
     await Promise.all(['500','700'].map(w=>document.fonts.load(`${w} 60px "Space Grotesk"`).catch(()=>{})));
     const font=(w,px)=>{x.font=`${w} ${px}px ${F}`};
     const ban=(px,cx,cy,rot=0,alpha=1)=>{const C={b:INK,y:'#FFD43B',l:'#FFEC8C',d:'#E8A317',s:'#7A4A1E'},u=px/16;
-      x.save();x.globalAlpha=alpha;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.translate(-px/2,-px*17/32);
-      BANANA_PX.forEach((row,yy)=>[...row].forEach((k,xx)=>{if(C[k]){x.fillStyle=C[k];x.fillRect(xx*u,yy*u,u+.5,u+.5)}}));x.restore()};
+      const o=bananaSprite(C),hh=px*17/16;   // drawn whole first, so faded or tilted bananas get no seams
+      x.save();x.globalAlpha=alpha;x.imageSmoothingEnabled=!!rot;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.drawImage(o,-px/2,-hh/2,px,hh);x.restore()};
     const box=(X,Y,w,h,fill,sh=6,shc=INK,bw=4)=>{x.fillStyle=shc;x.fillRect(X+sh,Y+sh,w,h);x.fillStyle=fill;x.fillRect(X,Y,w,h);x.lineWidth=bw;x.strokeStyle=INK;x.strokeRect(X+bw/2,Y+bw/2,w-bw,h-bw)};
     const L=84,R=W-84,ans=res.answers||[];
     x.fillStyle='#FFE36E';x.fillRect(0,0,W,H);
@@ -1151,8 +1159,8 @@ async function drawRound(q,a,{generic=false}={}){
     await Promise.all(['500','700'].map(w=>document.fonts.load(`${w} 60px "Space Grotesk"`).catch(()=>{})));
     const font=(w,px)=>{x.font=`${w} ${px}px ${F}`};
     const ban=(px,cx,cy,rot=0,alpha=1)=>{const C={b:'#3B2412',y:'#FFD43B',l:'#FFEC8C',d:'#E8A317',s:'#7A4A1E'},u=px/16;
-      x.save();x.globalAlpha=alpha;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.translate(-px/2,-px*17/32);
-      BANANA_PX.forEach((row,yy)=>[...row].forEach((k,xx)=>{if(C[k]){x.fillStyle=C[k];x.fillRect(xx*u,yy*u,u+.5,u+.5)}}));x.restore()};
+      const o=bananaSprite(C),hh=px*17/16;   // drawn whole first, so faded or tilted bananas get no seams
+      x.save();x.globalAlpha=alpha;x.imageSmoothingEnabled=!!rot;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.drawImage(o,-px/2,-hh/2,px,hh);x.restore()};
     const box=(X,Y,w,h,fill,sh,shc)=>{x.fillStyle=shc;x.fillRect(X+sh,Y+sh,w,h);x.fillStyle=fill;x.fillRect(X,Y,w,h);x.lineWidth=4;x.strokeStyle=INK;x.strokeRect(X+2,Y+2,w-4,h-4)};
     const L=84,R=W-84,p=a&&a.guess!=null?a.p||0:0;
     x.fillStyle=BG;x.fillRect(0,0,W,H);
