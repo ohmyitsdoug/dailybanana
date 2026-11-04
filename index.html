@@ -364,7 +364,7 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 // =====================================================================
 const CFG=Object.assign({api:'/.netlify/functions'},window.MATRYO_CONFIG||{});
 const API=CFG.api;   // Netlify server functions: logging, shared stats, words added after launch
-const VERSION='0.7';
+const VERSION='1.0';
 // v0.5 "Banana for Scale": 5 quick rounds a day. "How many bananas long is a school bus?"
 // Answer with a number. Points come from how far off you are, measured in multiples:
 //   within 10% = 100, sliding down to 0 at 10x too high or too low.
@@ -578,7 +578,7 @@ const nav=(right='')=>`<header class="nav in" style="--d:0">
   <button class="logo" id="home" aria-label="Home"><span class="m" aria-hidden="true">${BANANA(18)}</span>dailybanana.io</button>
   <div class="r">${right}<button class="sq" id="menu">Menu</button><button class="sq icon" id="theme" aria-label="Switch light or dark mode">${ICON.sun}${ICON.moon}</button></div>
 </header>`;
-const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · v${VERSION} beta<br><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></div>`;
+const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · v${VERSION}<br><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></div>`;
 function wireNav(){
   const on=(id,f)=>{const el=document.getElementById(id);if(el)el.onclick=f};
   on('home',showStart);on('menu',()=>showMenu());on('theme',toggleTheme);on('tobadges',()=>showMenu('badges'));
