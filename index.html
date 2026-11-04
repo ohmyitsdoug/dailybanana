@@ -881,7 +881,7 @@ function showReveal(){
       <div class="answer in" style="--d:1">${esc(the(q.B).replace(/^./,c=>c.toUpperCase()))} is about <b class="num">${fmt(nice(q.ans))} ${esc(q.ans>=1.5?q.A.plural:q.A.name)}</b> ${esc(q.B.dim)}.</div>
       <div class="in" style="--d:2">${guessScale(q,a)}</div>
       <div class="note in" style="--d:2">${esc(q.B.name.replace(/^./,c=>c.toUpperCase()))}: ${len(q.B.cm)} · ${esc(q.A.name)}: ${len(q.A.cm)}${a&&a.guess!=null?` · you guessed ${fmt(nice(a.guess))}`:''}</div>
-      <div class="cprow in" style="--d:3"><button class="btn main" id="next"><span>${last?'See results':'Next round'}</span><span aria-hidden="true">→</span></button>${S.r.quick?`<button class="btn sharebtn" id="dlq" aria-label="Download this round as an image">${ICON.download}</button>`:''}</div>
+      <div class="cprow in" style="--d:3"><button class="btn main" id="next"><span>${last?'See results':'Next round'}</span><span aria-hidden="true">→</span></button>${S.r.quick?`<button class="btn sharebtn" id="dlq" aria-label="Share this round as an image">${ICON.share}</button>`:''}</div>
     </div>
   </div>`;
   document.getElementById('pause').onclick=pause;
@@ -944,7 +944,7 @@ function showResults(r,res){
   const shareTxt=`${title} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n${marks}\n${location.host||'dailybanana.io'}`;
   const SHARE=`<div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(title)} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n<span class="emo">${marks}</span>\n${esc(location.host||'dailybanana.io')}</div>
     <div class="legend-row in" style="--d:4">${LEGEND.split(' · ').map(x=>{const [e,...t]=x.split(' ');return`<span><span class="emo">${e}</span> ${t.join(' ')}</span>`}).join('')}</div>
-    <div class="cprow in" style="--d:5"><button class="btn main" id="cp"><span id="cpl">Copy results</span>${ICON.copy}</button><button class="btn sharebtn" id="shr" aria-label="Share">${ICON.share}</button>${r.quick?'':`<button class="btn sharebtn" id="dl" aria-label="Download share image">${ICON.download}</button>`}</div>`;
+    <div class="cprow in" style="--d:5"><button class="btn main" id="cp"><span id="cpl">Copy results</span>${ICON.copy}</button>${r.quick?'':`<button class="btn sharebtn" id="dl" aria-label="Share your results as an image">${ICON.share}</button>`}</div>`;
   const PLAYBTN=`<button class="btn in" style="--d:6;width:100%" id="again">Play again</button>`;
   const PLAY=`<div class="fact in" style="--d:7" id="fact" hidden><span class="eyebrow">Fun fact</span><p id="factt"></p></div>
     <div class="disclaim in" style="--d:7">All sizes are estimates: typical sizes drawn from publicly available sources, and rounded. Real things vary, so answers are approximate.</div>
@@ -974,13 +974,7 @@ function showResults(r,res){
   tick=setInterval(()=>{const cd=document.getElementById('cd');if(cd)cd.textContent=untilMidnight();else clearInterval(tick)},1000);
   document.getElementById('again').onclick=()=>quick();
   SHOWN={r,res};if(r.quick)chalBox(res);else showRank(r,res);
-  document.getElementById('shr').onclick=async()=>{   // the device's share menu, with the link copied too
-    const url=location.origin+'/';
-    try{await navigator.clipboard.writeText(url)}catch(_){}
-    log('share',{what:'results',device:DEVICE});
-    try{if(navigator.share){await navigator.share({title:'Daily Banana',text:shareTxt,url});return}}catch(_){return}
-    toast('Link copied');
-  };
+
   showFact(r);
   const dl=document.getElementById('dl');if(dl)dl.onclick=()=>shareImage(r,res,dl);
   document.getElementById('cp').onclick=async()=>{
@@ -1159,7 +1153,7 @@ async function shareImage(r,res,btn){
     const name=`daily-banana-${pad3(r.n)}.png`,file=new File([blob],name,{type:'image/png'});
     log('share',{what:'image',device:DEVICE});
     if(navigator.canShare&&navigator.canShare({files:[file]})&&matchMedia('(pointer:coarse)').matches){
-      try{await navigator.share({files:[file],title:'Daily Banana'})}catch(_){}
+      try{await navigator.share({files:[file]})}catch(_){}
     }else{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Image saved')}
   }catch(e){toast('Couldn\'t make the image')}
   btn.disabled=false;
@@ -1257,7 +1251,7 @@ async function roundImage(q,a,btn){
     const blob=await new Promise(ok=>c.toBlob(ok,'image/png'));
     const name='daily-banana-round.png',file=new File([blob],name,{type:'image/png'});
     log('share',{what:'image',device:DEVICE});
-    if(navigator.canShare&&navigator.canShare({files:[file]})&&matchMedia('(pointer:coarse)').matches){try{await navigator.share({files:[file],title:'Daily Banana'})}catch(_){}}
+    if(navigator.canShare&&navigator.canShare({files:[file]})&&matchMedia('(pointer:coarse)').matches){try{await navigator.share({files:[file]})}catch(_){}}
     else{const u=URL.createObjectURL(blob),el=document.createElement('a');el.href=u;el.download=name;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Image saved')}
   }catch(e){toast('Couldn\'t make the image')}
   btn.disabled=false;
