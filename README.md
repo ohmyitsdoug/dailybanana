@@ -12,6 +12,7 @@ data/dailies.json   365 dailies, 6 rounds each (built by tools/make_scale.py)
 privacy.html        privacy policy and terms (/privacy, /terms)
 about.html, faq.html  public About and FAQ (built by tools/make_pages.mjs; edit the text there and rerun)
 llms.txt, robots.txt  for AI tools and search engines; /sitemap.xml is built by netlify/functions/sitemap.mjs
+2f4c0fdcc9a04615b0548d5f3037c5d5.txt  IndexNow key file; netlify/functions/indexnow.mjs pings new archive pages daily at 12:10 UTC
 netlify/functions/  log (anonymous visits, games, shares), stats (daily ranking), auth + sync (accounts),
                     challenge (challenge links), admin (admin numbers),
                     archive (/archive and /archive/000: public past dailies, posted once over everywhere)
