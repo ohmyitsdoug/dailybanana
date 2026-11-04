@@ -359,7 +359,9 @@ button.stat{font:inherit;color:inherit;background:var(--bg);text-align:left;curs
 .stat,.sqr,.list,.path,.board,.share,.badge,.pt,.mlegend,.legend-row,.field,.toggle,.pager,.scale,.disclaim,.prow{background:var(--bg)}
 .sqr.on{background:var(--card)}
 /* every block on a screen (text too) gets the page colour; :where() keeps this weaker than any box's own colour */
-:where(.narrow,.main-col,.side-col,.page) > *{background:var(--bg)}
+:where(.narrow,.main-col,.side-col,.page) > :where(:not(.spacer,.daily,.side-col,.main-col,.cta,.stats)){background:var(--bg)}
+/* home: only the paragraphs get a fill, not the chip or the big title */
+:where(.daily) > :where(p,.fine){background:var(--bg)}
 </style>
 </head>
 <body>
