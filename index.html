@@ -95,6 +95,10 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .daily p{margin:0;font-size:16px;max-width:34ch}
 .fine{font-size:13px;color:var(--mut)}
 .foot{font-size:12px;color:var(--mut);text-align:center}
+.kofiw{text-align:center}
+.kofi{display:inline-flex;align-items:center;gap:6px;margin:4px 0;padding:8px 14px;border:2px solid var(--ink);background:var(--card);color:var(--ink);font-weight:700;font-size:14px;text-decoration:none;box-shadow:3px 3px 0 var(--accsh)}
+.kofi:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--accsh)}
+.dellink{display:block;margin:28px auto 0;background:none;border:0;color:var(--mut);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:6px}
 .cta{display:flex;flex-direction:column;gap:12px}
 .cta2{display:grid;grid-template-columns:2fr 1fr;gap:12px}
 .cta2 .btn{padding:0 12px;justify-content:center}
@@ -347,6 +351,7 @@ button.stat{font:inherit;color:inherit;background:var(--bg);text-align:left;curs
   .home .stats .stat:first-child{grid-column:1/-1;box-shadow:5px 5px 0 var(--ink);background:var(--card);padding:18px 20px}
   .home .stats .stat:first-child b{font-size:40px}
   .footer{border-top:2px solid var(--ink);margin:0 -32px;padding:18px 32px;text-align:left}
+
   .page.play{align-items:flex-start}
   .play .ends{font-size:56px;letter-spacing:-2px}
   .play .ask b{font-size:52px;letter-spacing:-2px}
@@ -622,7 +627,10 @@ const nav=(right='')=>`<header class="nav in" style="--d:0">
   <button class="logo" id="home" aria-label="Home"><span class="m" aria-hidden="true">${BANANA(18)}</span>dailybanana.io</button>
   <div class="r">${right}<button class="sq" id="menu">Menu</button><button class="sq icon" id="theme" aria-label="Switch light or dark mode">${ICON.sun}${ICON.moon}</button></div>
 </header>`;
-const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · v${VERSION}<br><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></div>`;
+const KOFI='https://ko-fi.com/dougpuccetti';
+const kofiBtn=(d)=>`<div class="kofiw in" style="--d:${d}"><a class="kofi" href="${KOFI}" target="_blank" rel="noopener">🍌 Buy me a banana</a></div>`;
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.kofi'))log('kofi',{device:DEVICE})});
+const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}"><div class="ftxt">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · v${VERSION}<br><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></div></div>`;
 function wireNav(){
   const on=(id,f)=>{const el=document.getElementById(id);if(el)el.onclick=f};
   on('home',showStart);on('menu',()=>showMenu());on('theme',toggleTheme);on('banhelp',e=>{e.stopPropagation();banTip(e.currentTarget)});
@@ -755,9 +763,10 @@ function showMenu(jump){
       <button class="lrow" id="opt-motion"><span>Animations</span><span class="toggle ${SET.motion?'on':''}" aria-hidden="true"></span></button>
       <button class="lrow" id="opt-bgb" aria-pressed="${SET.bgb}"><span>Background bananas</span><span class="toggle ${SET.bgb?'on':''}" aria-hidden="true"></span></button>
       ${SESSION&&SESSION.user.admin?'<a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">→</span></a><button class="lrow" id="opt-social"><span>Social post image</span><span class="mut">→</span></button>':''}
-      ${SESSION?`<button class="lrow" id="delacct"><span>Delete my account</span><span class="mut">Can't be undone</span></button>`:''}
     </div>
     <a class="btn social in" style="--d:7" href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span>Follow us on Instagram</span></a>
+    ${kofiBtn(7)}
+    ${SESSION?`<button class="dellink in" style="--d:7" id="delacct">Delete my account</button>`:''}
   </div>${footer(7)}`;
   wireNav();
   renderHistory();
@@ -961,6 +970,7 @@ function showResults(r,res){
     <div class="cprow in" style="--d:5"><button class="btn main" id="cp"><span id="cpl">Copy results</span>${ICON.copy}</button>${r.quick?'':`<button class="btn sharebtn" id="dl" aria-label="Share your results as an image">${ICON.share}</button>`}</div>`;
   const PLAYBTN=`<button class="btn in" style="--d:6;width:100%" id="again">Play again</button>`;
   const PLAY=`<div class="fact in" style="--d:7" id="fact" hidden><span class="eyebrow">Fun fact</span><p id="factt"></p></div>
+    ${kofiBtn(7)}
     <div class="disclaim in" style="--d:7">All sizes are estimates: typical sizes drawn from publicly available sources, and rounded. Real things vary, so answers are approximate.</div>
     <div class="foot in" style="--d:7">${r.quick?'':`Next daily in <span class="num" id="cd">${untilMidnight()}</span> · `}© 2026 · <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a></div>`;
   const top=`    <div class="sumrow in" style="--d:1">

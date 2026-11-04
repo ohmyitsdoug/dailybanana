@@ -5,6 +5,7 @@
 //   { kind:"quick", score, points:[6], chal, device }         a finished quick game (chal: it was a challenge)
 //   { kind:"start", mode:"daily"|"quick", puzzle, chal, device }  a game was started (daily: once per device per puzzle)
 //   { kind:"share", what:"results"|"challenge", device }      someone copied their results or a challenge link
+//   { kind:"kofi", device }                                   tapped Buy me a banana (one per device per day)
 //   { kind:"backfill", puzzle, score, points, guesses, device } one time: guesses for a daily finished before they were sent
 // Netlify Blobs keys: seen/{device} {first day} · visits/{day}/{device} {first} · plays/{puzzle}/{id} · quick/{day}/{id} · shares/{day}/{id}
 import { db, cleanDevice, day, getAll } from '../lib/db.mjs';
@@ -73,6 +74,10 @@ export default async (req) => {
   }
   if (b.kind === 'share') {
     await store.setJSON(`shares/${today}/${id()}`, { what: b.what === 'challenge' ? 'challenge' : 'results', device });
+    return new Response('ok');
+  }
+  if (b.kind === 'kofi') {
+    await store.setJSON(`kofi/${today}/${device}`, { at: Date.now() });
     return new Response('ok');
   }
   return new Response('unknown kind', { status: 400 });

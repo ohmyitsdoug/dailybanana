@@ -24,9 +24,9 @@ export default async (req) => {
   if (from < SINCE.games) from = SINCE.games;
   if (from > to) from = to;
 
-  const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users, seenAll, signins] = await Promise.all([
+  const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users, seenAll, signins, kofi] = await Promise.all([
     getAll(store, 'plays/'), getAll(store, 'quick/'), getAll(store, 'starts/daily/'), getAll(store, 'starts/quick/'),
-    getAll(store, 'visits/'), getAll(store, 'shares/'), getAll(store, 'challenges/'), getAll(store, 'entries/'), getAll(store, 'users/'), getAll(store, 'seen/'), getAll(store, 'signins/'),
+    getAll(store, 'visits/'), getAll(store, 'shares/'), getAll(store, 'challenges/'), getAll(store, 'entries/'), getAll(store, 'users/'), getAll(store, 'seen/'), getAll(store, 'signins/'), getAll(store, 'kofi/'),
   ]);
   // one record per game, with its Eastern day
   const dailies = []; const seenDaily = new Set();
@@ -123,6 +123,7 @@ export default async (req) => {
     conversion: visitors.size ? pct(new Set(gR.map((g) => g.device).filter((d) => visitors.has(d))).size, visitors.size) : null,
     share_results: shR.filter((s) => s.what === 'results').length,
     share_challenge: shR.filter((s) => s.what === 'challenge').length,
+    kofi: kofi.filter((k) => inR(k.key.split('/')[1], from, to)).length,
     accounts: users.filter((u) => u.created && inR(ET(u.created), from, to)).length,
     points: gR.reduce((t, g) => t + (g.score || 0), 0),
   };
