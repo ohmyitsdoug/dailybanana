@@ -280,6 +280,8 @@ button.stat{font:inherit;color:inherit;background:var(--bg);text-align:left;curs
 .welcome .box>*{flex:none}
 .welcome #wgo{position:sticky;bottom:0}
 .welcome .box:focus{outline:none}
+.btn.danger{background:#B3261E;color:#fff;box-shadow:4px 4px 0 var(--ink)}
+.welcome .btn{justify-content:center}
 @media (max-height:700px){.welcome .box{gap:10px;padding:16px}.welcome h2{font-size:26px}.welcome p{font-size:14.5px}.welcome .btn.main{height:52px}}
 .toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translate(-50%,16px);z-index:50;background:var(--ink);color:var(--bg);border:2px solid var(--ink);box-shadow:4px 4px 0 var(--accsh);
   padding:12px 18px;font-weight:700;font-size:15px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
@@ -1052,7 +1054,7 @@ async function wireAcct(){
     if(r.user){setSession({...SESSION,user:r.user});store.set('name',r.user.name);toast('Name saved');showMenu()}else acErr(r.error||'Could not save that name.');
   };
   const del=document.getElementById('delacct');if(del)del.onclick=async()=>{
-    if(!del.dataset.armed){del.dataset.armed='1';del.innerHTML='<span>Tap again to delete your account</span><b>Sure?</b>';return}
+    if(!await confirmBox({title:'Delete your account?',body:'This removes your Banana ID, your name and your synced history from our servers. Games saved on this device stay here. This can’t be undone.',yes:'Delete my account',no:'Keep my account'}))return;
     await fetch(`${API}/auth`,{method:'DELETE',headers:authHdr()}).catch(()=>{});setSession(null);showMenu();
   };
   const c=await authCfg();
@@ -1507,6 +1509,18 @@ async function postChallenge(res){
   await chalApi({action:'play',code:res.chal.code,name:nameNow(),score:res.total,marks:res.answers.map(markA).join('')});
 }
 
+// ---------- confirm popup (resolves true/false) ----------
+function confirmBox({title,body,yes,no}){return new Promise(done=>{
+  const back=document.activeElement,w=document.createElement('div');w.className='welcome';w.setAttribute('role','alertdialog');w.setAttribute('aria-modal','true');w.setAttribute('aria-labelledby','cft');w.setAttribute('aria-describedby','cfb');
+  w.innerHTML=`<div class="box" tabindex="-1"><h2 id="cft" style="font-size:26px">${esc(title)}</h2><p id="cfb">${esc(body)}</p>
+    <button class="btn main danger" id="cfy"><span>${esc(yes)}</span></button><button class="btn" id="cfn"><span>${esc(no)}</span></button></div>`;
+  document.body.appendChild(w);
+  const end=v=>{w.remove();document.removeEventListener('keydown',key);if(back&&back.focus)back.focus();done(v)};
+  const key=e=>{if(e.key==='Escape')end(false)};document.addEventListener('keydown',key);
+  w.onclick=e=>{if(e.target===w)end(false)};
+  document.getElementById('cfn').onclick=()=>end(false);document.getElementById('cfy').onclick=()=>end(true);
+  document.getElementById('cfn').focus();
+})}
 // ---------- first visit: what the game is, and that every size is an approximation ----------
 function welcome(then){
   const w=document.createElement('div');w.className='welcome';w.setAttribute('role','dialog');w.setAttribute('aria-modal','true');w.setAttribute('aria-labelledby','wt');
