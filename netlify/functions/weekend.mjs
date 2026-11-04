@@ -1,15 +1,34 @@
 // dailybanana.io/weekend → this weekend's challenge (the link in the Instagram bio).
 //   /weekend           redirects to the challenge link (/c/CODE), or home if there isn't one yet
-//   /weekend?json=1    { code, open, closes, tagline, plural } for the app's Join screen and Menu
+//   /weekend?json=1    { code, open, closes, tagline, plural, next:{ opens } } for the app's Join screen and Menu
+//                      next = when the coming weekend's challenge opens (Saturday 10:15am Eastern), for the countdown
 import { db, json } from '../lib/db.mjs';
 
+const SITE = process.env.URL || 'https://dailybanana.io';
+const etDate = (t) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(t));
+// Saturday 10:15am Eastern on that date, in standard or daylight time
+function opensAt(iso) {
+  const t = Date.parse(iso + 'T15:15:00Z');
+  const h = +new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: '2-digit', hour12: false }).format(new Date(t)) % 24;
+  return t - (h - 10) * 3600e3;
+}
+let WKS = null;
+async function weekends() {
+  if (!WKS) { const r = await fetch(`${SITE}/data/weekend.json`).catch(() => null); WKS = r && r.ok ? await r.json() : []; }
+  return WKS;
+}
+
 export default async (req) => {
-  const store = db(), cur = await store.get('weekend/current', { type: 'json' }).catch(() => null);
+  const store = db(), now = Date.now(), cur = await store.get('weekend/current', { type: 'json' }).catch(() => null);
   const c = cur && (await store.get(`challenges/${cur.code}`, { type: 'json' }).catch(() => null));
-  const open = !!c && !c.closed && c.closes > Date.now();
+  const open = !!c && !c.closed && c.closes > now;
   if (new URL(req.url).searchParams.get('json')) {
-    if (!c) return json({}, 200, { 'cache-control': 'public, max-age=60' });
-    return json({ code: c.code, open, closes: c.closes, tagline: c.weekend.tagline, plural: c.weekend.unit.plural, name: c.weekend.unit.name }, 200, { 'cache-control': 'public, max-age=60' });
+    const out = c ? { code: c.code, open, closes: c.closes, tagline: c.weekend.tagline, plural: c.weekend.unit.plural, name: c.weekend.unit.name } : {};
+    if (!open) {
+      const today = etDate(now), nx = (await weekends()).find((w) => w.date >= today && (!cur || w.n !== cur.n));
+      if (nx) out.next = { opens: opensAt(nx.date) };
+    }
+    return json(out, 200, { 'cache-control': 'public, max-age=60' });
   }
   return Response.redirect(new URL(c ? `/c/${c.code}` : '/', req.url), 302);
 };

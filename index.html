@@ -781,9 +781,7 @@ function showMenu(jump){
   document.getElementById('opt-help').onclick=showHelp;
   const so=document.getElementById('opt-social');if(so)so.onclick=()=>showSocial();
   wireAcct();openChallenges();
-  weekendNow().then(w=>{const el=document.getElementById('wkmenu');if(!el||!w||!w.open)return;
-    el.innerHTML=`<div class="list in" style="--d:1"><button class="lrow" id="wkm" style="border:2px solid var(--ink);background:var(--acc);color:var(--acc-ink,#2A1A0E)"><span>Weekend challenge · ${esc(W(w.plural))}</span><span class="mut">closes in ${leftLabel(w.closes-Date.now())} →</span></button></div>`;
-    document.getElementById('wkm').onclick=()=>showJoin()});
+  weekendMenu();
   if(jump==='badges')setTimeout(()=>{const el=document.getElementById('badges');if(el)window.scrollTo(0,el.getBoundingClientRect().top+scrollY-12)},50);
   app.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const r=puzzleFor(DAILIES.find(x=>x.n===+b.dataset.n)),s=saved(r.n);s?showResults(r,s):r.n===TODAY.n?showStart():leave(r,liveSaved(r.n))});
   document.getElementById('back').onclick=showStart;
@@ -1532,12 +1530,7 @@ function showJoin(prefill=''){
     <div id="wkcard"></div>
   </div>${footer(4)}`;
   wireNav();document.getElementById('back').onclick=showStart;
-  weekendNow().then(w=>{const el=document.getElementById('wkcard');if(!el||!w||!w.code)return;
-    el.innerHTML=`<div class="chal in" style="--d:1"><span class="eyebrow">${w.open?'This weekend':'Last weekend'}</span><h3>${esc(w.tagline)}</h3>
-      <span class="note">${w.open?`6 questions, all measured in ${esc(w.plural)} · closes in ${leftLabel(w.closes-Date.now())}`:`Measured in ${esc(w.plural)} · closed`}</span>
-      <button class="btn ${w.open?'main':''}" id="wkgo"><span>${w.open?'Play the weekend challenge':'See the final scoreboard'}</span><span aria-hidden="true">→</span></button></div>`;
-    document.getElementById('wkgo').onclick=async()=>{if(!w.open)return showChallenge(w.code);const c=await getChal(w.code);if(!c)return;
-      const played=c.entries.some(x=>x.you)||quickList().some(q=>q.chal&&q.chal.code===c.code);played?showChallenge(c.code):quick(c)}});
+  weekendCard();
   const inp=document.getElementById('code');inp.focus();
   inp.oninput=()=>{inp.value=inp.value.toUpperCase().replace(/[^A-Z0-9]/g,'')};
   document.getElementById('joinf').onsubmit=async e=>{
@@ -1555,6 +1548,30 @@ function showJoin(prefill=''){
     const v=document.getElementById('viewch');if(v)v.onclick=()=>showChallenge(c.code);
   };
 }
+// ---------- the weekend challenge: open, counting down (on the player's own Saturday), or last weekend's ----------
+// it opens Saturday 10:15am Eastern, so players in Europe and elsewhere see a countdown on their Saturday until then
+const wkSoon=w=>!!w&&!w.open&&!!w.next&&new Date().getDay()===6&&w.next.opens>Date.now()-30*60e3;
+let wkTick=null;
+function wkCountdown(w,id,fmtFn){clearInterval(wkTick);
+  const upd=()=>{const el=document.getElementById(id);if(!el){clearInterval(wkTick);return}const ms=w.next.opens-Date.now();
+    if(ms<=0){el.textContent=fmtFn('starting');clearInterval(wkTick);CACHE.delete('wk');setTimeout(()=>{if(document.getElementById(id))(document.getElementById('wkcard')?weekendCard:weekendMenu)()},90e3);return}
+    el.textContent=fmtFn(ms<3600e3?`${Math.floor(ms/60000)}m ${String(Math.floor(ms/1000)%60).padStart(2,'0')}s`:leftLabel(ms))};
+  upd();wkTick=setInterval(upd,1000)}
+function weekendCard(){weekendNow().then(w=>{const el=document.getElementById('wkcard');if(!el||!w)return;
+  if(wkSoon(w)){el.innerHTML=`<div class="chal in" style="--d:1"><span class="eyebrow">This weekend</span><h3>Weekend challenge</h3>
+      <span class="note">A new themed challenge: 6 questions, all measured in one surprise unit. Open until midnight Pacific on Sunday.</span>
+      <div class="btn" role="status" aria-live="polite" style="cursor:default;justify-content:center;background:var(--acc);color:#2A1A0E"><span id="wkcd">Starting in…</span></div></div>`;
+    return wkCountdown(w,'wkcd',t=>t.startsWith('starting')?'Starting any moment…':`Starting in ${t}`)}
+  if(!w.code)return;
+  el.innerHTML=`<div class="chal in" style="--d:1"><span class="eyebrow">${w.open?'This weekend':'Last weekend'}</span><h3>${esc(w.tagline)}</h3>
+    <span class="note">${w.open?`6 questions, all measured in ${esc(w.plural)} · closes in ${leftLabel(w.closes-Date.now())}`:`Measured in ${esc(w.plural)} · closed`}</span>
+    <button class="btn ${w.open?'main':''}" id="wkgo"><span>${w.open?'Play the weekend challenge':'See the final scoreboard'}</span><span aria-hidden="true">→</span></button></div>`;
+  document.getElementById('wkgo').onclick=async()=>{if(!w.open)return showChallenge(w.code);const c=await getChal(w.code);if(!c)return;
+    const played=c.entries.some(x=>x.you)||quickList().some(q=>q.chal&&q.chal.code===c.code);played?showChallenge(c.code):quick(c)}})}
+function weekendMenu(){weekendNow().then(w=>{const el=document.getElementById('wkmenu');if(!el||!w||!(w.open||wkSoon(w)))return;
+  el.innerHTML=`<div class="list in" style="--d:1"><button class="lrow" id="wkm" style="border:2px solid var(--ink);background:var(--acc);color:#2A1A0E;padding-left:14px;padding-right:14px"><span>Weekend challenge${w.open?` · ${esc(W(w.plural))}`:''}</span><span id="wkmcd">${w.open?`closes in ${leftLabel(w.closes-Date.now())} →`:''}</span></button></div>`;
+  document.getElementById('wkm').onclick=()=>showJoin();
+  if(!w.open)wkCountdown(w,'wkmcd',t=>t.startsWith('starting')?'starting soon':`starts in ${t}`)})}
 // a finished challenge game posts its score (one try per person)
 async function postChallenge(res){
   if(!res.chal||res.own)return;
