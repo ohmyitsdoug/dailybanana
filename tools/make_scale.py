@@ -1,6 +1,6 @@
 """Build data/items.json and data/dailies.json for Daily Banana.
 Items come from tools/scale_items.txt. Each daily has 6 rounds: "How many [unit] [long/tall/across] is [thing]?"
-Each day has one answer from each size range, from small (2-10) to big (300-1,000), the unit is always something smaller and
+Each day has one answer from each size range, from small (2-10) to big (400-1,500), the unit is always something smaller and
 familiar, and a thing being measured doesn't come back within 10 days.
 Hyper-specific items (tools/specific.txt: landmarks, niche gear) show up in only 1-2 rounds a day.
 Counting units come only from tools/core.txt (well-known, standard sizes); about 2/3 of the other rounds measure a core item too.
@@ -33,7 +33,7 @@ try: OLD_NAMES = [i['name'] for i in json.load(open(os.path.join(HERE, '..', 'da
 except Exception: OLD_NAMES = []
 json.dump(items, open(os.path.join(HERE, '..', 'data', 'items.json'), 'w'), separators=(',', ':'))
 units = [i for i in items if i['unit']]
-BUCKETS = [(2, 10), (6, 30), (20, 80), (50, 200), (120, 500), (300, 1000)]  # keep in sync with BUCKETS in index.html
+BUCKETS = [(2, 10), (6, 30), (20, 90), (60, 250), (150, 700), (400, 1500)]  # keep in sync with BUCKETS in index.html
 pairs = {k: [] for k in range(len(BUCKETS))}
 for a in units:
     for b in items:
