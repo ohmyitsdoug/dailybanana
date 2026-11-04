@@ -17,7 +17,7 @@ const FAQ = [
   ['Is Daily Banana free?', 'Yes. It is free to play, with no ads.'],
   ['Does the game use AI?', 'No AI runs in the game. The questions come from a fixed list of everyday items with typical sizes, and the daily schedule is set in advance, so everyone gets the same daily.'],
   ['Who makes Daily Banana?', 'Daily Banana is made by Smidgen Games LLC, an independent game studio that publishes tabletop games. Learn more at playsmidgen.com.'],
-  ['How do I report a wrong size or get help?', 'Email dailybanana@playsmidgen.com. Sizes are averages, but if one looks far off, we want to know.'],
+  ['How do I report a wrong size or get help?', 'Email contact@dailybanana.io. Sizes are averages, but if one looks far off, we want to know.'],
 ];
 
 const faqBody = `<h1>Daily Banana FAQ</h1>
@@ -39,7 +39,7 @@ const aboutBody = `<h1>About Daily Banana</h1>
 <h2>About the sizes</h2>
 <p>All sizes are approximations: typical averages from publicly available data, rounded for play. Real bananas, buses and teaspoons vary. The game asks you to picture an average one.</p>
 <h2>Who makes it</h2>
-<p>Daily Banana is made by <a href="https://playsmidgen.com/?utm_source=dailybanana&utm_medium=game&utm_campaign=about">Smidgen Games LLC</a>, an independent game studio that publishes tabletop games. Questions or feedback: <a href="mailto:dailybanana@playsmidgen.com">dailybanana@playsmidgen.com</a>.</p>
+<p>Daily Banana is made by <a href="https://playsmidgen.com/?utm_source=dailybanana&utm_medium=game&utm_campaign=about">Smidgen Games LLC</a>, an independent game studio that publishes tabletop games. Questions or feedback: <a href="mailto:contact@dailybanana.io">contact@dailybanana.io</a>.</p>
 <p><a href="/faq">Read the FAQ</a></p>
 <a class="cta" href="/">Play today's daily <span aria-hidden="true">→</span></a>`;
 writeFileSync(new URL('../about.html', import.meta.url), page({
