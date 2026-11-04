@@ -1104,10 +1104,12 @@ async function shareImage(r,res,btn){
     ban(200,890,370,16,.35);                              // the floating banana, behind everything
     box(L,84,84,84,CARD);ban(56,L+42,126);
     font(700,46);x.fillStyle=INK;x.textBaseline='middle';x.fillText('dailybanana.io',L+104,128);
-    const chip=`Daily #${pad3(r.n)}`;font(700,36);const cw=x.measureText(chip).width+48;
+    const TAG='Guess ridiculous measurements for everyday items.';   // for people who've never seen the game
+    const fit=(w,max,min=24)=>{let t=max;font(w,t);while(x.measureText(TAG).width>R-L&&t>min){t--;font(w,t)}};
+    const chip=`Daily #${pad3(r.n)} · ${fmtDate(r.date)}`;font(700,36);const cw=x.measureText(chip).width+48;
     box(R-cw-6,92,cw,68,ACC);x.fillStyle=INK;x.fillText(chip,R-cw-6+24,128);
     x.textBaseline='alphabetic';
-    const [yy,mm,dd]=r.date.split('-');font(500,44);x.fillStyle=MUT;x.fillText(`${fmtDate(r.date)}, ${yy}`,L,300);
+    fit(500,38);x.fillStyle=INK;x.fillText(TAG,L,250);   // one line under the logo, shrinks to fit
     font(700,230);x.fillStyle=INK;try{x.letterSpacing='-6px'}catch(_){}x.fillText(fmt(res.total),L-6,505);const sw=x.measureText(fmt(res.total)).width;try{x.letterSpacing='0px'}catch(_){}
     font(700,72);x.fillStyle=MUT;x.fillText(`/ ${ROUNDS*MAX_PTS}`,L+sw+12,505);
     font(700,52);x.fillStyle=INK;x.fillText(await rankText(r,res),L,610);
@@ -1125,6 +1127,7 @@ async function shareImage(r,res,btn){
     const ws=stats.map(([v,l,ic])=>{font(700,80);const vw=x.measureText(v).width+(ic?78:0);font(400,34);return Math.max(vw,x.measureText(l).width)});
     const gap=(R-L-ws.reduce((a,b)=>a+b,0))/(stats.length-1);let sx=L;
     stats.forEach(([v,l,ic],i)=>{let vx=sx;if(ic){ban(64,sx+32,972);vx+=78}font(700,80);x.fillStyle=INK;x.fillText(v,vx,1000);font(400,34);x.fillStyle=MUT;x.fillText(l,sx,1050);sx+=ws[i]+gap});
+    // one line for people who've never seen the game (shrinks to fit, never wraps)
     x.fillStyle=ACCSH;x.fillRect(L+8,1156,R-L,118);x.fillStyle=INK;x.fillRect(L,1148,R-L,118);
     font(700,44);x.textBaseline='middle';x.fillStyle='#FFF0A0';x.fillText('Can you beat me?',L+44,1208);
     x.fillStyle=ACC;x.textAlign='right';x.fillText('dailybanana.io',R-44,1208);
