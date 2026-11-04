@@ -76,6 +76,7 @@ export default async (req) => {
   const daily = {
     starts: startsTracked ? sD.length : null,
     completions: dR.length,
+    completions_tracked: dR.filter((g) => g.day >= SINCE.starts).length,   // same days as starts, so the two compare
     rate: startsTracked && sD.length ? pct(completedAfterStart, sD.length) : null,
     accuracy: dR.length ? pct(dR.reduce((t, g) => t + (g.score || 0), 0), dR.length * 600) : null,
     avg_score: dR.length ? Math.round(dR.reduce((t, g) => t + (g.score || 0), 0) / dR.length) : null,
@@ -91,6 +92,7 @@ export default async (req) => {
   const quickM = {
     started: startsTracked ? sQ.length : null,
     completed: qR.length,
+    completed_tracked: qR.filter((g) => g.day >= SINCE.starts).length,
     players: new Set(qR.map((g) => g.device)).size,
     rate: startsTracked && sQ.length ? Math.min(100, pct(qR.filter((g) => g.day >= SINCE.starts).length, sQ.length)) : null,
     challenges: cR.length,

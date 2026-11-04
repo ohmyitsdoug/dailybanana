@@ -117,12 +117,12 @@ const DEF={
   'D1 retention':'Of the new players in this range, the share who finished a game again exactly 1 day after their first game. Only counts players whose next day has already happened.',
   'D7 retention':'Of the new players in this range, the share who finished a game again exactly 7 days after their first game. Only counts players at least 7 days in.',
   'D30 retention':'Of the new players in this range, the share who finished a game again exactly 30 days after their first game. Only counts players at least 30 days in.',
-  'Starts':'Players who started a daily in the range, counted once per player per daily. Tracked from Nov 4.',
+  'Starts':'Players who started a daily in the range, counted once per player per daily. Tracked from Nov 4, so a range that includes Nov 3 will show more completions than starts: compare starts with the \u201csince Nov 4\u201d number under Completions. Players still on an older copy of the game (an app saved to the home screen that hasn\u2019t refreshed) don\u2019t send starts yet.',
   'Completions':'Dailies finished in the range, counted once per player per daily even if their score was sent twice.',
   'Completion rate':'Of the players who started a daily in the range, the share who finished it. Completions ÷ starts.',
   'Avg accuracy':'Average daily score as a percent of the 600 possible. Each round scores your accuracy: the smaller of guess and answer divided by the bigger.',
   'Avg time guessing':'Average time spent on the six rounds of a daily, from each question appearing to the guess (25 seconds max per round). Reading the reveals isn\'t counted. Tracked from Nov 4.',
-  'Games started':'Quick play games started in the range, including challenge games. Tracked from Nov 4.',
+  'Games started':'Quick play games started in the range, including challenge games. Tracked from Nov 4, so compare it with the \u201csince Nov 4\u201d number under Games finished. Players on an older copy of the game don\u2019t send starts yet.',
   'Games finished':'Quick play games finished in the range, including challenge games.',
   'Unique players':'Players who finished at least one quick play game in the range.',
   'Finish rate':'Quick play games finished ÷ quick play games started, for days with start tracking.',
@@ -173,14 +173,14 @@ function draw(d){
 
     <h2>The daily</h2>
     <div class="grid g5">
-      ${card('Starts',n(D.starts),D.starts==null?'tracked from Nov 4':since(d,'starts'))}${card('Completions',n(D.completions))}
+      ${card('Starts',n(D.starts),D.starts==null?'tracked from Nov 4':since(d,'starts'))}${card('Completions',n(D.completions),d.from<d.since.starts&&D.starts!=null?`${n(D.completions_tracked)} since Nov 4`:'')}
       ${card('Completion rate',p(D.rate),D.rate==null?'needs start tracking':'')}${card('Avg accuracy',p(D.accuracy),D.avg_score!=null?`avg ${n(D.avg_score)} / 600`:'')}
       ${card('Avg time guessing',D.time==null?'–':`${Math.floor(D.time/60)}:${String(D.time%60).padStart(2,'0')}`,D.time==null?'tracked from Nov 4':'all 6 rounds')}
     </div>
 
     <h2>Quick play</h2>
     <div class="grid g6">
-      ${card('Games started',n(Q.started),Q.started==null?'tracked from Nov 4':'')}${card('Games finished',n(Q.completed))}
+      ${card('Games started',n(Q.started),Q.started==null?'tracked from Nov 4':'')}${card('Games finished',n(Q.completed),d.from<d.since.starts&&Q.started!=null?`${n(Q.completed_tracked)} since Nov 4`:'')}
       ${card('Unique players',n(Q.players))}${card('Finish rate',p(Q.rate),Q.rate==null?'needs start tracking':'')}
       ${card('Challenges made',n(Q.challenges))}${card('Challenge joins',n(Q.joins),'friends who played one')}
     </div>
