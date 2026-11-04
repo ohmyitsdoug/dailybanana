@@ -277,6 +277,7 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 .acctdd>summary::-webkit-details-marker{display:none}
 .acctdd[open] .chev{transform:rotate(180deg)}
 .chev{display:inline-block;transition:transform .15s}
+.btn.social{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:18px;text-decoration:none}
 .lrow.old{color:var(--mut);opacity:.55;cursor:default}
 .lrow .hl{display:inline-block;border:2px solid var(--ink);font-size:12px;font-weight:700;padding:0 5px;margin-right:4px;line-height:1.5}
 .lrow.live .hl{background:var(--acc);color:var(--acc-ink)}
@@ -727,6 +728,7 @@ function showMenu(jump){
       ${SESSION&&SESSION.user.admin?'<a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">→</span></a>':''}
       ${SESSION?`<button class="lrow" id="delacct"><span>Delete my account</span><span class="mut">Can't be undone</span></button>`:''}
     </div>
+    <a class="btn social in" style="--d:7" href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span>Follow us on Instagram</span></a>
   </div>${footer(7)}`;
   wireNav();
   renderHistory();
