@@ -1273,7 +1273,7 @@ async function showRank(r,res){
 
 // ---------- challenges ----------
 const CH=`${API}/challenge`;
-const chalLink=code=>`${location.origin}${location.pathname.replace(/index\.html$/,'')}?c=${code}`;
+const chalLink=code=>`${location.origin}/c/${code}`;   // /c/ pages give message apps a "you've been challenged" preview
 async function chalApi(body){
   for(const k of CACHE.keys())if(k.startsWith('ch:')||k==='host')stale(k);   // a challenge changed: fetch fresh
   const r=await fetch(CH,{method:body?'POST':'GET',headers:{'content-type':'application/json',...authHdr()},body:body?JSON.stringify({device:DEVICE,...body}):undefined});
