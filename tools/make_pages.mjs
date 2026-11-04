@@ -40,6 +40,7 @@ const aboutBody = `<h1>About Daily Banana</h1>
 <p>All sizes are approximations: typical averages from publicly available data, rounded for play. Real bananas, buses and teaspoons vary. The game asks you to picture an average one.</p>
 <h2>Who makes it</h2>
 <p>Daily Banana is made by <a href="https://playsmidgen.com/?utm_source=dailybanana&utm_medium=game&utm_campaign=about">Smidgen Games LLC</a>, an independent game studio that publishes tabletop games. Questions or feedback: <a href="mailto:contact@dailybanana.io">contact@dailybanana.io</a>.</p>
+<p>Follow along on Instagram: <a href="https://www.instagram.com/dailybanana.io/" rel="me">@dailybanana.io</a></p>
 <p><a href="/faq">Read the FAQ</a></p>
 <a class="cta" href="/">Play today's daily <span aria-hidden="true">→</span></a>`;
 writeFileSync(new URL('../about.html', import.meta.url), page({
@@ -47,6 +48,6 @@ writeFileSync(new URL('../about.html', import.meta.url), page({
   description: 'Daily Banana is a free daily size-guessing game by Smidgen Games: how many bananas long is a school bus?',
   path: '/about', body: aboutBody,
   jsonld: [{ '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Daily Banana', url: SITE_URL, applicationCategory: 'GameApplication', operatingSystem: 'Any (web browser)', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-    description: 'A free daily size-guessing game: how many of one everyday thing would line up to match another.', publisher: { '@type': 'Organization', name: 'Smidgen Games LLC', url: 'https://playsmidgen.com' } }],
+    description: 'A free daily size-guessing game: how many of one everyday thing would line up to match another.', publisher: { '@type': 'Organization', name: 'Smidgen Games LLC', url: 'https://playsmidgen.com' }, sameAs: ['https://www.instagram.com/dailybanana.io/'] }],
 }));
 console.log('wrote about.html and faq.html');

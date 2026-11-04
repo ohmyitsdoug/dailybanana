@@ -896,7 +896,7 @@ function finish(why){
     store.del('live:'+r.n);
     store.set('v07:'+r.n,res);
     res.badges=awardBadges(res,r);if(res.badges.length)store.set('v07:'+r.n,res);
-    pushSync();CACHE.delete('st:'+r.n);
+    pushSync();stale('st:'+r.n);
     log('play',{puzzle:r.n,points:R.answers.map(a=>a.p||0),guesses:R.answers.map(a=>a.guess==null?null:+a.guess),score:total,ms:R.answers.reduce((t,a)=>t+(a.t||0),0),device:DEVICE});
   }else{
     QUICK=null;
@@ -955,7 +955,7 @@ function showResults(r,res){
   window.scrollTo(0,0);wireNav();
   tick=setInterval(()=>{const cd=document.getElementById('cd');if(cd)cd.textContent=untilMidnight();else clearInterval(tick)},1000);
   document.getElementById('again').onclick=()=>quick();
-  if(r.quick)chalBox(res);else showRank(r,res);
+  SHOWN={r,res};if(r.quick)chalBox(res);else showRank(r,res);
   document.getElementById('shr').onclick=async()=>{   // the device's share menu, with the link copied too
     const url=location.origin+'/';
     try{await navigator.clipboard.writeText(url)}catch(_){}
@@ -1146,6 +1146,7 @@ async function showRank(r,res){
   // where the typical player guessed (median guess), once a few people have played
   if(st&&st.guess_n>=3&&Array.isArray(st.guesses)){
     r.qs.forEach((q,i)=>{const g=st.guesses[i],el=document.getElementById('mini'+i);if(!el||!(g>0))return;
+      el.querySelectorAll('.avg').forEach(x=>x.remove());
       el.insertAdjacentHTML('beforeend',`<span class="avg" title="typical guess: ${fmt(nice(g))}" style="left:${posOf(g,q.ans).toFixed(1)}%"></span>`);el.hidden=false});
     const lg=document.getElementById('mleg');if(lg)lg.hidden=false;
   }
@@ -1155,22 +1156,53 @@ async function showRank(r,res){
 const CH=`${API}/challenge`;
 const chalLink=code=>`${location.origin}${location.pathname.replace(/index\.html$/,'')}?c=${code}`;
 async function chalApi(body){
-  for(const k of CACHE.keys())if(k.startsWith('ch:'))CACHE.delete(k);   // a challenge changed: fetch fresh
+  for(const k of CACHE.keys())if(k.startsWith('ch:')||k==='host')stale(k);   // a challenge changed: fetch fresh
   const r=await fetch(CH,{method:body?'POST':'GET',headers:{'content-type':'application/json'},body:body?JSON.stringify({device:DEVICE,...body}):undefined});
   const j=await r.json().catch(()=>({}));return{ok:r.ok,status:r.status,...j};
 }
-// fetched once and kept briefly, so screens open with their numbers already there (preloaded from the home screen)
-const CACHE=new Map();
-function cached(key,ms,fn){const c=CACHE.get(key);if(c&&Date.now()-c.at<ms)return c.p;const p=fn().catch(()=>null);CACHE.set(key,{at:Date.now(),p});return p}
+// Server data (rankings, challenges, facts) is kept in memory and on the device, so a screen opens with the last
+// numbers already there. Anything older than its time limit is still shown at once, then refreshed in the
+// background; if the fresh copy differs, the screen that shows it fills itself in again.
+const CACHE=new Map(),KEEP=/^(st:|ch:|host$|facts$)/;
+(()=>{try{const old=Date.now()-3*864e5;for(let i=localStorage.length-1;i>=0;i--){const k=localStorage.key(i);
+  if(k&&k.startsWith('snug:c:')){const v=store.get(k.slice(5),null);if(!v||v.at<old)localStorage.removeItem(k)}}}catch(_){}})();
+function cached(key,ms,fn){
+  let c=CACHE.get(key);
+  if(!c&&KEEP.test(key)){const s=store.get('c:'+key,null);if(s&&s.v!=null){c={at:s.at,v:s.v,p:Promise.resolve(s.v)};CACHE.set(key,c)}}
+  if(c&&(Date.now()-c.at<ms||c.busy))return c.p;
+  const had=c&&c.v!=null?c:null;
+  const req=fn().catch(()=>null).then(v=>{
+    if(v==null){if(had)had.busy=false;else CACHE.delete(key);return had?had.v:null}
+    const same=had&&JSON.stringify(had.v)===JSON.stringify(v);
+    CACHE.set(key,{at:Date.now(),v,p:Promise.resolve(v)});
+    if(KEEP.test(key))try{store.set('c:'+key,{at:Date.now(),v})}catch(_){}
+    if(had&&!same)refill(key);
+    return v});
+  if(had){had.busy=true;return had.p}   // show the last copy now, refresh behind it
+  CACHE.set(key,{at:0,p:req,busy:true});return req;
+}
+const stale=k=>{const c=CACHE.get(k);if(c)c.at=0};   // keep showing it, but fetch again next time
+// a fresher copy arrived: redraw just the parts of the current screen that use it
+let SHOWN=null;   // the results on screen: {r,res}
+function refill(key){
+  if(key.startsWith('st:')&&SHOWN&&!SHOWN.r.quick&&'st:'+SHOWN.r.n===key&&document.getElementById('rank'))showRank(SHOWN.r,SHOWN.res);
+  if((key.startsWith('ch:')||key==='host')&&SHOWN&&SHOWN.r.quick&&document.getElementById('chalbox'))chalBox(SHOWN.res);
+  if(key.startsWith('ch:')&&document.getElementById('opench'))openChallenges();
+  if(key.startsWith('ch:')&&document.getElementById('hist'))renderHistory();
+}
 const getChal=code=>cached('ch:'+code,30e3,()=>fetch(`${CH}?code=${encodeURIComponent(code)}&device=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():null));
 const getStats=n=>API?cached('st:'+n,60e3,()=>fetch(`${API}/stats?n=${n}`).then(x=>x.ok?x.json():null)):Promise.resolve(null);
 const getFacts=()=>cached('facts',864e5,()=>fetch('data/facts.json').then(x=>x.json()));
-function preload(){   // while the home screen is up: today's ranking, open challenges, the fun facts
-  if(saved(TODAY.n))getStats(TODAY.n);
-  getFacts();
-  if(API)[...new Set(quickList().filter(q=>q.chal&&Date.now()-q.at<25*HOUR).map(q=>q.chal.code))].forEach(getChal);
+function preload(){   // today's ranking, your open challenges, the fun facts: fetched ahead so screens open filled in
+  getFacts();if(!API||!TODAY)return;
+  getStats(TODAY.n);myOpen();
+  [...new Set(quickList().filter(q=>q.chal&&Date.now()-q.at<25*HOUR).map(q=>q.chal.code))].forEach(getChal);
 }
-const myOpen=()=>fetch(`${CH}?host=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():{}).catch(()=>({}));
+// when the page opens and whenever it comes back into view, once the browser is idle
+const idle=f=>(window.requestIdleCallback||(g=>setTimeout(g,300)))(f,{timeout:2000});
+idle(preload);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')idle(preload)});
+const myOpen=()=>API?cached('host',30e3,()=>fetch(`${CH}?host=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():null)).then(v=>v||{}):Promise.resolve({});
 // the scoreboard name: your account name when signed in, otherwise this device's guest name (set in the Menu)
 const nameNow=()=>SESSION?SESSION.user.name:(store.get('name','')||GUEST);
 const nameNote=()=>`<span class="note">Playing as <b>${esc(nameNow())}</b>. ${SESSION?'You can change your name in the Menu, under Account.':'Sign in from the Menu to pick your own name.'}</span>`;
