@@ -15,7 +15,7 @@ export default async (req) => {
     const mine = await store.get(`entries/${code}/${c.creator}`, { type: 'json' }).catch(() => null);
     const open = !c.closed && c.closes > Date.now();
     title = c.weekend ? `Weekend challenge: ${c.weekend.tagline} · Daily Banana` : `${c.host || 'A friend'} challenged you! · Daily Banana`;
-    desc = c.weekend ? (open ? `6 questions, all measured in ${c.weekend.unit.plural}. Open for 24 hours, one try.` : 'This weekend challenge has ended. See the scoreboard, then play today’s daily.') : open
+    desc = c.weekend ? (open ? `6 questions, all measured in ${c.weekend.unit.plural}. Open all weekend, one try.` : 'This weekend challenge has ended. See the scoreboard, then play today’s daily.') : open
       ? `Can you beat ${mine ? fmt(mine.score) : 'their score'}? Same 6 questions, open for 24 hours.`
       : `This challenge has ended. See the scoreboard, then play today’s daily.`;
   }

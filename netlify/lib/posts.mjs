@@ -146,7 +146,7 @@ export function weekendPost(wk, code) {
   ban(890, 330, 170, -14, 0.35);
   const h = fit(wk.tagline, R - L - 200, 96, 3, 60); x.fillStyle = T.ink; h.ls.forEach((t, i) => x.fillText(t, L, 320 + i * h.px * 1.08));
   const y = 320 + (h.ls.length - 1) * h.px * 1.08 + 90;
-  x.fillStyle = T.mut; wrap(`6 questions, all measured in ${wk.plural}. Open 24 hours. One try.`, R - L, 40, 500).forEach((t, i) => x.fillText(t, L, y + i * 52));
+  x.fillStyle = T.mut; wrap(`6 questions, all measured in ${wk.plural}. Open all weekend. One try.`, R - L, 40, 500).forEach((t, i) => x.fillText(t, L, y + i * 52));
   box(L, 820, R - L, 250, T.card, 8, T.ink); f(500, 34); x.fillStyle = T.mut; x.fillText('Or tap Join on the home page and enter', L + 40, 890);
   f(700, 96); x.fillStyle = T.ink; x.fillText(code, L + 40, 1010);
   P.bar(); return P.c;
@@ -200,6 +200,6 @@ export function answerStory(q) {
   return storyCard('dark', 'The answer', [[500, 40, 'mut', 'Yesterday we asked:'], [700, 60, 'ink', question(q)], [500, 40, 'mut', 'The answer: about'], [700, 120, 'acc', fmt(ans)], [700, 60, 'ink', `${unitWord(q, ans)}.`], [500, 38, 'mut', 'How close were you?']], ['Play free', 'dailybanana.io']);
 }
 // SUN morning · last call for the weekend challenge
-export function lastCallStory(wk, code, hoursLeft) {
-  return storyCard('light', 'Weekend challenge', [[700, 96, 'ink', 'Last call!'], [500, 44, 'mut', `The ${wk.name} challenge closes in about ${hoursLeft} hours.`], [500, 40, 'mut', 'Tap Join on the home page and enter'], [700, 110, 'ink', code]], ['Link in bio', 'dailybanana.io/weekend']);
+export function lastCallStory(wk, code) {
+  return storyCard('light', 'Weekend challenge', [[700, 96, 'ink', 'Last call!'], [500, 44, 'mut', `The ${wk.name} challenge closes tonight at midnight Pacific.`], [500, 40, 'mut', 'Tap Join on the home page and enter'], [700, 110, 'ink', code]], ['Link in bio', 'dailybanana.io/weekend']);
 }

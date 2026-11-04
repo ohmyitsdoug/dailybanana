@@ -1410,7 +1410,7 @@ const nameNow=()=>SESSION?SESSION.user.name:(store.get('name','')||GUEST);
 const nameNote=()=>`<span class="note">Playing as <b>${esc(nameNow())}</b>. ${SESSION?'You can change your name in the Menu, under Account.':'Sign in from the Menu to pick your own name.'}</span>`;
 function board(c){
   // Bragging rights: only once the challenge has run its full 24 hours (closing it early doesn't count)
-  if(!c.open&&!c.closed&&c.entries.some(e=>e.you)&&c.entries.length>1){const me=c.entries.find(e=>e.you);if(c.entries.some(e=>!e.you&&e.score<me.score))earnBadge('beat24')}
+  if(!c.weekend&&!c.open&&!c.closed&&c.entries.some(e=>e.you)&&c.entries.length>1){const me=c.entries.find(e=>e.you);if(c.entries.some(e=>!e.you&&e.score<me.score))earnBadge('beat24')}
   return`<div class="board">${c.entries.map((e,i)=>`<div class="${e.you?'you':''}"><span class="n num">${i+1}</span><span class="nm">${esc(e.name)}${e.you?' (you)':''}</span><span>${esc(e.marks||'')}</span><b class="num">${fmt(e.score)}</b></div>`).join('')}</div>`;
 }
 const status=c=>c.open?`Open · closes in ${leftLabel(c.closes-Date.now())}`:'Closed';

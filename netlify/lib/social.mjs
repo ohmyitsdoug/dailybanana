@@ -3,7 +3,7 @@
 //
 // Weekly plan (Eastern time):           Mon 12:15 carousel · Tue 12:15 fun fact · Wed 7:15pm guess this
 //   Thu 9:15am answer story, 12:15 banana for scale · Fri 12:15 week in review (fun fact until 500+ dailies a week)
-//   Sat 10:15am weekend challenge · Sun 8:15am last-call story, 11:15 closest guess
+//   Sat 10:15am weekend challenge (open until midnight Pacific Sunday) · Sun 11:15 closest guess, 7:15pm last-call story
 // Milestones post at 12:15 or 7:15pm only, never within 2 hours of a scheduled post, at most one a day, each mark once.
 // Every feed post is also shared as a story.
 //
@@ -41,7 +41,7 @@ export const PLAN = {
   4: [[9, 15, 'thu_story'], [12, 15, 'thu']],
   5: [[12, 15, 'fri']],
   6: [[10, 15, 'sat']],
-  0: [[8, 15, 'sun_story'], [11, 15, 'sun']],
+  0: [[11, 15, 'sun'], [19, 15, 'sun_story']],
 };
 const STORY_ONLY = new Set(['thu_story', 'sun_story']);
 const MILESTONE_WINDOWS = [[12, 15], [19, 15]];
@@ -160,13 +160,13 @@ export async function build(kind, store, { date = etParts().date, preview = fals
     if (!wk) return null;
     const code = preview ? 'PREVIEW' : (await openWeekend(store, wk, items)).code;
     const img = P.weekendPost(wk, code);
-    return { kind, ...withTags('sat', `This weekend’s challenge is live! Same 6 questions for everyone, open 24 hours, one try.\nLink in bio, or tap “Join” and enter ${code}.\nPost your score in the comments 👇`), images: [img], story: [P.storyOf(img, false)], extra: { code, n: wk.n } };
+    return { kind, ...withTags('sat', `This weekend’s challenge is live! Same 6 questions for everyone, open all weekend, one try.\nLink in bio, or tap “Join” and enter ${code}.\nPost your score in the comments 👇`), images: [img], story: [P.storyOf(img, false)], extra: { code, n: wk.n } };
   }
   if (kind === 'sun_story') {
     const cur = await store.get('weekend/current', { type: 'json' }).catch(() => null), wks = await data('weekend');
     const wk = cur && wks.find((w) => w.n === cur.n);
-    if (!wk || !(cur.closes > Date.now())) return preview && wks[0] ? { kind, caption: '', fb: '', images: [], story: [P.lastCallStory(wks[0], 'PREVIEW', 2)] } : null;
-    return { kind, caption: '', fb: '', images: [], story: [P.lastCallStory(wk, cur.code, Math.max(1, Math.round((cur.closes - Date.now()) / HOUR)))] };
+    if (!wk || !(cur.closes > Date.now())) return preview && wks[0] ? { kind, caption: '', fb: '', images: [], story: [P.lastCallStory(wks[0], 'PREVIEW')] } : null;
+    return { kind, caption: '', fb: '', images: [], story: [P.lastCallStory(wk, cur.code)] };
   }
   if (kind === 'sun') {
     const cg = await closestGuess(store, date, items);
@@ -206,6 +206,12 @@ async function closestGuess(store, date, items) {
 // ---------- weekend challenge ----------
 export async function weekendFor(date) { const wks = await data('weekend'); return wks.find((w) => w.date === date) || null; }
 const ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+// the weekend challenge closes for everyone at midnight Pacific at the end of Sunday (3am Monday Eastern)
+export function sundayNightPacific(satIso) {
+  let t = Date.parse(addDays(satIso, 2) + 'T08:00:00Z');   // Monday 00:00 in standard time
+  const h = +new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', hour12: false }).format(new Date(t)) % 24;
+  return t - h * HOUR;   // in daylight time 08:00Z is 1am, so step back an hour
+}
 export async function openWeekend(store, wk, items) {
   const cur = await store.get('weekend/current', { type: 'json' }).catch(() => null);
   if (cur && cur.n === wk.n) return cur;   // already made (a retry)
@@ -218,7 +224,7 @@ export async function openWeekend(store, wk, items) {
   }
   for (let i = rounds.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rounds[i], rounds[j]] = [rounds[j], rounds[i]]; }
   let code; for (let i = 0; i < 6; i++) { code = Array.from({ length: 6 }, () => ABC[Math.floor(Math.random() * ABC.length)]).join(''); if (!(await store.get(`challenges/${code}`).catch(() => null))) break; }
-  const now = Date.now(), c = { code, rounds, creator: 'weekend', uid: null, host: 'Daily Banana', weekend: { n: wk.n, tagline: wk.tagline, hint: wk.hint, unit }, created: now, closes: now + 24 * HOUR, closed: false };
+  const now = Date.now(), c = { code, rounds, creator: 'weekend', uid: null, host: 'Daily Banana', weekend: { n: wk.n, tagline: wk.tagline, hint: wk.hint, unit }, created: now, closes: sundayNightPacific(etParts(now).date), closed: false };
   await store.setJSON(`challenges/${code}`, c);
   const rec = { code, n: wk.n, closes: c.closes };
   await store.setJSON('weekend/current', rec);
