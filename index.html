@@ -12,7 +12,7 @@
 <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
 <link rel="alternate icon" href="favicon.ico">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="theme-color" content="#FFF0A0">
+<meta name="theme-color" id="tc" content="#FFF0A0">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Daily Banana">
 <meta property="og:title" content="Daily Banana · Banana for scale">
@@ -30,7 +30,9 @@
 // pick the theme before anything paints: saved choice, else the device setting
 (function(){var t;try{t=JSON.parse(localStorage.getItem('snug:theme'))}catch(e){}
   if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
-  document.documentElement.dataset.theme=t})();
+  document.documentElement.dataset.theme=t;
+  // the phone's top bar uses this color: keep it the same as the page, light or dark
+  var m=document.getElementById('tc');if(m)m.content=t==='dark'?'#2A1A0E':'#FFF0A0'})();
 </script>
 <style>
 /* Banana for Scale · "A Offset" design: 2px borders, hard offset shadows, banana yellow + dark brown.
@@ -55,7 +57,7 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .mut{color:var(--mut)}
 .eyebrow{font-size:12px;letter-spacing:1.5px;color:var(--mut);text-transform:uppercase}
 
-.app{max-width:440px;margin:0 auto;min-height:100vh;min-height:100dvh;padding:max(20px,calc(env(safe-area-inset-top) + 12px)) max(20px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:18px}
+.app{max-width:440px;margin:0 auto;min-height:100vh;min-height:100dvh;padding:calc(max(20px,calc(env(safe-area-inset-top) + 12px)) + var(--topx)) max(20px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:18px}
 .spacer{flex:1}
 
 /* buttons */
@@ -160,6 +162,8 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 /* floating 16-bit bananas behind everything */
 .bgb{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
 /* a solid strip behind the iPhone status bar, so nothing scrolls under Apple's fade */
+.app{--topx:0px}
+@media (max-height:700px){.app{--topx:8px}}
 .safetop{position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--bg);z-index:40;pointer-events:none}
 .bgb span{position:absolute;opacity:.22;animation:floaty 9s ease-in-out infinite;animation-delay:calc(var(--d) * -1)}
 :root[data-theme="dark"] .bgb span{opacity:.14}
@@ -400,7 +404,7 @@ const SET=Object.assign({motion:true},store.get('settings',{}));
 function applySettings(){document.documentElement.classList.toggle('calm',!SET.motion)}
 applySettings();
 const reduced=()=>!SET.motion||matchMedia('(prefers-reduced-motion: reduce)').matches;
-function toggleTheme(){const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;store.set('theme',t)}
+function toggleTheme(){const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;store.set('theme',t);const m=document.getElementById('tc');if(m)m.content=t==='dark'?'#2A1A0E':'#FFF0A0'}
 const saved=n=>store.get('v07:'+n,null);          // finished dailies (v0.7: daily #000 is Nov 3, 2026)
 const liveSaved=n=>store.get('live:'+n,null);     // a daily that was paused or left mid-round
 function clearResults(){try{Object.keys(localStorage).filter(k=>/^snug:(best|result|r8|v01|v02|v03|v04|v05|v06|v07|quick|recent|live|badges)/.test(k)).forEach(k=>localStorage.removeItem(k))}catch(_){}}
