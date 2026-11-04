@@ -512,7 +512,7 @@ const BADGES=[
   {id:'bunch',name:'Whole bunch',how:'Score 500 or more in one daily'},
   {id:'streak7',name:'Week streak',how:'Play 7 dailies in a row'},
   {id:'host',name:'Ringleader',how:'Start a challenge'},
-  {id:'beat',name:'Bragging rights',how:'Beat a friend in a challenge that ran the full 24 hours'},
+  {id:'beat24',name:'Bragging rights',how:'Beat a friend in a challenge that ran the full 24 hours'},
   {id:'linked',name:'Banana ID',how:'Sign in with Google or Discord'},
   {id:'tester',name:'Playtester',how:'Played a daily in the first two weeks',secret:true},
 ];
@@ -1034,7 +1034,7 @@ const nameField=()=>`<input class="namein" id="nm" maxlength="16" placeholder="Y
 const readName=()=>{const el=document.getElementById('nm');const v=(el?el.value:'').trim().slice(0,16);if(v)store.set('name',v);return v};
 function board(c){
   // Bragging rights: only once the challenge has run its full 24 hours (closing it early doesn't count)
-  if(!c.open&&!c.closed&&c.entries.some(e=>e.you)&&c.entries.length>1){const me=c.entries.find(e=>e.you);if(c.entries.some(e=>!e.you&&e.score<me.score))earnBadge('beat')}
+  if(!c.open&&!c.closed&&c.entries.some(e=>e.you)&&c.entries.length>1){const me=c.entries.find(e=>e.you);if(c.entries.some(e=>!e.you&&e.score<me.score))earnBadge('beat24')}
   return`<div class="board">${c.entries.map((e,i)=>`<div class="${e.you?'you':''}"><span class="n num">${i+1}</span><span class="nm">${esc(e.name)}${e.you?' (you)':''}</span><span>${esc(e.marks||'')}</span><b class="num">${fmt(e.score)}</b></div>`).join('')}</div>`;
 }
 const status=c=>c.open?`Open · closes in ${leftLabel(c.closes-Date.now())}`:'Closed';
