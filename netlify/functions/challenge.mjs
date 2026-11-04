@@ -9,6 +9,9 @@
 //   entries/{code}/{device}     { name, score, marks, at }
 //   hosting/{device}            { code, closes }   one open challenge per person
 import { db, json, cleanDevice, getAll } from '../lib/db.mjs';
+import { userFor } from '../lib/auth.mjs';
+// a signed-in creator owns the challenge on every device they use, not just the one they made it on
+const owns = (c, device, user) => !!c && ((!!device && c.creator === device) || (!!user && !!c.uid && c.uid === user.uid));
 
 const HOUR = 3600e3, OPEN_FOR = 24 * HOUR, MAKE_WITHIN = HOUR, ROUNDS = 6, MAX = ROUNDS * 100;
 const ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -19,17 +22,18 @@ const cleanScore = (n) => Math.max(0, Math.min(MAX, Math.round(+n || 0)));
 const cleanMarks = (s) => [...String(s || '')].slice(0, ROUNDS).join('');
 const isOpen = (c, now = Date.now()) => c && !c.closed && c.closes > now;
 
-async function view(store, code, device) {
+async function view(store, code, device, user) {
   const c = await store.get(`challenges/${code}`, { type: 'json' }).catch(() => null);
   if (!c) return null;
   const entries = (await getAll(store, `entries/${code}/`))
     .map((e) => ({ name: e.name, score: e.score, marks: e.marks, at: e.at, you: e.key.endsWith('/' + device) }))
     .sort((a, b) => b.score - a.score || a.at - b.at);
-  return { code, host: c.host, rounds: c.rounds, created: c.created, closes: c.closes, open: isOpen(c), closed: !!c.closed, mine: !!device && c.creator === device, entries };
+  return { code, host: c.host, rounds: c.rounds, created: c.created, closes: c.closes, open: isOpen(c), closed: !!c.closed, mine: owns(c, device, user), entries };
 }
 
 export default async (req) => {
   const store = db(), now = Date.now();
+  const user = await userFor(req, store).catch(() => null);
   if (req.method === 'GET') {
     const u = new URL(req.url);
     const host = cleanDevice(u.searchParams.get('host'));
@@ -38,7 +42,7 @@ export default async (req) => {
       const c = h && (await store.get(`challenges/${h.code}`, { type: 'json' }).catch(() => null));
       return json(isOpen(c, now) ? { code: c.code, closes: c.closes } : {});
     }
-    const v = await view(store, cleanCode(u.searchParams.get('code')), cleanDevice(u.searchParams.get('device')));
+    const v = await view(store, cleanCode(u.searchParams.get('code')), cleanDevice(u.searchParams.get('device')), user);
     return v ? json(v) : json({ error: 'not found' }, 404);
   }
   if (req.method !== 'POST') return new Response('GET or POST', { status: 405 });
@@ -58,11 +62,11 @@ export default async (req) => {
     let code = newCode();
     for (let i = 0; i < 5 && (await store.get(`challenges/${code}`).catch(() => null)); i++) code = newCode();
     const name = cleanName(b.name);
-    const c = { code, rounds, creator: device, host: name, created: now, closes: now + OPEN_FOR, closed: false };
+    const c = { code, rounds, creator: device, uid: user ? user.uid : null, host: name, created: now, closes: now + OPEN_FOR, closed: false };
     await store.setJSON(`challenges/${code}`, c);
     await store.setJSON(`entries/${code}/${device}`, { name, score: cleanScore(b.score), marks: cleanMarks(b.marks), at: now });
     await store.setJSON(`hosting/${device}`, { code, closes: c.closes });
-    return json(await view(store, code, device));
+    return json(await view(store, code, device, user));
   }
 
   const code = cleanCode(b.code);
@@ -70,17 +74,17 @@ export default async (req) => {
   if (!c) return json({ error: 'not found' }, 404);
 
   if (b.action === 'play') {
-    if (!isOpen(c, now)) return json({ error: 'This challenge is closed.', ...(await view(store, code, device)) }, 409);
+    if (!isOpen(c, now)) return json({ error: 'This challenge is closed.', ...(await view(store, code, device, user)) }, 409);
     const have = await store.get(`entries/${code}/${device}`).catch(() => null);
     if (!have) await store.setJSON(`entries/${code}/${device}`, { name: cleanName(b.name), score: cleanScore(b.score), marks: cleanMarks(b.marks), at: now });
-    return json(await view(store, code, device));
+    return json(await view(store, code, device, user));
   }
   if (b.action === 'close') {
-    if (c.creator !== device) return json({ error: 'Only the person who started it can close it.' }, 403);
+    if (!owns(c, device, user)) return json({ error: 'Only the person who started it can close it.' }, 403);
     c.closed = true; c.closes = Math.min(c.closes, now);
     await store.setJSON(`challenges/${code}`, c);
-    await store.delete(`hosting/${device}`).catch(() => {});
-    return json(await view(store, code, device));
+    await store.delete(`hosting/${c.creator}`).catch(() => {});
+    return json(await view(store, code, device, user));
   }
   return json({ error: 'unknown action' }, 400);
 };

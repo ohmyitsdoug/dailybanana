@@ -1276,7 +1276,7 @@ const CH=`${API}/challenge`;
 const chalLink=code=>`${location.origin}${location.pathname.replace(/index\.html$/,'')}?c=${code}`;
 async function chalApi(body){
   for(const k of CACHE.keys())if(k.startsWith('ch:')||k==='host')stale(k);   // a challenge changed: fetch fresh
-  const r=await fetch(CH,{method:body?'POST':'GET',headers:{'content-type':'application/json'},body:body?JSON.stringify({device:DEVICE,...body}):undefined});
+  const r=await fetch(CH,{method:body?'POST':'GET',headers:{'content-type':'application/json',...authHdr()},body:body?JSON.stringify({device:DEVICE,...body}):undefined});
   const j=await r.json().catch(()=>({}));return{ok:r.ok,status:r.status,...j};
 }
 // Server data (rankings, challenges, facts) is kept in memory and on the device, so a screen opens with the last
@@ -1309,7 +1309,7 @@ function refill(key){
   if(key.startsWith('ch:')&&document.getElementById('opench'))openChallenges();
   if(key.startsWith('ch:')&&document.getElementById('hist'))renderHistory();
 }
-const getChal=code=>cached('ch:'+code,30e3,()=>fetch(`${CH}?code=${encodeURIComponent(code)}&device=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():null));
+const getChal=code=>cached('ch:'+code,30e3,()=>fetch(`${CH}?code=${encodeURIComponent(code)}&device=${encodeURIComponent(DEVICE)}`,{headers:authHdr()}).then(r=>r.ok?r.json():null));
 const getStats=n=>API?cached('st:'+n,60e3,()=>fetch(`${API}/stats?n=${n}`).then(x=>x.ok?x.json():null)):Promise.resolve(null);
 const getFacts=()=>cached('facts',864e5,()=>fetch('data/facts.json').then(x=>x.json()));
 function preload(){   // today's ranking, your open challenges, the fun facts: fetched ahead so screens open filled in
@@ -1403,10 +1403,11 @@ async function openChallenges(){
   const b=document.getElementById('opench');if(!b||!cs.length)return;
   b.innerHTML=`<div class="eyebrow">Open challenges</div>`+cs.map(c=>{const i=c.entries.findIndex(e=>e.you);
     return`<button class="chal" data-ch="${esc(c.code)}" style="text-align:left;font:inherit;color:inherit;cursor:pointer">
-      <h3>${c.mine?'Your challenge':`${esc(c.host)}'s challenge`}</h3>
+      <h3>${(c.mine||ownChal(c.code))?'Your challenge':`${esc(c.host)}'s challenge`}</h3>
       <span class="note">Closes in ${leftLabel(c.closes-Date.now())} · ${c.entries.length} played${i>=0?` · you're ${ordinal(i+1)} of ${c.entries.length}`:''}</span></button>`}).join('');
   b.querySelectorAll('[data-ch]').forEach(x=>x.onclick=()=>showChallenge(x.dataset.ch));
 }
+const ownChal=code=>quickList().some(q=>q.own&&q.chal&&q.chal.code===code);
 const ordinal=n=>n+(n%100>=11&&n%100<=13?'th':['th','st','nd','rd'][n%10]||'th');
 // the page a challenge link opens
 async function showChallenge(code){
@@ -1417,11 +1418,11 @@ async function showChallenge(code){
   const me=c.entries.find(e=>e.you);
   const played=me||quickList().some(q=>q.chal&&q.chal.code===c.code);
   app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:14px">
-    <div class="head in" style="--d:1"><h2>${c.mine?'Your challenge':`${esc(c.host)}'s challenge`}</h2><button class="sq" id="back">Home</button></div>
+    <div class="head in" style="--d:1"><h2>${(c.mine||ownChal(c.code))?'Your challenge':`${esc(c.host)}'s challenge`}</h2><button class="sq" id="back">Home</button></div>
     <div class="note in" style="--d:1">${status(c)} · 6 rounds, the same for everyone · ${c.entries.length} played</div>
     <div class="in" style="--d:2">${board(c)}</div>
     ${c.open&&!played?`<div class="chal in" style="--d:3"><h3>Your turn</h3><span class="note">Six questions, 25 seconds each. You get one try.</span>${nameNote()}<button class="btn main" id="playch"><span>Play the challenge</span><span aria-hidden="true">→</span></button><span class="note" id="cherr"></span></div>`:''}
-    ${c.open&&c.mine?`<div class="chal in" style="--d:3"><h3>Share it</h3>${shareLinkRow(c.code)}<button class="btn" id="closech">Close challenge now</button></div>`:''}
+    ${c.open&&(c.mine||ownChal(c.code))?`<div class="chal in" style="--d:3"><h3>Share it</h3>${shareLinkRow(c.code)}${c.mine?'<button class="btn" id="closech">Close challenge now</button>':''}</div>`:''}
     ${!c.open?`<div class="note in" style="--d:3">This challenge is closed. ${c.entries[0]?`${esc(c.entries[0].name)} came out on top.`:''}</div>`:''}
   </div>${footer(5)}`;
   wireNav();wireLink(c.code,c.host);
