@@ -828,10 +828,10 @@ function showResults(r,res){
     <div class="in" style="--d:2"><div class="eyebrow" style="margin-bottom:4px">Your rounds</div>
       ${r.quick?'':`<div class="mlegend" id="mleg" hidden><span><i style="width:10px;height:10px;border-radius:50%;background:var(--ink)"></i>you</span><span><i style="width:8px;height:8px;background:var(--acc);border:2px solid var(--ink);transform:rotate(45deg)"></i>typical player</span><span><i style="width:2px;height:12px;background:var(--accsh)"></i>answer</span></div>`}
       <div class="path">${r.qs.map((q,i)=>{const a=res.answers[i]||{};
-        return`<div class="prow round"><span class="i num">${i+1}</span><span class="w"><b>${esc(question(q))}</b><br>
+        return`<div class="prow round"><span class="i num">${i+1}</span><span class="w"><b>${esc(question(q).replace(/^Approximately h/,'H'))}</b><br>
           <span class="t">answer: about ${fmt(nice(q.ans))} · ${a.guess!=null?`you: ${fmt(nice(a.guess))} · ${esc(offLabel(a).replace(/\.$/,'').toLowerCase())}`:'no guess'}<span id="pr${i}"></span></span>
           ${r.quick?'':`<span class="mini" id="mini${i}" hidden><span class="c"></span>${a.guess!=null?`<span class="you" style="left:${posOf(a.guess,q.ans).toFixed(1)}%"></span>`:''}</span>`}</span>
-          <span class="num">${markA(a)} ${a.guess==null?'–':a.p||0}</span></div>`}).join('')}
+          <span class="num">${a.guess==null?'–':a.p||0}</span></div>`}).join('')}
       </div></div>
     ${r.quick?`<div class="in" style="--d:3" id="chalbox"></div>`:''}
     <div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(shareTxt)}</div>
