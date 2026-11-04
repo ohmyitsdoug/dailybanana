@@ -291,6 +291,7 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 .nextd{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;border:2px solid var(--ink);background:var(--card);padding:6px 12px;font-size:15px;box-shadow:3px 3px 0 var(--accsh)}
 .nextd b{font-size:18px;letter-spacing:.5px}
 .cprow{display:flex;gap:10px}
+.cprow #next{flex:1}
 .cprow #cp{flex:1}
 .sharebtn{width:60px;height:60px;padding:0;flex:none}
 .sharebtn svg{width:22px;height:22px}
@@ -725,7 +726,7 @@ function showMenu(jump){
       <a class="lrow" href="/archive" target="_blank" rel="noopener"><span>Archive</span><span class="mut" aria-label="opens in a new tab"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg></span></a>
       <button class="lrow" id="opt-theme"><span>Dark mode</span><span class="toggle ${document.documentElement.dataset.theme==='dark'?'on':''}" aria-hidden="true"></span></button>
       <button class="lrow" id="opt-motion"><span>Animations</span><span class="toggle ${SET.motion?'on':''}" aria-hidden="true"></span></button>
-      ${SESSION&&SESSION.user.admin?'<a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">→</span></a>':''}
+      ${SESSION&&SESSION.user.admin?'<a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">→</span></a><button class="lrow" id="opt-social"><span>Social post image</span><span class="mut">→</span></button>':''}
       ${SESSION?`<button class="lrow" id="delacct"><span>Delete my account</span><span class="mut">Can't be undone</span></button>`:''}
     </div>
     <a class="btn social in" style="--d:7" href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span>Follow us on Instagram</span></a>
@@ -733,6 +734,7 @@ function showMenu(jump){
   wireNav();
   renderHistory();
   document.getElementById('opt-help').onclick=showHelp;
+  const so=document.getElementById('opt-social');if(so)so.onclick=()=>showSocial();
   wireAcct();openChallenges();
   if(jump==='badges')setTimeout(()=>{const el=document.getElementById('badges');if(el)window.scrollTo(0,el.getBoundingClientRect().top+scrollY-12)},50);
   app.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const r=puzzleFor(DAILIES.find(x=>x.n===+b.dataset.n)),s=saved(r.n);s?showResults(r,s):r.n===TODAY.n?showStart():leave(r,liveSaved(r.n))});
@@ -864,10 +866,11 @@ function showReveal(){
       <div class="answer in" style="--d:1">${esc(the(q.B).replace(/^./,c=>c.toUpperCase()))} is about <b class="num">${fmt(nice(q.ans))} ${esc(q.ans>=1.5?q.A.plural:q.A.name)}</b> ${esc(q.B.dim)}.</div>
       <div class="in" style="--d:2">${guessScale(q,a)}</div>
       <div class="note in" style="--d:2">${esc(q.B.name.replace(/^./,c=>c.toUpperCase()))}: ${len(q.B.cm)} · ${esc(q.A.name)}: ${len(q.A.cm)}${a&&a.guess!=null?` · you guessed ${fmt(nice(a.guess))}`:''}</div>
-      <button class="btn main in" style="--d:3" id="next"><span>${last?'See results':'Next round'}</span><span aria-hidden="true">→</span></button>
+      <div class="cprow in" style="--d:3"><button class="btn main" id="next"><span>${last?'See results':'Next round'}</span><span aria-hidden="true">→</span></button>${S.r.quick?`<button class="btn sharebtn" id="dlq" aria-label="Download this round as an image">${ICON.download}</button>`:''}</div>
     </div>
   </div>`;
   document.getElementById('pause').onclick=pause;
+  const dq=document.getElementById('dlq');if(dq)dq.onclick=()=>roundImage(q,a,dq);   // quick play only, so no daily gets spoiled
   S.revealAt=Date.now();
   document.getElementById('next').onclick=()=>{
     if(!S||S.phase!=='reveal')return;
@@ -1137,6 +1140,89 @@ async function shareImage(r,res,btn){
     if(navigator.canShare&&navigator.canShare({files:[file]})&&matchMedia('(pointer:coarse)').matches){
       try{await navigator.share({files:[file],title:'Daily Banana'})}catch(_){}
     }else{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Image saved')}
+  }catch(e){toast('Couldn\'t make the image')}
+  btn.disabled=false;
+}
+// one quick-play round as a 1080×1350 dark card: the question, the points and where the guess landed, never the answer
+// generic:true is the admin's social-post version: no "I scored", and the pin says "you"
+async function drawRound(q,a,{generic=false}={}){
+    const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+    const BG='#2A1A0E',INK='#FFF3C9',MUT='#CDB68C',CARD='#382415',ACC='#FFD43B',DARK='#2A1A0E',F='"Space Grotesk",system-ui,sans-serif';
+    await Promise.all(['500','700'].map(w=>document.fonts.load(`${w} 60px "Space Grotesk"`).catch(()=>{})));
+    const font=(w,px)=>{x.font=`${w} ${px}px ${F}`};
+    const ban=(px,cx,cy,rot=0,alpha=1)=>{const C={b:'#3B2412',y:'#FFD43B',l:'#FFEC8C',d:'#E8A317',s:'#7A4A1E'},u=px/16;
+      x.save();x.globalAlpha=alpha;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.translate(-px/2,-px*17/32);
+      BANANA_PX.forEach((row,yy)=>[...row].forEach((k,xx)=>{if(C[k]){x.fillStyle=C[k];x.fillRect(xx*u,yy*u,u+.5,u+.5)}}));x.restore()};
+    const box=(X,Y,w,h,fill,sh,shc)=>{x.fillStyle=shc;x.fillRect(X+sh,Y+sh,w,h);x.fillStyle=fill;x.fillRect(X,Y,w,h);x.lineWidth=4;x.strokeStyle=INK;x.strokeRect(X+2,Y+2,w-4,h-4)};
+    const L=84,R=W-84,p=a&&a.guess!=null?a.p||0:0;
+    x.fillStyle=BG;x.fillRect(0,0,W,H);
+    // header
+    box(L,84,84,84,CARD,6,ACC);ban(56,L+42,126);
+    x.textBaseline='middle';font(700,46);x.fillStyle=INK;x.fillText('dailybanana.io',L+104,128);
+    font(700,36);const chip='Quick play',cw=x.measureText(chip).width+48;box(R-cw-6,92,cw,68,ACC,6,INK);x.fillStyle=DARK;x.fillText(chip,R-cw-6+24,128);
+    x.textBaseline='alphabetic';
+    // the question, wrapped
+    font(500,40);x.fillStyle=MUT;x.fillText('Approximately…',L,320);
+    const words=question(q).replace(/^Approximately h/,'H').split(' '),lines=[];let qs=68;
+    for(;;){font(700,qs);lines.length=0;let ln='';for(const w of words){const t=ln?ln+' '+w:w;if(x.measureText(t).width>R-L&&ln){lines.push(ln);ln=w}else ln=t}lines.push(ln);if(lines.length<=3||qs<=48)break;qs-=4}
+    x.fillStyle=INK;lines.forEach((t,i)=>x.fillText(t,L,320+qs*1.2*(i+1)));
+    const qEnd=320+qs*1.2*lines.length;
+    // the points
+    const hy=Math.max(qEnd+96,560),sy=Math.min(hy+190,860);let sx=L;
+    if(!generic){font(700,40);x.fillStyle=ACC;x.fillText('I scored',L,hy)}
+    if(p>=90){ban(120,L+60,sy-70);sx+=140}
+    font(700,200);x.fillStyle=INK;try{x.letterSpacing='-5px'}catch(_){}x.fillText(a&&a.guess==null?'0':String(p),sx-4,sy);const pw=x.measureText(String(p)).width;try{x.letterSpacing='0px'}catch(_){}
+    font(700,64);x.fillStyle=MUT;x.fillText(a&&a.guess==null?'/ 100 · out of time':'/ 100',sx+pw+14,sy);
+    ban(200,890,sy-90,16,.28);   // floating banana, in the empty space beside the points
+    // where the guess landed (answer in the middle, no numbers)
+    const ty=1012;
+    x.fillStyle=CARD;x.fillRect(L,ty,R-L,30);x.lineWidth=4;x.strokeStyle=INK;x.strokeRect(L+2,ty+2,R-L-4,26);
+    x.fillStyle=ACC;x.fillRect((L+R)/2-4,ty-24,8,78);
+    if(a&&a.guess!=null){const px=L+(R-L)*posOf(a.guess,q.ans)/100;
+      const PIN=generic?'you':'my guess';font(700,34);const lw=x.measureText(PIN).width+40,bx=Math.max(L,Math.min(R-lw,px-lw/2));
+      x.fillStyle=INK;x.fillRect(px-2,ty-34,4,34);
+      x.fillStyle=ACC;x.fillRect(bx+4,ty-96+4,lw,58);x.fillStyle=BG;x.fillRect(bx,ty-96,lw,58);x.strokeStyle=INK;x.strokeRect(bx+2,ty-94,lw-4,54);
+      x.fillStyle=INK;x.textAlign='center';x.textBaseline='middle';x.fillText(PIN,bx+lw/2,ty-67);x.textAlign='left';x.textBaseline='alphabetic'}
+    font(400,34);x.fillStyle=MUT;x.fillText('too low',L,ty+92);x.textAlign='right';x.fillText('too high',R,ty+92);
+    font(700,34);x.fillStyle=ACC;x.textAlign='center';x.fillText('the answer',(L+R)/2,ty+92);x.textAlign='left';
+    // footer bar
+    x.fillStyle=INK;x.fillRect(L+8,1156,R-L,118);box(L,1148,R-L,118,ACC,0,INK);
+    font(700,44);x.textBaseline='middle';x.fillStyle=DARK;x.fillText('Play free',L+44,1208);x.textAlign='right';x.fillText('dailybanana.io',R-44,1208);
+    return c;
+}
+// admin only: a random quick-play question with a made-up score from 40 to 100, as a post for the game's own Instagram
+function socialPick(){
+  const seen=store.get('seen',[]);const rd=randomRounds()[0];store.set('seen',seen);   // doesn't use up the admin's own quick-play questions
+  const q=puzzleFor({rounds:[rd]}).qs[0],p=40+Math.floor(Math.random()*61);
+  const guess=Math.random()<.5?q.ans*p/100:q.ans*100/p;   // a guess that scores exactly p, too low or too high
+  return{q,a:{guess,p}};
+}
+async function showSocial(pick){
+  if(!(SESSION&&SESSION.user.admin))return showStart();
+  const cur=pick||socialPick();
+  app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:14px">
+    <div class="head"><h2>Social post</h2><button class="sq" id="back">Back</button></div>
+    <span class="note">A random quick-play question and a random score from 40 to 100. Only you can see this.</span>
+    <img id="soimg" alt="Post preview" style="width:100%;aspect-ratio:4/5;border:2px solid var(--ink);background:var(--card)">
+    <div class="cprow"><button class="btn main" id="sodl" style="flex:1"><span>Download</span>${ICON.download}</button><button class="btn" id="sonew">New one</button></div>
+  </div>`;
+  wireNav();
+  document.getElementById('back').onclick=()=>showMenu();
+  document.getElementById('sonew').onclick=()=>showSocial();
+  const c=await drawRound(cur.q,cur.a,{generic:true});
+  const img=document.getElementById('soimg');if(img)img.src=c.toDataURL('image/png');
+  document.getElementById('sodl').onclick=()=>c.toBlob(b=>{const u=URL.createObjectURL(b),el=document.createElement('a');el.href=u;el.download=`daily-banana-post-${todayISO()}.png`;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)},'image/png');
+  window.scrollTo(0,0);
+}
+async function roundImage(q,a,btn){
+  btn.disabled=true;
+  try{
+    const c=await drawRound(q,a);
+    const blob=await new Promise(ok=>c.toBlob(ok,'image/png'));
+    const name='daily-banana-round.png',file=new File([blob],name,{type:'image/png'});
+    log('share',{what:'image',device:DEVICE});
+    if(navigator.canShare&&navigator.canShare({files:[file]})&&matchMedia('(pointer:coarse)').matches){try{await navigator.share({files:[file],title:'Daily Banana'})}catch(_){}}
+    else{const u=URL.createObjectURL(blob),el=document.createElement('a');el.href=u;el.download=name;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Image saved')}
   }catch(e){toast('Couldn\'t make the image')}
   btn.disabled=false;
 }
