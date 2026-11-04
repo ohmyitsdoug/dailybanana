@@ -2,7 +2,7 @@
 
 Planned for v1.1, not live yet. (This file sits in /tools, which is kept off the public site.)
 
-## 1. Rounding, and exact guesses score 100
+## 1. Rounding, and exact guesses score 100 · DONE (live Nov 4 evening, applies to games from Nov 5)
 - **Bug:** points are worked out against the exact answer, but players see a rounded answer.
   Example (Nov 4): green bean 10 cm and paper clip 3.3 cm give 3.03; the screen showed "about 3", so a guess of 3 scored 99 ("1% too low").
 - **Rounding rule (Doug):**

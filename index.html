@@ -488,6 +488,9 @@ const the=b=>b.art?`${b.art} ${b.name}`:b.name;
 const question=q=>`Approximately how many ${q.A.plural} ${q.B.dim} is ${the(q.B)}?`;
 // a friendly rounded answer: 61, 140, 1,900, 13,000
 function nice(n){if(n<10)return Math.round(n*10)/10;const p=10**Math.max(0,Math.floor(Math.log10(n))-1);return Math.round(n/p)*p}
+// the answer players see, and (from Nov 5) the one they're scored against: tenths under 100, whole numbers from 100
+const SCORE_V2='2026-11-05';
+const shownAns=n=>n<100?Math.round(n*10)/10:Math.round(n);
 // lengths for the reveal, metric with imperial alongside
 function len(cm){
   const m=cm>=100000?`${fmt(nice(cm/100000))} km`:cm>=100?`${fmt(nice(cm/100))} m`:`${nice(cm)} cm`;
@@ -506,8 +509,9 @@ function parseGuess(raw){
 // points = how accurate you were, as a percent: the smaller of (guess, answer) over the bigger.
 // Half the answer scores 50, twice the answer scores 50, 5x off scores 20, 10x off scores 10.
 function judge(guess,q){
-  const p=Math.round(MAX_PTS*Math.min(guess,q.ans)/Math.max(guess,q.ans));
-  return{guess,p,off:guess/q.ans};
+  const t=q.v2?q.show:q.ans;   // from Nov 5, typing the answer shown on screen scores exactly 100
+  const p=Math.round(MAX_PTS*Math.min(guess,t)/Math.max(guess,t));
+  return{guess,p,off:guess/t};
 }
 const mark=p=>p>=90?'🍌':p>=70?'🟫':p>=40?'🟨':'⬜';   // darker the closer you get, then the banana
 // small tip under the bananas box
@@ -541,7 +545,8 @@ function log(kind,payload){
 }
 
 // ---------- puzzles ----------
-function puzzleFor(d){const it=v=>typeof v==='object'?v:ITEMS[v];return{...d,qs:d.rounds.map(x=>{const A=it(x.a),B=it(x.b);return{A,B,ans:B.cm/A.cm}})}}
+function puzzleFor(d){const it=v=>typeof v==='object'?v:ITEMS[v],v2=(d.date||todayISO())>=SCORE_V2;
+  return{...d,qs:d.rounds.map(x=>{const A=it(x.a),B=it(x.b),ans=B.cm/A.cm;return{A,B,ans,v2,show:v2?shownAns(ans):nice(ans)}})}}
 let QUICK=null;   // a paused quick game (kept in memory only)
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 // skips any question from a daily (past or future) and the last 300 quick-play questions on this device
@@ -900,8 +905,8 @@ const posOf=(g,ans)=>g<=ans?50*g/ans:100-50*ans/g;   // same as the reveal scale
 function guessScale(q,a){
   const pos=a&&a.guess!=null?(a.guess<=q.ans?50*a.guess/q.ans:100-50*q.ans/a.guess):null;
   return`<div class="scale">
-    <div class="track"><span class="tick" style="left:50%"></span>${pos!=null?`<div class="pin you" style="left:${pos.toFixed(1)}%"><span>${fmt(nice(a.guess))}</span></div>`:''}</div>
-    <div class="scale-ends"><span class="mut">too low</span><b>${fmt(nice(q.ans))}</b><span class="mut">too high</span></div>
+    <div class="track"><span class="tick" style="left:50%"></span>${pos!=null?`<div class="pin you" style="left:${pos.toFixed(1)}%"><span>${fmt(q.v2?shownAns(a.guess):nice(a.guess))}</span></div>`:''}</div>
+    <div class="scale-ends"><span class="mut">too low</span><b>${fmt(q.show)}</b><span class="mut">too high</span></div>
   </div>`;
 }
 function showReveal(){
@@ -911,9 +916,9 @@ function showReveal(){
       <div class="playtop in" style="--d:0"><button class="sq icon" id="pause" aria-label="Pause">${ICON.pause}</button><span class="timer">Round ${S.i+1}</span><span class="tag pts num">${S.i+1}/${ROUNDS} · ${fmt(S.score)}</span></div>
       <div class="in" style="--d:1">${squares(S.answers)}</div>
       <div class="in" style="--d:1;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><b class="score num">+${a.p||0}</b><span>${esc(offLabel(a))}</span></div>
-      <div class="answer in" style="--d:1">${esc(the(q.B).replace(/^./,c=>c.toUpperCase()))} is about <b class="num">${fmt(nice(q.ans))} ${esc(q.ans>=1.5?q.A.plural:q.A.name)}</b> ${esc(q.B.dim)}.</div>
+      <div class="answer in" style="--d:1">${esc(the(q.B).replace(/^./,c=>c.toUpperCase()))} is about <b class="num">${fmt(q.show)} ${esc(q.show===1?q.A.name:q.A.plural)}</b> ${esc(q.B.dim)}.</div>
       <div class="in" style="--d:2">${guessScale(q,a)}</div>
-      <div class="note in" style="--d:2">${esc(q.B.name.replace(/^./,c=>c.toUpperCase()))}: ${len(q.B.cm)} · ${esc(q.A.name)}: ${len(q.A.cm)}${a&&a.guess!=null?` · you guessed ${fmt(nice(a.guess))}`:''}</div>
+      <div class="note in" style="--d:2">${esc(q.B.name.replace(/^./,c=>c.toUpperCase()))}: ${len(q.B.cm)} · ${esc(q.A.name)}: ${len(q.A.cm)}${a&&a.guess!=null?` · you guessed ${fmt(q.v2?shownAns(a.guess):nice(a.guess))}`:''}</div>
       <div class="cprow in" style="--d:3"><button class="btn main" id="next"><span>${last?'See results':'Next round'}</span><span aria-hidden="true">→</span></button>${S.r.quick?`<button class="btn sharebtn" id="dlq" aria-label="Share this round as an image">${ICON.share}</button>`:''}</div>
     </div>
   </div>`;
@@ -995,7 +1000,7 @@ function showResults(r,res){
       ${r.quick?'':`<div class="mlegend" id="mleg" hidden><span><i style="width:10px;height:10px;border-radius:50%;background:var(--ink)"></i>you</span><span><i style="width:8px;height:8px;background:var(--acc);border:2px solid var(--ink);transform:rotate(45deg)"></i>typical player</span><span><i style="width:2px;height:12px;background:var(--accsh)"></i>answer</span></div>`}
       <div class="path">${r.qs.map((q,i)=>{const a=res.answers[i]||{};
         return`<div class="prow round"><span class="i num">${i+1}</span><span class="w"><b>${esc(question(q).replace(/^Approximately h/,'H'))}</b><br>
-          <span class="t">answer: about ${fmt(nice(q.ans))} · ${a.guess!=null?`you: ${fmt(nice(a.guess))}`:'no guess'}<span id="pr${i}"></span></span>
+          <span class="t">answer: about ${fmt(q.show)} · ${a.guess!=null?`you: ${fmt(q.v2?shownAns(a.guess):nice(a.guess))}`:'no guess'}<span id="pr${i}"></span></span>
           ${r.quick?'':`<span class="mini" id="mini${i}" hidden><span class="c"></span>${a.guess!=null?`<span class="you" style="left:${posOf(a.guess,q.ans).toFixed(1)}%"></span>`:''}</span>`}</span>
           <span class="num">${a.guess==null?'–':a.p||0}</span></div>`}).join('')}
       </div></div>

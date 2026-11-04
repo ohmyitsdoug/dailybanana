@@ -113,7 +113,7 @@ export async function build(kind, store, { date = etParts().date, preview = fals
     if (!week.length) return null;
     slides.sort((a, b) => (a.avg == null) - (b.avg == null) || (a.avg ?? 0) - (b.avg ?? 0) || a.d.n - b.d.n);   // hardest first
     const imgs = [P.monCover(`Week of ${mon(start)}`, slides.length), ...slides.map((s, k) => P.monDay({ dayName: dayName(s.d.date), n: s.d.n, q: s.q, avg: s.avg, within: s.within, i: k + 1, of: slides.length }, k % 2 === 0)), P.monEnd()];
-    const top = slides[0], ans = P.nice(top.q.ans);
+    const top = slides[0], ans = P.shownAns(top.q.ans);
     const text = top.avg != null
       ? `Last week’s dailies, ranked by how badly they slipped everyone up. 🍌 The worst one: ${P.question(top.q)} Answer: about ${P.fmt(ans)} ${ans === 1 ? top.q.A.name : top.q.A.plural}. Average score: ${Math.round(top.avg)}.\nSwipe for all ${slides.length}, then play today’s at dailybanana.io`
       : `Last week’s dailies: the hardest question from each day. 🍌\nSwipe for all ${slides.length}, then play today’s at dailybanana.io`;
@@ -145,7 +145,7 @@ export async function build(kind, store, { date = etParts().date, preview = fals
   if (kind === 'thu') {
     const banana = items.find((i) => i.name === 'banana'), avoid = new Set(u.pairs), q = randomPair(items, { lo: 3, hi: 60, unit: banana, avoid });
     if (!preview) { u.pairs.push('banana>' + q.B.name); await remember(store, u); }
-    const ans = P.nice(q.ans), Bn = q.B.name.charAt(0).toUpperCase() + q.B.name.slice(1);
+    const ans = P.shownAns(q.ans), Bn = q.B.name.charAt(0).toUpperCase() + q.B.name.slice(1);
     const img = P.scalePost(q);
     return { kind, ...withTags('thu', `${q.B.art ? (q.B.art === 'an' ? 'An' : 'A') + ' ' + q.B.name : Bn} is about ${P.fmt(ans)} ${ans === 1 ? 'banana' : 'bananas'} ${q.B.dim}. We did the math so you don’t have to. 🍌📏\nHow close would you have been? dailybanana.io`), images: [img], story: [P.storyOf(img, false)] };
   }
@@ -172,7 +172,7 @@ export async function build(kind, store, { date = etParts().date, preview = fals
     const cg = await closestGuess(store, date, items);
     if (!cg) return null;
     const img = P.closestPost(cg);
-    return { kind, ...withTags('sun', `Closest guess of the week 🏆 ${P.question(cg.q)} A player guessed ${P.fmt(cg.guess)}. The answer was ${P.fmt(P.nice(cg.q.ans))}. That’s ${cg.points} points.\nThink you can do better? dailybanana.io`), images: [img], story: [P.storyOf(img, true)] };
+    return { kind, ...withTags('sun', `Closest guess of the week 🏆 ${P.question(cg.q)} A player guessed ${P.fmt(cg.guess)}. The answer was ${P.fmt(P.shownAns(cg.q.ans))}. That’s ${cg.points} points.\nThink you can do better? dailybanana.io`), images: [img], story: [P.storyOf(img, true)] };
   }
   if (kind === 'milestone') {
     const m = preview ? { number: '10,000', label: 'bananas earned', sub: 'That’s 10,000 guesses within 10%.' } : await nextMilestone(store);
@@ -199,7 +199,7 @@ async function closestGuess(store, date, items) {
     p.guesses.forEach((g, i) => { const pt = (p.points || [])[i]; if (g == null || !Number.isFinite(pt)) return; if (!best || pt > best.points) best = { points: pt, guess: g, q: qOfDaily(items, d, i) }; });
   }
   if (!best) return null;
-  best.guess = P.nice(best.guess) === best.guess ? best.guess : Math.round(best.guess * 10) / 10;
+  best.guess = P.shownAns(best.guess);
   return { ...best, plays: plays.length };
 }
 

@@ -12,6 +12,7 @@ const TH = {
 };
 
 export const fmt = (n) => Number(n).toLocaleString('en-US');
+export const shownAns = (n) => (n < 100 ? Math.round(n * 10) / 10 : Math.round(n));   // the answer as players see it
 export function nice(n) { if (n < 10) return Math.round(n * 10) / 10; const p = 10 ** Math.max(0, Math.floor(Math.log10(n)) - 1); return Math.round(n / p) * p; }
 export const the = (b) => (b.art ? `${b.art} ${b.name}` : b.name);
 export const question = (q) => `How many ${q.A.plural} ${q.B.dim} is ${the(q.B)}?`;
@@ -50,7 +51,7 @@ export function monDay(d, dark) {
   const { ls, px } = fit(question(d.q), R - L, 64, 3, 48); x.fillStyle = T.ink; f(700, px); ls.forEach((s, i) => x.fillText(s, L, 380 + i * px * 1.19));
   const sh = dark ? T.acc : T.ink;
   box(L, 600, R - L, 250, T.card, 8, sh); f(500, 36); x.fillStyle = T.mut; x.fillText('The answer: about', L + 40, 670);
-  const ans = nice(d.q.ans), at = `${fmt(ans)} ${unitWord(d.q, ans)}`;
+  const ans = shownAns(d.q.ans), at = `${fmt(ans)} ${unitWord(d.q, ans)}`;
   let ap = 100; f(700, ap); while (x.measureText(at).width > R - L - 80 && ap > 56) { ap -= 4; f(700, ap); }
   x.fillStyle = T.ink; x.fillText(at, L + 40, 790);
   const w2 = (R - L) / 2 - 12;
@@ -117,7 +118,7 @@ export function guessPost(q, a) {
 // THU · banana for scale (q.A is the banana)
 export function scalePost(q) {
   const P = poster('light', 'Banana for scale', ['How close were you?', 'dailybanana.io']), { x, T, f, fit } = P;
-  const B = q.B, cap = B.name.charAt(0).toUpperCase() + B.name.slice(1), ans = nice(q.ans);
+  const B = q.B, cap = B.name.charAt(0).toUpperCase() + B.name.slice(1), ans = shownAns(q.ans);
   const head = `${B.art ? (B.art === 'an' ? 'An' : 'A') + ' ' : ''}${B.art ? B.name : cap} is about`;
   const h = fit(head, R - L, 44, 2, 32, 500); x.fillStyle = T.mut; h.ls.forEach((t, i) => x.fillText(t, L, 320 + i * h.px * 1.2));
   const y0 = 320 + (h.ls.length - 1) * h.px * 1.2;
@@ -160,7 +161,7 @@ export function closestPost(cg) {
   const half = (R - L) / 2 - 12;
   box(L, 560, half, 260, T.card, 8, T.acc); box(L + half + 24, 560, half, 260, T.card, 8, T.acc);
   f(500, 34); x.fillStyle = T.mut; x.fillText('a player guessed', L + 36, 620); x.fillText('the answer', L + half + 60, 620);
-  const g = fmt(cg.guess), a = fmt(nice(cg.q.ans)); let s = 110; f(700, s); while (Math.max(x.measureText(g).width, x.measureText(a).width) > half - 72 && s > 50) { s -= 6; f(700, s); }
+  const g = fmt(cg.guess), a = fmt(shownAns(cg.q.ans)); let s = 110; f(700, s); while (Math.max(x.measureText(g).width, x.measureText(a).width) > half - 72 && s > 50) { s -= 6; f(700, s); }
   x.fillStyle = T.ink; x.fillText(g, L + 36, 740); x.fillText(a, L + half + 60, 740);
   ban(L + 60, 930, 90); f(700, 64); x.fillStyle = T.ink; x.fillText(`${cg.points} points.`, L + 130, 955);
   f(500, 36); x.fillStyle = T.mut; x.fillText(`Out of ${fmt(cg.plays)} dailies played.`, L, 1040);
@@ -196,7 +197,7 @@ function storyCard(t, chip, lines, foot) {
 }
 // THU morning · answer to Wednesday's question
 export function answerStory(q) {
-  const ans = nice(q.ans);
+  const ans = shownAns(q.ans);
   return storyCard('dark', 'The answer', [[500, 40, 'mut', 'Yesterday we asked:'], [700, 60, 'ink', question(q)], [500, 40, 'mut', 'The answer: about'], [700, 120, 'acc', fmt(ans)], [700, 60, 'ink', `${unitWord(q, ans)}.`], [500, 38, 'mut', 'How close were you?']], ['Play free', 'dailybanana.io']);
 }
 // SUN morning · last call for the weekend challenge

@@ -3,7 +3,7 @@
 //   /archive/000    one daily: the six questions, answers, sizes, how players did and where they typically guessed
 // A daily is published once it's over in every time zone (noon UTC the day after its date), so nothing is spoiled.
 import { db, getAll } from '../lib/db.mjs';
-import { page, esc, fmt, nice, len, fmtDate, shortDate, pad3, SITE_URL } from '../lib/page.mjs';
+import { page, esc, fmt, nice, shownAns, SCORE_V2, len, fmtDate, shortDate, pad3, SITE_URL } from '../lib/page.mjs';
 
 export const config = { path: ['/archive', '/archive/*'] };
 
@@ -76,6 +76,7 @@ export default async (req) => {
   const anyTypical = qs.some((q) => q.typical);
   const prev = live.find((x) => x.n === n - 1), next = live.find((x) => x.n === n + 1);
 
+  const ansOf = (q) => (d.date >= SCORE_V2 ? shownAns(q.ans) : nice(q.ans));
   const body = `<div class="eyebrow" style="margin-top:22px">Daily #${pad3(n)} · ${esc(fmtDate(d.date))}</div>
     <h1>Daily Banana #${pad3(n)} answers</h1>
     <p class="lead">Six questions, one ridiculous unit each. Here are the answers, the real sizes behind them, and how ${ps.length ? `${fmt(ps.length)} player${ps.length === 1 ? '' : 's'}` : 'players'} did.</p>
@@ -92,7 +93,7 @@ export default async (req) => {
     ${qs.map((q, i) => `<section class="round">
       <div class="eyebrow">Round ${i + 1}</div>
       <h3 class="q">${esc(question(q.A, q.B))}</h3>
-      <p class="a"><b>Answer: about ${fmt(nice(q.ans))} ${esc(q.ans >= 1.5 ? q.A.plural : q.A.name)}.</b> ${esc(the(q.B).replace(/^./, (c) => c.toUpperCase()))} is about ${len(q.B.cm)} ${esc(q.B.dim)}, and ${esc(the(q.A))} is about ${len(q.A.cm)}.</p>
+      <p class="a"><b>Answer: about ${fmt(ansOf(q))} ${esc(ansOf(q) === 1 ? q.A.name : q.A.plural)}.</b> ${esc(the(q.B).replace(/^./, (c) => c.toUpperCase()))} is about ${len(q.B.cm)} ${esc(q.B.dim)}, and ${esc(the(q.A))} is about ${len(q.A.cm)}.</p>
       ${q.typical ? `<span class="mini"><span class="c"></span><span class="avg" style="left:${posOf(q.typical, q.ans).toFixed(1)}%"></span></span><div class="ends"><span>too low</span><span>typical guess: ${fmt(nice(q.typical))}</span><span>too high</span></div>` : ''}
       ${q.avgPts != null ? `<p class="small mut" style="margin:8px 0 0">Average ${Math.round(q.avgPts)} points · ${q.close}% of players were within 10%</p>` : ''}
     </section>`).join('')}
@@ -101,7 +102,7 @@ export default async (req) => {
     <a class="cta" href="/">Play today's daily <span aria-hidden="true">→</span></a>
     <p class="small">${prev ? `<a href="/archive/${pad3(prev.n)}">← Daily #${pad3(prev.n)}</a> · ` : ''}<a href="/archive">All dailies</a>${next ? ` · <a href="/archive/${pad3(next.n)}">Daily #${pad3(next.n)} →</a>` : ''}</p>`;
 
-  const qa = qs.map((q) => ({ '@type': 'Question', name: question(q.A, q.B), acceptedAnswer: { '@type': 'Answer', text: `About ${fmt(nice(q.ans))} ${q.A.plural}: ${the(q.B)} is about ${len(q.B.cm)} ${q.B.dim} and ${the(q.A)} is about ${len(q.A.cm)}.` } }));
+  const qa = qs.map((q) => ({ '@type': 'Question', name: question(q.A, q.B), acceptedAnswer: { '@type': 'Answer', text: `About ${fmt(ansOf(q))} ${q.A.plural}: ${the(q.B)} is about ${len(q.B.cm)} ${q.B.dim} and ${the(q.A)} is about ${len(q.A.cm)}.` } }));
   return html(page({
     title: `Daily Banana #${pad3(n)} answers · ${shortDate(d.date)}`,
     description: `Answers for Daily Banana #${pad3(n)} (${shortDate(d.date)}): ${qs.slice(0, 2).map((q) => question(q.A, q.B)).join(' ')} Plus the average score${ps.length ? ` (${fmt(Math.round(avg(scores)))}/600)` : ''} and where players guessed.`,
