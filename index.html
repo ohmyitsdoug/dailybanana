@@ -551,9 +551,9 @@ function puzzleFor(d){const it=v=>typeof v==='object'?v:ITEMS[v],v2=(d.date||tod
 // so the home screen offers Resume. A finished or replaced game leaves a 'cleared' marker so other devices drop it too.
 function quickLive(){const v=store.get('qlive',null);if(!v||v.cleared||!Array.isArray(v.rounds))return null;
   const unit=v.chal&&v.chal.weekend&&v.chal.weekend.unit,rounds=fromNames(v.rounds,unit);if(rounds.some(x=>x.a==null||x.b==null))return null;
-  return{r:{...puzzleFor({rounds,date:v.date}),n:0,quick:true,date:v.date,chal:v.chal||null},answers:v.answers,score:v.score,i:v.i,left:v.left,pauses:0,phase:v.phase}}
+  return{r:{...puzzleFor({rounds,date:v.date}),n:0,quick:true,date:v.date,chal:v.chal||null},answers:v.answers,score:v.score,i:v.i,left:v.left,pauses:0,phase:v.phase,running:v.running,end:v.end}}
 function quickKeep(){if(!S||!S.r.quick)return;const left=S.clock?Math.max(0,S.end-Date.now()):S.left;
-  store.set('qlive',{at:Date.now(),rounds:toNames(S.r.rounds),date:S.r.date,chal:S.r.chal||null,answers:S.answers,score:S.score,i:S.i,left,phase:S.phase})}
+  store.set('qlive',{at:Date.now(),rounds:toNames(S.r.rounds),date:S.r.date,chal:S.r.chal||null,answers:S.answers,score:S.score,i:S.i,left,phase:S.phase,running:!!S.clock,end:S.clock?S.end:null})}
 const quickDrop=()=>store.set('qlive',{cleared:true,at:Date.now()});
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 // skips any question from a daily (past or future) and the last 300 quick-play questions on this device
@@ -815,14 +815,22 @@ function saveLive(){ // what's needed to resume, and to stop a reload from resta
   if(S&&S.r.quick)return quickKeep();
   if(!S)return;
   const left=S.clock?Math.max(0,S.end-Date.now()):S.left;
-  store.set('live:'+S.r.n,{answers:S.answers,score:S.score,i:S.i,left,pauses:S.pauses,phase:S.phase,running:S.live});
+  store.set('live:'+S.r.n,{answers:S.answers,score:S.score,i:S.i,left,pauses:S.pauses,phase:S.phase,running:S.live,end:S.clock?S.end:null});
 }
 function startGame(r,resume){
   if(r.quick&&!resume)quickDrop();
   S={r,i:0,answers:[],score:0,left:ROUND_SECONDS*1000,pauses:0,phase:'play',live:false,clock:false,end:0,
      ...(resume?{answers:resume.answers,score:resume.score,i:resume.i,left:resume.left,pauses:resume.pauses,phase:resume.phase}:{})};
+  // closed mid-question without pausing: the clock kept running while you were away
+  if(resume&&resume.running&&resume.end&&S.phase==='play'){
+    const rem=resume.end-Date.now();
+    if(rem<=1000){S.answers=[...S.answers];S.answers[S.i]={guess:null,p:0,t:ROUND_SECONDS*1000};S.phase='reveal';S.left=ROUND_SECONDS*1000;S.missed=true;saveLive();if(r.quick)pushSync()}
+    else{S.left=rem;S.resumeRunning=true}
+  }
   if(!resume)log('start',{mode:r.quick?'quick':'daily',puzzle:r.quick?null:r.n,chal:!!r.chal,device:DEVICE});   // for the admin's starts and completion rate
   S.phase==='reveal'?showReveal():showQuestion();
+  if(S.missed){S.missed=false;toast('Time ran out on that question while you were away')}
+  else if(S.resumeRunning){S.resumeRunning=false;startClock()}   // the round picks up with the time that was left
 }
 function showQuestion(){
   const q=S.r.qs[S.i];S.phase='play';S.clock=false;S.live=false;
@@ -856,11 +864,12 @@ function showQuestion(){
   const fb=document.getElementById('fb');
   if(!reduced()){fb.className='fb pop';fb.innerHTML=`<span class="count">Round ${S.i+1}</span>`}
   setTimeout(()=>{if(S&&S.phase==='play'&&!S.clock)startClock()},HEADSTART_MS);
-  saveLive();
+  if(!S.r.quick)saveLive();
 }
 function startClock(){
   if(!S||S.clock||S.phase!=='play')return;
   S.clock=true;S.live=true;S.end=Date.now()+S.left;
+  saveLive();if(S.r.quick)pushSync();   // the deadline is saved, so closing the app doesn't stop the clock
   const fb=document.getElementById('fb');if(fb&&fb.querySelector('.count'))fb.innerHTML='';
   let n=0;
   tick=setInterval(()=>{
@@ -870,7 +879,7 @@ function startClock(){
     const bar=document.getElementById('bar');
     bar.firstElementChild.style.width=(left/(ROUND_SECONDS*10))+'%';
     bar.classList.toggle('low',s<=5);
-    if(++n%10===0&&!S.r.quick)saveLive();   // dailies keep the clock; quick games save once a round
+
     if(!left)endRound(null);
   },100);
 }
@@ -1416,9 +1425,6 @@ function preload(){   // today's ranking, your open challenges, the fun facts: f
 const idle=f=>(window.requestIdleCallback||(g=>setTimeout(g,300)))(f,{timeout:2000});
 idle(preload);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')idle(preload)});
-// leaving the app mid-daily: save where you are right now (quick games save at the end of each round instead)
-addEventListener('pagehide',()=>{if(S&&!S.r.quick)saveLive()});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&S&&!S.r.quick)saveLive()});
 const myOpen=()=>API?cached('host',30e3,()=>fetch(`${CH}?host=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():null)).then(v=>v||{}):Promise.resolve({});
 // the scoreboard name: your account name when signed in, otherwise this device's guest name (set in the Menu)
 const nameNow=()=>SESSION?SESSION.user.name:(store.get('name','')||GUEST);
@@ -1628,10 +1634,10 @@ const isNew=()=>!store.get('welcomed',false)&&!playedDailies().length&&!quickLis
 document.getElementById('bgb').innerHTML=[[8,14,72,0],[80,8,52,3],[68,38,64,4],[16,62,60,6],[84,70,80,2],[50,88,46,5]].map(([x,y,s,d])=>`<span style="left:${x}%;top:${y}%;--s:${s}px;--d:${d}s">${BANANA(s)}</span>`).join('');
 app.innerHTML='<div class="note" style="padding:40px 0">Loading…</div>';
 loadData().then(()=>{
-  // a daily left mid-round (tab closed or reloaded) counts as a pause
+  // a daily left mid-round keeps its clock running (see startGame); only an old save without a deadline counts as a pause
   const live=liveSaved(TODAY.n);
   if(live&&!Array.isArray(live.answers))store.del('live:'+TODAY.n);   // an unfinished round from an older version
-  else if(live&&live.running){live.running=false;live.pauses++;store.set('live:'+TODAY.n,live)}
+  else if(live&&live.running&&!live.end){live.running=false;live.pauses++;store.set('live:'+TODAY.n,live)}   // saved by an older version: counts as a pause
   const l2=liveSaved(TODAY.n);
   if(l2&&l2.pauses>MAX_PAUSES&&!saved(TODAY.n)){
     S={r:puzzleFor(TODAY),answers:l2.answers,score:l2.score,pauses:MAX_PAUSES};
