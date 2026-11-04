@@ -518,6 +518,9 @@ function quick(chal){
   leave({...puzzleFor({rounds}),n:0,quick:true,date:todayISO(),chal:chal?{code:chal.code,host:chal.host}:null});
 }
 const quickList=()=>store.get('quick',[]);
+const quickTotalsFromList=()=>{const l=quickList();return{g:l.length,t:l.reduce((a,q)=>a+(q.total||0),0),b:l.reduce((a,q)=>a+(q.answers||[]).filter(x=>(x&&x.p||0)>=90).length,0)}};
+// lifetime totals; falls back to the saved list (which also covers games synced from another device)
+const quickTotals=()=>{const a=store.get('qstats',null),b=quickTotalsFromList();return a&&a.g>=b.g?a:b};
 function saveQuick(rec){const l=quickList().filter(x=>x.id!==rec.id);l.unshift(rec);store.set('quick',l.slice(0,60))}
 
 // ---------- badges and history (dailies only) ----------
@@ -667,6 +670,7 @@ function showHelp(){
 function showMenu(jump){
   const hist=playedDailies().reverse();
   const scores=hist.map(x=>x.res.total);
+  const qt=quickTotals();
   const have=store.get('badges',{});
   const todayRes=saved(TODAY.n);
   HGAMES=[...hist.map(x=>({...x,t:x.res.at||new Date(x.d.date+'T12:00').getTime()})),...quickList().map(q=>({q,t:q.at}))].sort((a,b)=>b.t-a.t);HPAGE=0;
@@ -681,6 +685,12 @@ function showMenu(jump){
       <div class="stat"><b class="num">${streak()}</b><span>streak</span></div>
       <div class="stat"><b class="num">${scores.length?fmt(Math.max(...scores)):'–'}</b><span>best</span></div>
       <div class="stat"><b class="num">${scores.length?fmt(Math.round(scores.reduce((a,b)=>a+b,0)/scores.length)):'–'}</b><span>average</span></div>
+    </div>
+    <div class="eyebrow in" style="--d:3">Quick play</div>
+    <div class="stats in" style="--d:3">
+      <div class="stat"><b class="num">${fmt(qt.g)}</b><span>games</span></div>
+      <div class="stat"><b class="num">${qt.g?fmt(Math.round(qt.t/qt.g)):'–'}</b><span>avg score</span></div>
+      <div class="stat"><b class="num">${fmt(qt.b)}</b><span>🍌 collected</span></div>
     </div>
     <div class="eyebrow in" style="--d:4" id="badges">Badges · ${badgeCount(have).replace('/',' of ')}</div>
     <div class="badges in" style="--d:4">${shownBadges(have).map(b=>`<div class="badge ${have[b.id]?'on':''}">${badgeIcon()}<span class="bt"><b>${b.name}</b><span>${b.how}</span></span></div>`).join('')}</div>
@@ -868,7 +878,8 @@ function finish(why){
   }else{
     QUICK=null;
     Object.assign(res,{id:'q'+Date.now().toString(36),at:Date.now(),rounds:toNames(r.rounds),chal:r.chal||null,own:false});
-    res.badges=[];saveQuick(res);pushSync();   // quick games and challenges don't earn the daily badges
+    res.badges=[];saveQuick(res);pushSync();
+    {const t=store.get('qstats',null);if(t){t.g++;t.t+=total;t.b+=R.answers.filter(a=>(a.p||0)>=90).length;store.set('qstats',t)}else store.set('qstats',quickTotalsFromList())}   // the list already includes this game   // quick games and challenges don't earn the daily badges
     log('quick',{score:total,points:R.answers.map(a=>a.p||0),chal:!!res.chal,device:DEVICE});
     if(res.chal){showResults(r,res);postChallenge(res).then(()=>chalBox(res));return}
   }
@@ -1073,8 +1084,9 @@ async function chalApi(body){
 }
 const getChal=code=>fetch(`${CH}?code=${encodeURIComponent(code)}&device=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():null).catch(()=>null);
 const myOpen=()=>fetch(`${CH}?host=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?r.json():{}).catch(()=>({}));
-const nameField=()=>`<input class="namein" id="nm" maxlength="16" placeholder="Your name for the scoreboard" value="${esc(store.get('name','')||(SESSION?SESSION.user.name:GUEST))}" autocomplete="nickname">`;
-const readName=()=>{const el=document.getElementById('nm');const v=(el?el.value:'').trim().slice(0,16);if(v)store.set('name',v);return v};
+// the scoreboard name: your account name when signed in, otherwise this device's guest name (set in the Menu)
+const nameNow=()=>SESSION?SESSION.user.name:(store.get('name','')||GUEST);
+const nameNote=()=>`<span class="note">Playing as <b>${esc(nameNow())}</b>. ${SESSION?'You can change your name in the Menu, under Account.':'Sign in from the Menu to pick your own name.'}</span>`;
 function board(c){
   // Bragging rights: only once the challenge has run its full 24 hours (closing it early doesn't count)
   if(!c.open&&!c.closed&&c.entries.some(e=>e.you)&&c.entries.length>1){const me=c.entries.find(e=>e.you);if(c.entries.some(e=>!e.you&&e.score<me.score))earnBadge('beat24')}
@@ -1108,9 +1120,9 @@ async function chalBox(res){
     document.getElementById('viewch').onclick=()=>showChallenge(mine.code);return;
   }
   if(!put(`<h3>Challenge your friends</h3><span class="note">Send a link to these exact 6 questions. It stays open for 24 hours. Link available for ${leftLabel(CHALLENGE_WITHIN-(Date.now()-res.at))} more.</span>
-    ${nameField()}<button class="btn main" id="mkch"><span>Make a challenge link</span><span aria-hidden="true">→</span></button><span class="note" id="cherr"></span>`))return;
+    ${nameNote()}<button class="btn main" id="mkch"><span>Make a challenge link</span><span aria-hidden="true">→</span></button><span class="note" id="cherr"></span>`))return;
   document.getElementById('mkch').onclick=async e=>{
-    const name=readName();if(!name){document.getElementById('nm').focus();document.getElementById('cherr').textContent='Add a name so friends know who to beat.';return}
+    const name=nameNow();
     e.currentTarget.disabled=true;
     const c=await chalApi({action:'create',name,rounds:res.rounds,score:res.total,marks:res.answers.map(markA).join(''),playedAt:res.at});
     if(!c.ok){document.getElementById('cherr').textContent=c.error||'Could not make a link right now. Try again.';e.currentTarget.disabled=false;return}
@@ -1170,7 +1182,7 @@ async function showChallenge(code){
     <div class="head in" style="--d:1"><h2>${c.mine?'Your challenge':`${esc(c.host)}'s challenge`}</h2><button class="sq" id="back">Home</button></div>
     <div class="note in" style="--d:1">${status(c)} · 6 rounds, the same for everyone · ${c.entries.length} played</div>
     <div class="in" style="--d:2">${board(c)}</div>
-    ${c.open&&!played?`<div class="chal in" style="--d:3"><h3>Your turn</h3><span class="note">Six questions, 25 seconds each. You get one try.</span>${nameField()}<button class="btn main" id="playch"><span>Play the challenge</span><span aria-hidden="true">→</span></button><span class="note" id="cherr"></span></div>`:''}
+    ${c.open&&!played?`<div class="chal in" style="--d:3"><h3>Your turn</h3><span class="note">Six questions, 25 seconds each. You get one try.</span>${nameNote()}<button class="btn main" id="playch"><span>Play the challenge</span><span aria-hidden="true">→</span></button><span class="note" id="cherr"></span></div>`:''}
     ${c.open&&c.mine?`<div class="chal in" style="--d:3"><h3>Share it</h3>${shareLinkRow(c.code)}<button class="btn" id="closech">Close challenge now</button></div>`:''}
     ${!c.open?`<div class="note in" style="--d:3">This challenge is closed. ${c.entries[0]?`${esc(c.entries[0].name)} came out on top.`:''}</div>`:''}
   </div>${footer(5)}`;
@@ -1178,14 +1190,14 @@ async function showChallenge(code){
   document.getElementById('back').onclick=showStart;
   const cl=document.getElementById('closech');if(cl)cl.onclick=async()=>{cl.disabled=true;await chalApi({action:'close',code:c.code});showChallenge(c.code)};
   const pl=document.getElementById('playch');if(pl)pl.onclick=()=>{
-    const name=readName();if(!name){document.getElementById('nm').focus();document.getElementById('cherr').textContent='Add a name for the scoreboard.';return}
+
     quick(c);
   };
 }
 // a finished challenge game posts its score (one try per person)
 async function postChallenge(res){
   if(!res.chal||res.own)return;
-  await chalApi({action:'play',code:res.chal.code,name:store.get('name','')||(SESSION?SESSION.user.name:GUEST),score:res.total,marks:res.answers.map(markA).join('')});
+  await chalApi({action:'play',code:res.chal.code,name:nameNow(),score:res.total,marks:res.answers.map(markA).join('')});
 }
 
 // ---------- first visit: what the game is, and that every size is an approximation ----------
