@@ -8,6 +8,9 @@ Planned for v1.1, not live yet. (This file sits in /tools, which is kept off the
   Guessing 3 scored 99 and said "1% too low."
 - **Fix:** score against the rounded answer the player sees (`nice(q.ans)`), so typing the shown number gives 100 and says "Spot on!"
   Use the same rounded answer everywhere it's used: the reveal scale, the results, the share text, the typical-player marks and the post images.
+- **Rounding rule (Doug):** answers round to the nearest tenth, up or down, and a trailing .0 is dropped.
+  10.03 → 10, 10.06 → 10.1, 3.03 → 3. A guess equal to that shown answer scores 100.
+  (Today, answers of 10 and up round to 2 significant figures, e.g. 1,437 → 1,400. Open question: keep the nearest tenth for big answers too, e.g. 1,437.2?)
 - Scores already played stay as they are; only new games use the new scoring.
 
 ## 2. Bonus for an exact guess
