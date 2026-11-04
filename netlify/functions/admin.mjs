@@ -78,6 +78,7 @@ export default async (req) => {
     completions: dR.length,
     completions_tracked: dR.filter((g) => g.day >= SINCE.starts).length,   // same days as starts, so the two compare
     rate: startsTracked && sD.length ? pct(completedAfterStart, sD.length) : null,
+    finished_starts: startsTracked ? completedAfterStart : null,   // of the starts, how many were finished
     accuracy: dR.length ? pct(dR.reduce((t, g) => t + (g.score || 0), 0), dR.length * 600) : null,
     avg_score: dR.length ? Math.round(dR.reduce((t, g) => t + (g.score || 0), 0) / dR.length) : null,
     time: timed.length ? Math.round(timed.reduce((t, g) => t + g.ms, 0) / timed.length / 1000) : null,
