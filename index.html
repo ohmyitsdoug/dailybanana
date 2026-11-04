@@ -875,7 +875,8 @@ let FACTS=null;
 async function showFact(r){
   try{if(!FACTS)FACTS=await fetch('data/facts.json').then(x=>x.json())}catch(_){return}
   const el=document.getElementById('factt');if(!el||!FACTS.length)return;
-  el.textContent=FACTS[r.quick?Math.floor(Math.random()*FACTS.length):r.n%FACTS.length];document.getElementById('fact').hidden=false;
+  if(!r.quick&&r.n<1)return;   // #000 has no fun fact; #001 starts the list (the barleycorn one)
+  el.textContent=FACTS[r.quick?Math.floor(Math.random()*FACTS.length):(r.n-1)%FACTS.length];document.getElementById('fact').hidden=false;
 }
 const RESULTS_LAYOUT='A';   // A: your rounds, then sharing and Play again · B: sharing above the rounds
 function showResults(r,res){
