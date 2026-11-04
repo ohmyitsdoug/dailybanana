@@ -319,7 +319,7 @@ button.stat{font:inherit;color:inherit;background:var(--bg);text-align:left;curs
 .in{animation:slideIn .4s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--d,0) * 60ms)}
 .out{animation:slideOut .25s ease-in both;animation-delay:calc(var(--d,0) * 35ms)}
 .pop{animation:pop .2s ease-out}
-.calm .in,.calm .out,.calm .pop,.calm .caret{animation:none!important}
+.calm .in,.calm .out,.calm .pop,.calm .caret,.still .in{animation:none!important}
 @media (prefers-reduced-motion:reduce){.in,.out,.pop,.caret{animation:none!important}}
 
 /* desktop */
@@ -1070,14 +1070,21 @@ function applyData(d){
   const b=store.get('badges',{});Object.entries(d.badges||{}).forEach(([k,v])=>{if(!b[k]||v<b[k])b[k]=v});store.set('badges',b);
   if(d.name&&!store.get('name',''))store.set('name',d.name);
 }
+// redraw the current screen in place, without replaying the entrance animations
+function redrawQuietly(fn){const h=document.documentElement,y=scrollY;h.classList.add('still');fn();scrollTo(0,y);requestAnimationFrame(()=>requestAnimationFrame(()=>h.classList.remove('still')))}
+// returns true when the account had something this device didn't (so the screen needs redrawing)
 async function syncNow(){
-  if(!SESSION||!API)return;
+  if(!SESSION||!API)return false;
+  let changed=false;
   try{
     const g=await fetch(`${API}/sync`,{headers:authHdr()});
     if(g.status===401){setSession(null);return}
+    const before=JSON.stringify(localData());
     applyData(((await g.json())||{}).data||{});
+    changed=JSON.stringify(localData())!==before;
     await fetch(`${API}/sync`,{method:'POST',headers:{'content-type':'application/json',...authHdr()},body:JSON.stringify({data:localData()})});
   }catch(_){}
+  return changed;
 }
 function pushSync(){if(SESSION&&API)fetch(`${API}/sync`,{method:'POST',headers:{'content-type':'application/json',...authHdr()},body:JSON.stringify({data:localData()}),keepalive:true}).catch(()=>{})}
 
@@ -1476,7 +1483,7 @@ loadData().then(()=>{
     const open=()=>code?showChallenge(code):showStart();
     if(isNew()){showStart();welcome(open)}else open();
     // pull scores from your other devices, then refresh the home screen if it's showing
-    if(SESSION)syncNow().then(()=>{testerCheck();if(!S&&document.querySelector('.home'))showStart()});
+    if(SESSION)syncNow().then(changed=>{testerCheck();if(changed&&!S&&document.querySelector('.home'))redrawQuietly(showStart)});
   });
   log('visit',{device:DEVICE});
   testerCheck();backfillGuesses();
