@@ -1,5 +1,6 @@
 // POST /.netlify/functions/log  (anonymous: a random device ID, no names)
-//   { kind:"visit", device }                                  one per device per day
+//   { kind:"visit", device, src:{s,m,c} }                     one per device per day; src = where the device first came from
+//   { kind:"signin", device, uid }                            someone signed in on this device (first time per device)
 //   { kind:"play",  puzzle, score, points:[6], guesses:[6], device }   a finished daily (guesses: null = no guess)
 //   { kind:"quick", score, points:[6], chal, device }         a finished quick game (chal: it was a challenge)
 //   { kind:"start", mode:"daily"|"quick", puzzle, chal, device }  a game was started (daily: once per device per puzzle)
@@ -11,6 +12,8 @@ import { db, cleanDevice, day, getAll } from '../lib/db.mjs';
 const pts = (x) => (Array.isArray(x) ? x : []).slice(0, 6).map((v) => Math.max(0, Math.min(100, Math.round(+v || 0))));
 const score = (x) => Math.max(0, Math.min(600, Math.round(+x || 0)));
 const ms = (x) => { const n = Math.round(+x || 0); return n > 0 && n < 6 * 60e3 ? n : null; };
+const tag = (x) => String(x || '').toLowerCase().replace(/[^a-z0-9_.\-]/g, '').slice(0, 40);
+const cleanSrc = (x) => (x && typeof x === 'object' && tag(x.s) ? { s: tag(x.s), m: tag(x.m), c: tag(x.c) } : null);
 const id = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 export default async (req) => {
@@ -22,7 +25,9 @@ export default async (req) => {
 
   if (b.kind === 'visit') {
     let seen = await store.get(`seen/${device}`, { type: 'json' }).catch(() => null);
-    if (!seen) { seen = { first: today }; await store.setJSON(`seen/${device}`, seen); }
+    const src = cleanSrc(b.src);
+    if (!seen) { seen = { first: today, ...(src ? { src } : {}) }; await store.setJSON(`seen/${device}`, seen); }
+    else if (!seen.src && src && seen.first === today) { seen.src = src; await store.setJSON(`seen/${device}`, seen); }
     await store.setJSON(`visits/${today}/${device}`, { first: seen.first });
     return new Response('ok');
   }
@@ -60,6 +65,10 @@ export default async (req) => {
       if (puzzle === null) return new Response('skip');
       if (!(await store.get(`starts/daily/${puzzle}/${device}`).catch(() => null))) await store.setJSON(`starts/daily/${puzzle}/${device}`, { day: today });
     } else await store.setJSON(`starts/quick/${today}/${id()}`, { device, chal: !!b.chal });
+    return new Response('ok');
+  }
+  if (b.kind === 'signin') {
+    if (!(await store.get(`signins/${device}`).catch(() => null))) await store.setJSON(`signins/${device}`, { day: today, uid: String(b.uid || '').slice(0, 40) });
     return new Response('ok');
   }
   if (b.kind === 'share') {

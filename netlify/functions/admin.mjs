@@ -24,9 +24,9 @@ export default async (req) => {
   if (from < SINCE.games) from = SINCE.games;
   if (from > to) from = to;
 
-  const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users] = await Promise.all([
+  const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users, seenAll, signins] = await Promise.all([
     getAll(store, 'plays/'), getAll(store, 'quick/'), getAll(store, 'starts/daily/'), getAll(store, 'starts/quick/'),
-    getAll(store, 'visits/'), getAll(store, 'shares/'), getAll(store, 'challenges/'), getAll(store, 'entries/'), getAll(store, 'users/'),
+    getAll(store, 'visits/'), getAll(store, 'shares/'), getAll(store, 'challenges/'), getAll(store, 'entries/'), getAll(store, 'users/'), getAll(store, 'seen/'), getAll(store, 'signins/'),
   ]);
   // one record per game, with its Eastern day
   const dailies = []; const seenDaily = new Set();
@@ -124,6 +124,27 @@ export default async (req) => {
     points: gR.reduce((t, g) => t + (g.score || 0), 0),
   };
 
+  // G. where new devices came from (first visit's ad tags / Facebook click / referring site / direct), tracked from Nov 4
+  const label = (x) => (!x ? 'before tracking' : x.s === 'direct' ? 'direct' : [x.s, x.c || x.m].filter(Boolean).join(' · '));
+  const visitDays = new Map();
+  for (const v of visits) { if (!visitDays.has(v.device)) visitDays.set(v.device, new Set()); visitDays.get(v.device).add(v.day); }
+  const signedIn = new Map(signins.map((x) => [x.key.split('/')[1], x]));
+  const created = new Map(users.map((u) => [u.uid, u.created ? ET(u.created) : null]));
+  const dailyDevs = new Set(dailies.map((g) => g.device));
+  const groups = new Map();
+  for (const sn of seenAll) {
+    const dev = sn.key.split('/')[1];
+    if (!sn.first || !inR(sn.first, from, to)) continue;
+    const k = label(sn.src); if (!groups.has(k)) groups.set(k, { source: k, visitors: 0, played: 0, daily: 0, signed_in: 0, new_accounts: 0, came_back: 0 });
+    const g = groups.get(k); g.visitors++;
+    if (first.has(dev)) g.played++;
+    if (dailyDevs.has(dev)) g.daily++;
+    const si = signedIn.get(dev); if (si) { g.signed_in++; if (created.get(si.uid) && created.get(si.uid) >= sn.first) g.new_accounts++; }
+    const later = [...(visitDays.get(dev) || []), ...(active.get(dev) || [])].some((d) => d > sn.first);
+    if (later) g.came_back++;
+  }
+  const sources = [...groups.values()].sort((a, b) => b.visitors - a.visitors);
+
   // per-day series for the chart and the breakdown table (newest first)
   const days = [];
   for (let d = to; d >= from; d = add(d, -1)) {
@@ -134,5 +155,5 @@ export default async (req) => {
       bananas: g.reduce((t, x) => t + ban(x), 0), shares: shares.filter((s) => s.key.split('/')[1] === d).length });
     if (days.length > 400) break;
   }
-  return json({ from, to, today, days_in_range: len, since: SINCE, health, retention, daily, quick: quickM, bananas, traffic, days });
+  return json({ from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, days });
 };

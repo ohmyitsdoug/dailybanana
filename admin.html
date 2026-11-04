@@ -52,6 +52,8 @@ button.card:hover .qi,button.card:focus-visible .qi,button.card[aria-expanded="t
 .chart .x{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:4px}
 .tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:4px 8px;white-space:nowrap;transform:translate(-50%,-100%);display:none}
 .tip b{font-size:14px}
+.table.srcs{border:2px solid var(--ink);background:var(--card)}
+.qb{border:1.5px solid var(--mut);background:none;color:var(--mut);cursor:pointer;font-family:inherit;padding:0;vertical-align:3px}
 details.table{border:2px solid var(--ink);background:var(--card)}
 details.table summary{cursor:pointer;padding:10px 14px;font-weight:700}
 .wrap{overflow-x:auto}
@@ -135,8 +137,10 @@ const DEF={
   'Visitor → player':'Of the visitors in the range, the share who finished at least one game.',
   'Results copied':'Times players copied or shared their results in the range.',
   'Challenge links copied':'Times players copied or shared a challenge link in the range.',
+  'Where players come from':'Every new device in the range, grouped by where its first visit came from: ad tags in the link (like the Meta ad: source · campaign), a Facebook click without tags, another website, or direct. Played = finished any game. Came back = visited or played again on a later day. Signed in and new accounts are counted on that device. Tracked from Nov 4, so older devices show as \u201cbefore tracking\u201d.',
   'New accounts':'Accounts created in the range with Google or Discord sign-in.',
 };
+const pc=(a,b)=>b?`${Math.round(100*a/b)}%`:'';
 const ch=c=>c==null?'<span class="s up">new</span>':`<span class="s ${c>0?'up':''}">${c>0?'▲':c<0?'▼':'•'} ${Math.abs(c)}% vs previous</span>`;
 const card=(label,val,sub='',big=false)=>`<button class="card ${big?'big':''}" data-def="${esc(label)}" aria-expanded="false"><span class="l">${label} <span class="qi" aria-hidden="true">?</span></span><b>${val}</b>${sub?`<span class="s">${sub}</span>`:''}</button>`;
 const since=(d,key)=>d.from<d.since[key]?`tracked from ${fmtDay(d.since[key])}`:'';
@@ -193,6 +197,12 @@ function draw(d){
       ${card('Visitor → player',p(T.conversion),'finished a game')}${card('Results copied',n(T.share_results))}
       ${card('Challenge links copied',n(T.share_challenge))}${card('New accounts',n(T.accounts))}
     </div>
+
+    <h2>Where players come from <button class="qi qb" data-def="Where players come from" aria-expanded="false" aria-label="What this means">?</button></h2>
+    ${(d.sources||[]).length?`<div class="table srcs"><div class="wrap"><table>
+      <thead><tr><th>Source</th><th>New visitors</th><th>Played</th><th>Finished a daily</th><th>Signed in</th><th>New accounts</th><th>Came back</th></tr></thead>
+      <tbody>${d.sources.map(x=>`<tr><td>${esc(x.source)}</td><td>${n(x.visitors)}</td><td>${n(x.played)} <span class="mut">${pc(x.played,x.visitors)}</span></td><td>${n(x.daily)} <span class="mut">${pc(x.daily,x.visitors)}</span></td><td>${n(x.signed_in)}</td><td>${n(x.new_accounts)}</td><td>${n(x.came_back)} <span class="mut">${pc(x.came_back,x.visitors)}</span></td></tr>`).join('')}</tbody>
+    </table></div></div>`:`<p class="mut small">No new visitors in this range yet. Sources are tracked from Nov 4.</p>`}
 
     <details class="table"><summary>Day by day</summary><div class="wrap"><table>
       <thead><tr><th>Day</th><th>Players</th><th>New</th><th>Dailies</th><th>Quick</th><th>Visitors</th><th>Returning</th><th>🍌</th><th>Shares</th></tr></thead>
