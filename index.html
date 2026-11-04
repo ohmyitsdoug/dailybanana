@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Daily Banana">
 <title>Daily Banana · Ridiculous measurements for everyday items</title>
 <meta name="description" content="Ridiculous measurements for everyday items. A daily guessing game: how many bananas long is a school bus? How many shoes tall is the Eiffel Tower?">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -52,7 +55,7 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .mut{color:var(--mut)}
 .eyebrow{font-size:12px;letter-spacing:1.5px;color:var(--mut);text-transform:uppercase}
 
-.app{max-width:440px;margin:0 auto;min-height:100vh;min-height:100dvh;padding:20px 20px 18px;display:flex;flex-direction:column;gap:18px}
+.app{max-width:440px;margin:0 auto;min-height:100vh;min-height:100dvh;padding:max(20px,calc(env(safe-area-inset-top) + 12px)) max(20px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:18px}
 .spacer{flex:1}
 
 /* buttons */
@@ -139,6 +142,8 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .reveal .score{font-size:48px}
 .note .rare{color:var(--acc-text);font-weight:700}
 .sqrow.seven{justify-content:flex-start;gap:6px}
+.play .sqrow.seven{justify-content:center}
+.play .fb{justify-content:center}
 .sqrow.seven .sqr{max-width:56px}
 .ask{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;margin:4px 0}
 .ask b{font-size:34px;line-height:1.05;letter-spacing:-1px}
@@ -154,6 +159,8 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .nest{padding-top:22px}
 /* floating 16-bit bananas behind everything */
 .bgb{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+/* a solid strip behind the iPhone status bar, so nothing scrolls under Apple's fade */
+.safetop{position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--bg);z-index:40;pointer-events:none}
 .bgb span{position:absolute;opacity:.22;animation:floaty 9s ease-in-out infinite;animation-delay:calc(var(--d) * -1)}
 :root[data-theme="dark"] .bgb span{opacity:.14}
 @keyframes floaty{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-22px) rotate(8deg)}}
@@ -245,7 +252,7 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 .btn .pi svg{width:22px;height:22px}
 .btn.prov{justify-content:flex-start}
 .btn.prov .go{margin-left:auto}
-.welcome{position:fixed;inset:0;z-index:60;background:rgba(59,36,18,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.welcome{position:fixed;inset:0;z-index:60;background:rgba(59,36,18,.55);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom))}
 .welcome .box{width:100%;max-width:400px;max-height:calc(100dvh - 32px);overflow:auto;background:var(--bg);color:var(--ink);border:2px solid var(--ink);box-shadow:6px 6px 0 var(--accsh);padding:22px 20px;display:flex;flex-direction:column;gap:14px}
 .welcome h2{margin:0;font-size:32px;letter-spacing:-1px;line-height:1.05}
 .welcome p{margin:0;font-size:16px;line-height:1.4}
@@ -256,9 +263,13 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 .welcome #wgo{position:sticky;bottom:0}
 .welcome .box:focus{outline:none}
 @media (max-height:700px){.welcome .box{gap:10px;padding:16px}.welcome h2{font-size:26px}.welcome p{font-size:14.5px}.welcome .btn.main{height:52px}}
-.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,16px);z-index:50;background:var(--ink);color:var(--bg);border:2px solid var(--ink);box-shadow:4px 4px 0 var(--accsh);
+.toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translate(-50%,16px);z-index:50;background:var(--ink);color:var(--bg);border:2px solid var(--ink);box-shadow:4px 4px 0 var(--accsh);
   padding:12px 18px;font-weight:700;font-size:15px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
 .toast.on{opacity:1;transform:translate(-50%,0)}
+.acctdd>summary{list-style:none;cursor:pointer;border-top:2px solid var(--ink)}
+.acctdd>summary::-webkit-details-marker{display:none}
+.acctdd[open] .chev{transform:rotate(180deg)}
+.chev{display:inline-block;transition:transform .15s}
 .disclaim{font-size:12px;color:var(--mut);line-height:1.4}
 .help h3{margin:8px 0 0;font-size:12px;letter-spacing:1.5px;color:var(--mut);font-weight:500}
 .help p,.help li{margin:0;font-size:16px;max-width:60ch}
@@ -310,6 +321,7 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
   .home .sqr{max-width:56px}
   .play .field{height:72px;font-size:30px;max-width:640px;box-shadow:6px 6px 0 var(--accsh)}
   .play .chips{display:none}
+  .play .field{margin:0 auto;width:100%}
   .side{display:flex;flex-direction:column;border:2px solid var(--ink);padding:18px 20px}
   .side .prow{font-size:16px}
   .narrow{max-width:720px;margin:0 auto;width:100%;padding:40px 0;display:flex;flex-direction:column;gap:18px}
@@ -317,7 +329,7 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 </style>
 </head>
 <body>
-<div class="bgb" id="bgb" aria-hidden="true"></div>
+<div class="safetop" aria-hidden="true"></div><div class="bgb" id="bgb" aria-hidden="true"></div>
 <div class="app" id="app"></div>
 <input class="keep" id="keep" tabindex="-1" aria-hidden="true" autocapitalize="off">
 <!-- optional: config.js can point the game at its server functions; the game runs without them -->
@@ -496,11 +508,12 @@ const BADGES=[
   {id:'bunch',name:'Whole bunch',how:'Score 500 or more in one daily'},
   {id:'streak7',name:'Week streak',how:'Play 7 dailies in a row'},
   {id:'host',name:'Ringleader',how:'Start a challenge'},
-  {id:'beat',name:'Bragging rights',how:'Beat a friend in a challenge'},
+  {id:'beat',name:'Bragging rights',how:'Beat a friend in a challenge that ran the full 24 hours'},
+  {id:'linked',name:'Banana ID',how:'Sign in with Google or Discord'},
   {id:'tester',name:'Playtester',how:'Played a daily in the first two weeks',secret:true},
 ];
 const PLAYTEST_LAST=13;   // anyone who finishes a daily from #000–#013 gets the secret Playtester badge
-function testerCheck(){if(TODAY&&TODAY.n<=PLAYTEST_LAST&&playedDailies().length&&earnBadge('tester'))pushSync()}
+function testerCheck(){if(SESSION&&earnBadge('linked'))pushSync();if(TODAY&&TODAY.n<=PLAYTEST_LAST&&playedDailies().length&&earnBadge('tester'))pushSync()}
 const shownBadges=have=>BADGES.filter(b=>!b.secret||have[b.id]);
 const badgeCount=have=>`${shownBadges(have).filter(b=>have[b.id]).length}/${shownBadges(have).length}`;
 function earnBadge(id){const have=store.get('badges',{});if(have[id])return false;have[id]=todayISO();store.set('badges',have);return true}
@@ -533,7 +546,7 @@ const nav=(right='')=>`<header class="nav in" style="--d:0">
   <button class="logo" id="home" aria-label="Home"><span class="m" aria-hidden="true">${BANANA(18)}</span>dailybanana.io</button>
   <div class="r">${right}<button class="sq" id="menu">Menu</button><button class="sq icon" id="theme" aria-label="Switch light or dark mode">${ICON.sun}${ICON.moon}</button></div>
 </header>`;
-const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · v${VERSION} beta · <a href="privacy.html">Privacy &amp; terms</a></div>`;
+const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · v${VERSION} beta<br><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></div>`;
 function wireNav(){
   const on=(id,f)=>{const el=document.getElementById(id);if(el)el.onclick=f};
   on('home',showStart);on('menu',()=>showMenu());on('theme',toggleTheme);on('tobadges',()=>showMenu('badges'));
@@ -651,6 +664,7 @@ function showMenu(jump){
       <button class="lrow" id="opt-theme"><span>Dark mode</span><span class="toggle ${document.documentElement.dataset.theme==='dark'?'on':''}" aria-hidden="true"></span></button>
       <button class="lrow" id="opt-motion"><span>Animations</span><span class="toggle ${SET.motion?'on':''}" aria-hidden="true"></span></button>
       ${SESSION&&SESSION.user.admin?'<a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">→</span></a>':''}
+      ${SESSION?`<button class="lrow" id="delacct"><span>Delete my account</span><span class="mut">Can't be undone</span></button>`:''}
     </div>
   </div>${footer(7)}`;
   wireNav();
@@ -789,7 +803,9 @@ function showReveal(){
     </div>
   </div>`;
   document.getElementById('pause').onclick=pause;
+  S.revealAt=Date.now();
   document.getElementById('next').onclick=()=>{
+    if(!S||S.phase!=='reveal')return;
     if(last)return finish('done');
     document.getElementById('keep').focus();   // keeps the phone keyboard up for the next round
     S.i++;showQuestion();
@@ -797,6 +813,10 @@ function showReveal(){
   window.scrollTo(0,0);
 }
 
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||!S||S.phase!=='reveal'||Date.now()-(S.revealAt||0)<350)return;   // the Enter that sent the guess doesn't skip the reveal
+  const n=document.getElementById('next');if(n){e.preventDefault();n.click()}
+});
 // ---------- results ----------
 function finish(why){
   clearInterval(tick);
@@ -879,13 +899,14 @@ function acctHtml(){
     <button class="btn prov" id="ggl"><span class="pi">${GOOGLE_ICON}</span>Sign in with Google</button>
     <button class="btn prov" id="dsc"><span class="pi">${DISCORD_ICON}</span>Sign in with Discord</button><div class="note" id="acerr"></div>`;
   const u=SESSION.user;
-  return`<div class="list">
-    <div class="lrow"><span>Signed in as <b>${esc(u.name)}</b></span><button class="sq" id="rename">Rename</button></div>
-    <div class="lrow"><span>Google</span>${u.google?'<span class="mut">Linked</span>':'<button class="sq" id="ggl">Link</button>'}</div>
-    <div class="lrow"><span>Discord</span>${u.discord?'<span class="mut">Linked</span>':'<button class="sq" id="dsc">Link</button>'}</div>
-    <button class="lrow" id="signout"><span>Sign out</span><span class="mut">→</span></button>
-    <button class="lrow" id="delacct"><span>Delete my account</span><span class="mut">Can't be undone</span></button>
-  </div><div class="note" id="acerr"></div>`;
+  return`<details class="acctdd"><summary class="lrow"><span>Signed in as <b>${esc(u.name)}</b></span><span class="mut chev" aria-hidden="true">▾</span></summary>
+    <div class="list" style="border-top:0">
+      <form class="lrow" id="renamef" style="gap:8px"><label for="rn" class="mut" style="flex:none">Name</label>
+        <input id="rn" class="namein" style="height:40px" maxlength="16" value="${esc(u.name)}" autocomplete="nickname"><button class="sq">Save</button></form>
+      <div class="lrow"><span>Google</span>${u.google?'<span class="mut">Linked</span>':'<button class="sq" id="ggl">Link</button>'}</div>
+      <div class="lrow"><span>Discord</span>${u.discord?'<span class="mut">Linked</span>':'<button class="sq" id="dsc">Link</button>'}</div>
+      <button class="lrow" id="signout"><span>Sign out</span><span class="mut">→</span></button>
+    </div></details><div class="note" id="acerr"></div>`;
 }
 const acErr=m=>{const e=document.getElementById('acerr');if(e)e.textContent=m};
 async function finishSignIn(body,link=!!SESSION){
@@ -893,6 +914,7 @@ async function finishSignIn(body,link=!!SESSION){
   const j=await r.json().catch(()=>({}));
   if(!r.ok||!j.token)throw new Error(j.error||'Sign-in failed. Try again.');
   setSession({token:j.token,user:j.user});
+  earnBadge('linked');
   await syncNow();
 }
 async function wireAcct(){
@@ -900,11 +922,11 @@ async function wireAcct(){
   on('dsc',()=>startSignIn('discord'));
   on('ggl',()=>startSignIn('google'));
   on('signout',()=>{setSession(null);showMenu()});
-  on('rename',async()=>{
-    const n=(prompt('Your name for scoreboards (up to 16 characters)',SESSION.user.name)||'').trim().slice(0,16);if(!n)return;
+  const rf=document.getElementById('renamef');if(rf)rf.onsubmit=async e=>{e.preventDefault();
+    const n=(document.getElementById('rn').value||'').trim().slice(0,16);if(!n)return acErr('Pick a name.');
     const r=await fetch(`${API}/auth`,{method:'POST',headers:{'content-type':'application/json',...authHdr()},body:JSON.stringify({action:'rename',name:n})}).then(r=>r.json()).catch(()=>({}));
-    if(r.user){setSession({...SESSION,user:r.user});store.set('name',r.user.name);showMenu()}
-  });
+    if(r.user){setSession({...SESSION,user:r.user});store.set('name',r.user.name);toast('Name saved');showMenu()}else acErr(r.error||'Could not save that name.');
+  };
   const del=document.getElementById('delacct');if(del)del.onclick=async()=>{
     if(!del.dataset.armed){del.dataset.armed='1';del.innerHTML='<span>Tap again to delete your account</span><b>Sure?</b>';return}
     await fetch(`${API}/auth`,{method:'DELETE',headers:authHdr()}).catch(()=>{});setSession(null);showMenu();
@@ -1001,7 +1023,8 @@ const myOpen=()=>fetch(`${CH}?host=${encodeURIComponent(DEVICE)}`).then(r=>r.ok?
 const nameField=()=>`<input class="namein" id="nm" maxlength="16" placeholder="Your name for the scoreboard" value="${esc(store.get('name','')||(SESSION?SESSION.user.name:GUEST))}" autocomplete="nickname">`;
 const readName=()=>{const el=document.getElementById('nm');const v=(el?el.value:'').trim().slice(0,16);if(v)store.set('name',v);return v};
 function board(c){
-  if(c.entries.some(e=>e.you)&&c.entries.length>1){const me=c.entries.find(e=>e.you);if(c.entries.some(e=>!e.you&&e.score<me.score))earnBadge('beat')}
+  // Bragging rights: only once the challenge has run its full 24 hours (closing it early doesn't count)
+  if(!c.open&&!c.closed&&c.entries.some(e=>e.you)&&c.entries.length>1){const me=c.entries.find(e=>e.you);if(c.entries.some(e=>!e.you&&e.score<me.score))earnBadge('beat')}
   return`<div class="board">${c.entries.map((e,i)=>`<div class="${e.you?'you':''}"><span class="n num">${i+1}</span><span class="nm">${esc(e.name)}${e.you?' (you)':''}</span><span>${esc(e.marks||'')}</span><b class="num">${fmt(e.score)}</b></div>`).join('')}</div>`;
 }
 const status=c=>c.open?`Open · closes in ${leftLabel(c.closes-Date.now())}`:'Closed';
@@ -1091,10 +1114,9 @@ function welcome(then){
   w.innerHTML=`<div class="box" tabindex="-1">
     <div style="display:flex;align-items:center;gap:10px">${BANANA(30)}<span style="font-weight:700">dailybanana.io</span></div>
     <h2 id="wt">Banana for scale</h2>
-    <p>Each round asks how many of one thing would line up to match another, like how many bananas long a school bus is. Type your best guess.</p>
-    <div class="pt"><span class="ic" aria-hidden="true">≈</span><p><b>Every size is an approximation.</b>Sizes are typical averages drawn from publicly available data and rounded. Real things vary.</p></div>
-    <div class="pt"><span class="ic" aria-hidden="true">${BANANA(20)}</span><p><b>Picture an average one.</b>A regular banana, a standard school bus, an adult shoe. Not the biggest or smallest you've seen.</p></div>
-    <div class="pt"><span class="ic" aria-hidden="true">◎</span><p><b>Close counts.</b>The nearer your guess, the more points. 6 rounds, 25 seconds each, and a new daily every day.</p></div>
+    <p>Guess how many of one thing would line up to match another. How many bananas long is a school bus?</p>
+    <div class="pt"><span class="ic" aria-hidden="true">≈</span><p><b>Sizes are averages.</b>Picture a typical one. Real things vary.</p></div>
+    <div class="pt"><span class="ic" aria-hidden="true">◎</span><p><b>The closer your guess, the more points.</b>6 rounds, 25 seconds each, and a new challenge daily.</p></div>
     <button class="btn main" id="wgo"><span>Let's go</span><span aria-hidden="true">→</span></button>
   </div>`;
   document.body.appendChild(w);
