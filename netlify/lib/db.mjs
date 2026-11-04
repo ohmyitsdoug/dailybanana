@@ -20,3 +20,28 @@ export async function getAll(store, prefix) {
   const vals = await Promise.all(ks.map((k) => store.get(k, { type: 'json' }).catch(() => null)));
   return ks.map((k, i) => ({ key: k, ...(vals[i] || {}) }));
 }
+
+// getAll, but fast for big prefixes the admin dashboard reads on every view. Records almost never change
+// once written, so values are kept in memory (while the function is warm) and in one snapshot blob per prefix
+// (cache/{prefix}), and only keys that are new since last time are fetched. `recheck(value)` says which
+// cached records may still change (e.g. ones written today) so they are fetched again; `fresh` refetches all.
+const MEM = new Map();
+export async function getAllCached(store, prefix, { recheck = null, fresh = false } = {}) {
+  const ck = `cache/${prefix.replace(/\//g, '_')}`;
+  let vals = MEM.get(prefix);
+  if (!vals) {
+    const snap = fresh ? null : await store.get(ck, { type: 'json' }).catch(() => null);
+    vals = new Map(snap ? Object.entries(snap) : []);
+    MEM.set(prefix, vals);
+  }
+  const ks = await keys(store, prefix), live = new Set(ks);
+  const need = ks.filter((k) => fresh || !vals.has(k) || (recheck && recheck(vals.get(k), k)));
+  let changed = false;
+  for (const k of [...vals.keys()]) if (!live.has(k)) { vals.delete(k); changed = true; }
+  for (let i = 0; i < need.length; i += 200) {   // in batches, so thousands of reads don't all fire at once
+    const part = need.slice(i, i + 200), got = await Promise.all(part.map((k) => store.get(k, { type: 'json' }).catch(() => null)));
+    part.forEach((k, j) => { const before = vals.get(k); vals.set(k, got[j] || {}); if (JSON.stringify(before) !== JSON.stringify(got[j] || {})) changed = true; });
+  }
+  if (changed) await store.setJSON(ck, Object.fromEntries(vals)).catch(() => {});
+  return ks.map((k) => ({ key: k, ...(vals.get(k) || {}) }));
+}

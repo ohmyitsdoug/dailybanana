@@ -2,7 +2,7 @@
 // GET ?from=YYYY-MM-DD&to=YYYY-MM-DD   (Eastern days, inclusive; defaults to the last 30 days)
 // A "player" is a device that finished at least one game (daily or quick). Visits alone don't count as playing.
 // Metrics whose tracking started later report `null` plus a `since` date, never a fake zero.
-import { db, json, day, getAll } from '../lib/db.mjs';
+import { db, json, day, getAll, getAllCached } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
 
 // when each kind of data started being recorded
@@ -24,9 +24,13 @@ export default async (req) => {
   if (from < SINCE.games) from = SINCE.games;
   if (from > to) from = to;
 
+  // most records never change once written, so they come from a cache and only new ones are read (see getAllCached);
+  // the few that can change get read again: plays still missing guesses (a backfill can add them), brand-new devices' source, challenges, accounts
+  const fresh = url.searchParams.get('fresh') === '1', yday = add(today, -1);
+  const C = (p, recheck) => getAllCached(store, p, { recheck, fresh });
   const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users, seenAll, signins, kofi] = await Promise.all([
-    getAll(store, 'plays/'), getAll(store, 'quick/'), getAll(store, 'starts/daily/'), getAll(store, 'starts/quick/'),
-    getAll(store, 'visits/'), getAll(store, 'shares/'), getAll(store, 'challenges/'), getAll(store, 'entries/'), getAll(store, 'users/'), getAll(store, 'seen/'), getAll(store, 'signins/'), getAll(store, 'kofi/'),
+    C('plays/', (v) => !Array.isArray(v.guesses) || !v.guesses.length), C('quick/'), C('starts/daily/'), C('starts/quick/'),
+    C('visits/'), C('shares/'), getAll(store, 'challenges/'), C('entries/'), getAll(store, 'users/'), C('seen/', (v) => !v.first || (v.first >= yday && !v.src)), C('signins/'), C('kofi/'),
   ]);
   // one record per game, with its Eastern day
   const dailies = []; const seenDaily = new Set();

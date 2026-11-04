@@ -90,23 +90,35 @@ function gate(msg){
     <div class="small mut">Sign in on the game's Menu with your admin account (Google or Discord), then come back here.</div>
     <a href="./" style="font-weight:700">Go to the game →</a></div>`;
 }
-function rangeDates(){
+function rangeDates(R=RANGE){
   const t=todayET();
-  if(RANGE==='custom'&&CUSTOM.from&&CUSTOM.to)return{from:CUSTOM.from,to:CUSTOM.to};
-  if(RANGE==='1')return{from:t,to:t};
-  if(RANGE==='all')return{from:'2026-11-03',to:t};
-  return{from:add(t,-(+RANGE||30)+1),to:t};
+  if(R==='custom'&&CUSTOM.from&&CUSTOM.to)return{from:CUSTOM.from,to:CUSTOM.to};
+  if(R==='1')return{from:t,to:t};
+  if(R==='all')return{from:'2026-11-03',to:t};
+  return{from:add(t,-(+R||30)+1),to:t};
 }
 async function load(){
   if(!TOKEN)return gate();
   const {from,to}=rangeDates();
-  if(!m.querySelector('main'))m.innerHTML='<main class="wrapx"><div class="mut">Loading…</div></main>';
-  const r=await fetch(`${API}/admin?from=${from}&to=${to}`,{headers:{authorization:'Bearer '+TOKEN}}).catch(()=>null);
-  if(!r)return m.innerHTML='<main class="wrapx"><div class="msg">Could not reach the server.</div></main>';
-  if(r.status===401)return gate('This account isn\'t the admin. Sign in with your admin Google or Discord account on the game\'s Menu.');
-  const d=await r.json().catch(()=>null);if(!d||!d.health)return m.innerHTML='<main class="wrapx"><div class="msg">Server error.</div></main>';
+  const key=from+'_'+to,seen=ADM.get(key)||(()=>{try{const v=JSON.parse(sessionStorage.getItem('db-adm:'+key)||'null');if(v)ADM.set(key,v);return v}catch(_){return null}})();
+  if(seen)draw(seen);   // show the last numbers for this range right away, then refresh them
+  else if(!m.querySelector('main'))m.innerHTML='<main class="wrapx"><div class="mut">Loading…</div></main>';
+  const want=key;LAST=key;
+  const d=await fetchRange(from,to);
+  if(LAST!==want)return;   // a different range was picked meanwhile
+  if(d&&d.unauth)return gate('This account isn\'t the admin. Sign in with your admin Google or Discord account on the game\'s Menu.');
+  if(!d)return seen?null:m.innerHTML='<main class="wrapx"><div class="msg">Could not reach the server.</div></main>';
+  if(!d.health)return seen?null:m.innerHTML='<main class="wrapx"><div class="msg">Server error.</div></main>';
   draw(d);
+  if(!PRE){PRE=true;setTimeout(()=>['1','7','30','all'].forEach(R=>{const x=rangeDates(R);if(x.from+'_'+x.to!==key)fetchRange(x.from,x.to)}),300)}   // the other buttons, ready before they're tapped
 }
+const ADM=new Map();let LAST='',PRE=false;
+async function fetchRange(from,to){const key=from+'_'+to;
+  const r=await fetch(`${API}/admin?from=${from}&to=${to}`,{headers:{authorization:'Bearer '+TOKEN}}).catch(()=>null);
+  if(!r)return null;if(r.status===401)return{unauth:true};
+  const d=await r.json().catch(()=>null);
+  if(d&&d.health){ADM.set(key,d);try{sessionStorage.setItem('db-adm:'+key,JSON.stringify(d))}catch(_){}}
+  return d}
 // a change vs the previous period: arrow + number, never color alone
 const DEF={
   'Daily active players':'Unique players (devices) who finished at least one game, daily or quick play, on the last day of the range. Compared with the day before.',

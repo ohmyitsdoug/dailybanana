@@ -15,7 +15,7 @@
 //   social/marks/{metric}         { done:[numbers] } milestone marks already posted (or already passed when this started)
 //   social/used                   { facts:[i], pairs:[key] }  recently used facts and questions
 //   weekend/current               { code, n, closes }
-import { getAll } from './db.mjs';
+import { getAll, getAllCached } from './db.mjs';
 import { loadFonts } from './raster.mjs';
 import * as P from './posts.mjs';
 
@@ -185,14 +185,14 @@ export async function build(kind, store, { date = etParts().date, preview = fals
 
 async function weekTotals(store, date) {
   const from = addDays(date, -7), inR = (d) => d >= from && d < date;
-  const plays = (await getAll(store, 'plays/')).filter((p) => inR(p.day));
+  const plays = (await getAllCached(store, 'plays/', { recheck: (v) => !Array.isArray(v.guesses) || !v.guesses.length })).filter((p) => inR(p.day));
   const chals = (await getAll(store, 'challenges/')).filter((c) => c.created && inR(etParts(c.created).date) && c.creator !== 'weekend');
   const pts = plays.flatMap((p) => (p.points || []).filter(Number.isFinite));
   return { dailies: plays.length, bananas: pts.filter((v) => v >= 90).length, challenges: chals.length, accuracy: pts.length ? Math.round(pts.reduce((a, b) => a + b, 0) / pts.length) : 0 };
 }
 async function closestGuess(store, date, items) {
   const from = addDays(date, -7), dailies = await data('dailies'), byN = Object.fromEntries(dailies.map((d) => [d.n, d]));
-  const plays = (await getAll(store, 'plays/')).filter((p) => p.day >= from && p.day < date);
+  const plays = (await getAllCached(store, 'plays/', { recheck: (v) => !Array.isArray(v.guesses) || !v.guesses.length })).filter((p) => p.day >= from && p.day < date);
   let best = null;
   for (const p of plays) {
     const n = +p.key.split('/')[1], d = byN[n]; if (!d || !Array.isArray(p.guesses)) continue;
@@ -242,7 +242,7 @@ const METRICS = {
   guesses: { label: 'guesses made', min: 10000 },
 };
 export async function totals(store) {
-  const [plays, quick, chals] = await Promise.all([getAll(store, 'plays/'), getAll(store, 'quick/'), getAll(store, 'challenges/')]);
+  const [plays, quick, chals] = await Promise.all([getAllCached(store, 'plays/', { recheck: (v) => !Array.isArray(v.guesses) || !v.guesses.length }), getAllCached(store, 'quick/'), getAll(store, 'challenges/')]);
   const pts = plays.flatMap((p) => (p.points || []).filter(Number.isFinite)), qpts = quick.flatMap((p) => (p.points || []).filter(Number.isFinite));
   const players = new Set([...plays, ...quick].map((p) => p.device).filter(Boolean));
   const guesses = plays.reduce((t, p) => t + (Array.isArray(p.guesses) ? p.guesses.filter((g) => g != null).length : (p.points || []).filter((v) => v > 0).length), 0) + qpts.filter((v) => v > 0).length;
