@@ -142,7 +142,7 @@ spaghetti noodle | spaghetti noodles | a | long | 25 | u
 crayon box | crayon boxes | a | long | 13 | 
 paperback book | paperback books | a | tall | 18 | u
 laptop | laptops | a | across | 33 | 
-TV (55-inch) | 55-inch TVs | a | across | 122 | 
+55-inch TV | 55-inch TVs | a | across | 122 | 
 stop sign | stop signs | a | across | 76 | 
 traffic cone | traffic cones | a | tall | 71 | 
 fire hydrant | fire hydrants | a | tall | 75 | 
@@ -719,3 +719,400 @@ Hubble telescope | Hubble telescopes | the | long | 1330 |
 Apollo lunar module | lunar modules | an | tall | 700 | 
 Voyager antenna | Voyager antennas | a | across | 370 | 
 meteor crater | meteor craters |  | across | 118600 | 
+# ---- kitchen & food (more) ----
+measuring cup | measuring cups | a | tall | 10 | u
+spatula | spatulas | a | long | 30 | u
+ladle | ladles | a | long | 30 | u
+tongs | pairs of tongs | a pair of | long | 30 | u
+cutting board | cutting boards | a | long | 40 | u
+oven mitt | oven mitts | an | long | 30 | u
+colander | colanders | a | across | 25 | 
+mixing bowl | mixing bowls | a | across | 28 | 
+baking sheet | baking sheets | a | long | 45 | 
+muffin tin | muffin tins | a | long | 33 | 
+kettle | kettles | a | tall | 25 | 
+coffee maker | coffee makers | a | tall | 35 | 
+salt shaker | salt shakers | a | tall | 8 | u
+pepper grinder | pepper grinders | a | tall | 20 | u
+can opener | can openers | a | long | 20 | u
+pizza cutter | pizza cutters | a | long | 22 | u
+ice cube | ice cubes | an | across | 3 | u
+ice cube tray | ice cube trays | an | long | 28 | 
+lunch tray | lunch trays | a | long | 40 | 
+paper plate | paper plates | a | across | 23 | u
+paper cup | paper cups | a | tall | 11 | u
+coffee filter | coffee filters | a | across | 20 | 
+tea bag | tea bags | a | long | 6 | u
+sugar packet | sugar packets | a | long | 7 | u
+ketchup packet | ketchup packets | a | long | 6 | u
+fortune cookie | fortune cookies | a | long | 6 | u
+graham cracker | graham crackers | a | long | 12 | u
+granola bar | granola bars | a | long | 10 | u
+hot dog bun | hot dog buns | a | long | 16 | u
+tortilla | tortillas | a | across | 25 | u
+pita | pitas | a | across | 17 | u
+pretzel | pretzels | a | across | 12 | u
+breadstick | breadsticks | a | long | 20 | u
+churro | churros | a | long | 25 | u
+corn dog | corn dogs | a | long | 20 | u
+sausage link | sausage links | a | long | 10 | u
+strip of bacon | strips of bacon | a | long | 25 | u
+chicken wing | chicken wings | a | long | 8 | u
+chicken drumstick | chicken drumsticks | a | long | 13 | 
+fish stick | fish sticks | a | long | 9 | u
+mozzarella stick | mozzarella sticks | a | long | 10 | u
+onion ring | onion rings | an | across | 7 | u
+taquito | taquitos | a | long | 15 | u
+slice of pizza | slices of pizza | a | long | 23 | u
+sandwich | sandwiches | a | across | 12 | u
+quesadilla | quesadillas | a | across | 25 | 
+bagel half | bagel halves | a | across | 10 | 
+doughnut hole | doughnut holes | a | across | 3 | u
+cake pop | cake pops | a | long | 15 | u
+cookie dough tub | cookie dough tubs | a | tall | 15 | 
+pint of ice cream | pints of ice cream | a | tall | 10 | u
+popsicle | popsicles | a | long | 18 | u
+banana split | banana splits | a | long | 25 | 
+watermelon slice | watermelon slices | a | across | 25 | 
+corn chip | corn chips | a | long | 4 | u
+pickle spear | pickle spears | a | long | 10 | u
+baby carrot | baby carrots | a | long | 5 | u
+asparagus spear | asparagus spears | an | long | 20 | u
+green bean | green beans | a | long | 10 | u
+broccoli floret | broccoli florets | a | tall | 6 | u
+mushroom | mushrooms | a | across | 5 | u
+radish | radishes | a | across | 3 | u
+beet | beets | a | across | 7 | u
+artichoke | artichokes | an | tall | 10 | u
+butternut squash | butternut squashes | a | long | 28 | 
+pumpkin pie | pumpkin pies | a | across | 23 | 
+honeydew melon | honeydew melons | a | long | 20 | 
+papaya | papayas | a | long | 20 | 
+pomegranate | pomegranates | a | across | 10 | u
+fig | figs | a | long | 5 | u
+clementine | clementines | a | across | 6 | u
+star fruit | star fruits | a | long | 10 | 
+dragon fruit | dragon fruits | a | long | 12 | 
+apricot | apricots | an | across | 4.5 | u
+raspberry | raspberries | a | long | 2 | u
+blackberry | blackberries | a | long | 2.5 | u
+cranberry | cranberries | a | across | 1.5 | u
+pistachio | pistachios | a | long | 2 | u
+cashew | cashews | a | long | 2.5 | u
+pecan | pecans | a | long | 3.5 | u
+chestnut | chestnuts | a | across | 3 | u
+microwave popcorn bag | microwave popcorn bags | a | long | 20 | 
+cereal bar | cereal bars | a | long | 11 | u
+chocolate bar | chocolate bars | a | long | 16 | u
+candy corn | candy corns | a | tall | 2 | u
+jawbreaker | jawbreakers | a | across | 2.5 | u
+gumball | gumballs | a | across | 2.5 | u
+stick of gum | sticks of gum | a | long | 7 | u
+peppermint candy | peppermint candies | a | across | 2 | u
+marshmallow peep | marshmallow peeps | a | tall | 5 | u
+hard taco shell | taco shells | a | across | 15 | 
+juice box | juice boxes | a | tall | 11 | u
+yogurt cup | yogurt cups | a | tall | 7 | u
+2-liter soda bottle | 2-liter soda bottles | a | tall | 33 | u
+gallon of water | gallon jugs of water | a | tall | 28 | 
+coffee can | coffee cans | a | tall | 16 | u
+peanut butter jar | peanut butter jars | a | tall | 13 | u
+honey bear | honey bears | a | tall | 14 | u
+spice jar | spice jars | a | tall | 10 | u
+mustard bottle | mustard bottles | a | tall | 18 | u
+cooler | coolers | a | long | 60 | 
+picnic basket | picnic baskets | a | long | 45 | 
+grill | grills | a | tall | 110 | 
+# ---- around the house (more) ----
+toothpaste cap | toothpaste caps | a | tall | 2 | u
+cotton swab | cotton swabs | a | long | 7.5 | u
+cotton ball | cotton balls | a | across | 2.5 | u
+bandage | bandages | a | long | 7 | u
+comb | combs | a | long | 18 | u
+hairbrush | hairbrushes | a | long | 23 | u
+hair dryer | hair dryers | a | long | 25 | 
+nail clippers | pairs of nail clippers | a pair of | long | 6 | u
+razor | razors | a | long | 15 | u
+lip balm | lip balms | a | long | 7 | u
+lipstick | lipsticks | a | long | 8 | u
+perfume bottle | perfume bottles | a | tall | 12 | u
+deodorant stick | deodorant sticks | a | tall | 14 | u
+tissue box | tissue boxes | a | long | 24 | u
+roll of tape | rolls of tape | a | across | 9 | u
+spool of thread | spools of thread | a | tall | 5 | u
+safety pin | safety pins | a | long | 3 | u
+sewing needle | sewing needles | a | long | 4 | u
+rubber band | rubber bands | a | long | 8 | u
+phone charger | phone chargers | a | long | 9 | u
+phone case | phone cases | a | long | 16 | u
+power strip | power strips | a | long | 30 | u
+extension cord | extension cords | an | long | 450 | 
+light switch plate | light switch plates | a | tall | 11.4 | u
+smoke detector | smoke detectors | a | across | 14 | u
+thermostat | thermostats | a | across | 10 | u
+doorknob | doorknobs | a | across | 6 | u
+padlock | padlocks | a | tall | 6 | u
+welcome mat | welcome mats | a | long | 75 | 
+throw pillow | throw pillows | a | across | 45 | u
+blanket | blankets | a | long | 200 | 
+sleeping bag | sleeping bags | a | long | 200 | 
+air mattress | air mattresses | an | long | 190 | 
+nightstand | nightstands | a | tall | 60 | u
+lamp | lamps | a | tall | 60 | u
+floor lamp | floor lamps | a | tall | 160 | 
+ceiling fan | ceiling fans | a | across | 132 | 
+box fan | box fans | a | across | 50 | 
+space heater | space heaters | a | tall | 40 | 
+window air conditioner | window air conditioners | a | across | 50 | 
+TV stand | TV stands | a | long | 150 | 
+bean bag chair | bean bag chairs | a | across | 90 | 
+rocking chair | rocking chairs | a | tall | 110 | 
+stool | stools | a | tall | 75 | u
+bar stool | bar stools | a | tall | 75 | 
+folding chair | folding chairs | a | tall | 80 | u
+folding table | folding tables | a | long | 180 | 
+card table | card tables | a | across | 86 | 
+pet bed | pet beds | a | across | 70 | 
+dog crate | dog crates | a | long | 90 | 
+litter box | litter boxes | a | long | 50 | 
+fish tank | fish tanks | a | long | 60 | 
+bird cage | bird cages | a | tall | 60 | 
+hamster cage | hamster cages | a | long | 60 | 
+dog leash | dog leashes | a | long | 180 | u
+dog bone | dog bones | a | long | 15 | u
+tennis ball can | tennis ball cans | a | tall | 23 | u
+laundry basket | laundry baskets | a | tall | 60 | 
+clothes iron | irons | a | long | 28 | 
+clothes dryer | clothes dryers | a | tall | 100 | 
+closet door | closet doors | a | tall | 203 | 
+bathroom scale | bathroom scales | a | across | 30 | 
+plunger | plungers | a | tall | 50 | 
+toilet brush | toilet brushes | a | long | 40 | 
+bath mat | bath mats | a | long | 80 | 
+shower head | shower heads | a | across | 15 | 
+sink | sinks | a | across | 60 | 
+kitchen counter | kitchen counters | a | tall | 91 | 
+fridge magnet | fridge magnets | a | across | 5 | u
+calendar | wall calendars | a | tall | 60 | 
+clipboard | clipboards | a | long | 32 | u
+pushpin | pushpins | a | long | 2 | u
+binder clip | binder clips | a | across | 3 | u
+jumbo crayon | jumbo crayons | a | long | 10 | 
+marker | markers | a | long | 13 | u
+colored pencil | colored pencils | a | long | 17.5 | u
+pencil sharpener | pencil sharpeners | a | long | 5 | u
+mechanical pencil | mechanical pencils | a | long | 14 | 
+paper airplane | paper airplanes | a | long | 25 | u
+big envelope | big envelopes | a | long | 32 | 
+manila folder | manila folders | a | long | 30 | u
+poster | posters | a | tall | 91 | 
+bulletin board | bulletin boards | a | across | 90 | 
+chalk stick | sticks of chalk | a | long | 8 | u
+glue bottle | glue bottles | a | tall | 13 | u
+paint tube | paint tubes | a | long | 12 | u
+# ---- outdoors & garden (more) ----
+garden hose nozzle | hose nozzles | a | long | 18 | u
+sprinkler | sprinklers | a | long | 30 | 
+leaf blower | leaf blowers | a | long | 90 | 
+hedge trimmer | hedge trimmers | a | long | 100 | 
+pruning shears | pairs of pruning shears | a pair of | long | 20 | u
+garden trowel | garden trowels | a | long | 30 | u
+bag of mulch | bags of mulch | a | long | 75 | 
+bird feeder | bird feeders | a | tall | 30 | 
+birdhouse | birdhouses | a | tall | 25 | 
+mailbox flag | mailbox flags | a | long | 15 | 
+fence post | fence posts | a | tall | 180 | 
+flagpole | flagpoles | a | tall | 600 | 
+flag | flags | a | long | 150 | 
+lawn chair | lawn chairs | a | tall | 85 | 
+patio umbrella | patio umbrellas | a | across | 270 | 
+fire pit | fire pits | a | across | 90 | 
+porch swing | porch swings | a | long | 150 | 
+doghouse | doghouses | a | tall | 90 | 
+kiddie pool | kiddie pools | a | across | 150 | 
+sandbox | sandboxes | a | across | 150 | 
+playground slide | playground slides | a | long | 300 | 
+seesaw | seesaws | a | long | 300 | 
+park bench | park benches | a | long | 180 | 
+bus stop sign | bus stop signs | a | tall | 240 | 
+parking meter | parking meters | a | tall | 130 | 
+crosswalk stripe | crosswalk stripes | a | long | 300 | 
+speed bump | speed bumps | a | across | 360 | 
+manhole cover | manhole covers | a | across | 60 | u
+sidewalk square | sidewalk squares | a | long | 150 | u
+curb | curbs | a | tall | 15 | 
+traffic light | traffic lights | a | tall | 100 | 
+street sign | street signs | a | long | 76 | 
+bike rack | bike racks | a | long | 180 | 
+dumpster | dumpsters | a | long | 360 | 
+port-a-potty | port-a-potties | a | tall | 230 | 
+tent | tents | a | long | 210 | 
+camping chair | camping chairs | a | tall | 90 | 
+canoe paddle | canoe paddles | a | long | 140 | u
+fishing rod | fishing rods | a | long | 210 | u
+life jacket | life jackets | a | tall | 60 | 
+pool noodle | pool noodles | a | long | 150 | u
+beach towel | beach towels | a | long | 170 | u
+beach umbrella | beach umbrellas | a | across | 200 | 
+sandcastle bucket | sand buckets | a | tall | 15 | u
+boogie board | boogie boards | a | long | 105 | 
+seashell | seashells | a | long | 6 | u
+sand dollar | sand dollars | a | across | 7 | u
+hiking stick | hiking sticks | a | long | 130 | 
+firewood log | firewood logs | a | long | 40 | u
+tree stump | tree stumps | a | across | 60 | 
+jack-o'-lantern | jack-o'-lanterns | a | tall | 30 | 
+scarecrow | scarecrows | a | tall | 170 | 
+hay bale | hay bales | a | long | 100 | 
+# ---- getting around (more) ----
+balance bike | balance bikes | a | long | 85 | 
+tricycle | tricycles | a | long | 75 | 
+unicycle | unicycles | a | tall | 100 | 
+electric scooter | electric scooters | an | long | 110 | 
+moped | mopeds | a | long | 175 | 
+ATV | ATVs | an | long | 200 | 
+go-kart | go-karts | a | long | 180 | 
+jet ski | jet skis | a | long | 320 | 
+snowmobile | snowmobiles | a | long | 300 | 
+sedan | sedans | a | long | 480 | u
+SUV | SUVs | an | long | 500 | u
+taxi | taxis | a | long | 480 | 
+police car | police cars | a | long | 510 | 
+garbage truck | garbage trucks | a | long | 900 | 
+delivery van | delivery vans | a | long | 600 | 
+ice cream truck | ice cream trucks | an | long | 700 | 
+cement mixer truck | cement mixer trucks | a | long | 900 | 
+car door | car doors | a | long | 110 | 
+steering wheel | steering wheels | a | across | 38 | u
+car key fob | car key fobs | a | long | 6 | u
+kid's car seat | kids' car seats | a | tall | 65 | 
+bike helmet | bike helmets | a | long | 27 | u
+skateboard wheel | skateboard wheels | a | across | 5.4 | u
+roller skate | roller skates | a | long | 30 | 
+airplane seat | airplane seats | an | across | 45 | 
+airplane window | airplane windows | an | tall | 33 | 
+carry-on suitcase | carry-on suitcases | a | tall | 56 | u
+luggage cart | luggage carts | a | long | 120 | 
+passenger train car | passenger train cars | a | long | 2500 | 
+articulated bus | articulated buses | an | long | 1800 | 
+canal boat | canal boats | a | long | 2100 | 
+# ---- sports & play (more) ----
+soccer cleat | soccer cleats | a | long | 28 | 
+baseball glove | baseball gloves | a | long | 30 | u
+football helmet | football helmets | a | long | 30 | 
+hockey helmet | hockey helmets | a | long | 27 | 
+boxing glove | boxing gloves | a | long | 30 | u
+lacrosse stick | lacrosse sticks | a | long | 100 | u
+field hockey stick | field hockey sticks | a | long | 90 | 
+croquet mallet | croquet mallets | a | long | 90 | 
+cricket bat | cricket bats | a | long | 96 | 
+pickleball paddle | pickleball paddles | a | long | 40 | u
+racquetball | racquetballs | a | across | 5.7 | u
+pickleball | pickleballs | a | across | 7.4 | u
+dodgeball | dodgeballs | a | across | 21 | u
+kickball | kickballs | a | across | 25 | u
+medicine ball | medicine balls | a | across | 35 | 
+yoga mat | yoga mats | a | long | 173 | u
+dumbbell | dumbbells | a | long | 30 | u
+kettlebell | kettlebells | a | tall | 25 | u
+jump box | plyo boxes | a | tall | 60 | 
+treadmill | treadmills | a | long | 180 | 
+exercise bike | exercise bikes | an | long | 110 | 
+punching bag | punching bags | a | tall | 120 | 
+trophy | trophies | a | tall | 30 | u
+medal | medals | a | across | 7 | u
+scoreboard | scoreboards | a | across | 600 | 
+basketball backboard | basketball backboards | a | across | 183 | 
+tennis net | tennis nets | a | long | 1280 | 
+bowling pin rack | bowling pin decks | a | across | 105 | 
+golf green | golf greens | a | across | 2000 | 
+batting helmet | batting helmets | a | long | 28 | 
+outfield fence | outfield fences | an | tall | 245 | 
+surf leash | surf leashes | a | long | 240 | 
+skate ramp | skate ramps | a | long | 400 | 
+climbing wall | climbing walls | a | tall | 1200 | 
+monkey bars | monkey bars | a set of | long | 300 | 
+ball pit ball | ball pit balls | a | across | 7 | u
+water balloon | water balloons | a | across | 8 | u
+bubble wand | bubble wands | a | long | 15 | u
+squirt gun | squirt guns | a | long | 25 | u
+nerf dart | foam darts | a | long | 7 | u
+marble run | marble runs | a | tall | 60 | 
+toy block | toy blocks | a | across | 4 | u
+stuffed animal | stuffed animals | a | tall | 25 | u
+toy robot | toy robots | a | tall | 25 | u
+dollhouse | dollhouses | a | tall | 90 | 
+play kitchen | play kitchens | a | tall | 90 | 
+toy train track | toy train track pieces | a | long | 20 | u
+playing card deck | decks of cards | a | tall | 9 | 
+foam die | foam dice | a | across | 15 | 
+checkers piece | checkers | a | across | 3 | u
+Monopoly board | Monopoly boards | a | across | 50 | 
+Jenga block | Jenga blocks | a | long | 7.5 | u
+Jenga tower | Jenga towers | a | tall | 27 | 
+video game console | game consoles | a | long | 30 | 
+handheld game | handheld game consoles | a | long | 24 | 
+arcade machine | arcade machines | an | tall | 180 | 
+pinball machine | pinball machines | a | long | 140 | 
+# ---- people & animals (more) ----
+kindergartner | kindergartners | a | tall | 110 | u
+teenager | teenagers | a | tall | 165 | 
+NBA center | NBA centers | an | tall | 213 | 
+adult's step | adult steps | an | long | 75 | u
+toddler shoe | toddler shoes | a | long | 13 | u
+kitten | kittens | a | long | 20 | u
+puppy | puppies | a | long | 30 | u
+Labrador | Labradors | a | long | 100 | 
+poodle | poodles | a | tall | 50 | 
+pug | pugs | a | long | 40 | 
+beagle | beagles | a | long | 70 | 
+German shepherd | German shepherds | a | long | 110 | 
+parakeet | parakeets | a | long | 18 | u
+parrot | parrots | a | long | 50 | 
+duck | ducks | a | long | 55 | 
+goose | geese | a | long | 85 | 
+swan | swans | a | long | 140 | 
+turkey | turkeys | a | tall | 100 | 
+rooster | roosters | a | tall | 60 | 
+seagull | seagulls | a | long | 55 | 
+robin | robins | a | long | 24 | u
+blue jay | blue jays | a | long | 28 | 
+cardinal | cardinals | a | long | 22 | u
+bat | bats | a | across | 30 | 
+raccoon | raccoons | a | long | 70 | 
+skunk | skunks | a | long | 65 | 
+fox | foxes | a | long | 100 | 
+wolf | wolves | a | long | 160 | 
+beaver | beavers | a | long | 100 | 
+otter | otters | an | long | 110 | 
+hedgehog | hedgehogs | a | long | 20 | u
+ferret | ferrets | a | long | 50 | 
+porcupine | porcupines | a | long | 80 | 
+armadillo | armadillos | an | long | 75 | 
+sloth | sloths | a | long | 65 | 
+hippo calf | hippo calves | a | long | 130 | 
+red panda | red pandas | a | long | 110 | 
+penguin chick | penguin chicks | a | tall | 30 | 
+sea turtle | sea turtles | a | long | 100 | 
+tortoise | tortoises | a | long | 40 | 
+lizard | lizards | a | long | 20 | u
+gecko | geckos | a | long | 15 | u
+garter snake | garter snakes | a | long | 70 | 
+bullfrog | bullfrogs | a | long | 15 | 
+tadpole | tadpoles | a | long | 3 | u
+caterpillar | caterpillars | a | long | 4 | u
+bumblebee | bumblebees | a | long | 2 | u
+beetle | beetles | a | long | 2.5 | u
+gummy worm | gummy worms | a | long | 7 | u
+shrimp | shrimp | a | long | 8 | u
+trout | trout | a | long | 45 | 
+catfish | catfish | a | long | 70 | 
+largemouth bass | bass | a | long | 40 | 
+koi fish | koi fish | a | long | 60 | 
+pufferfish | pufferfish | a | long | 30 | 
+stingray | stingrays | a | across | 150 | 
+hammerhead shark | hammerhead sharks | a | long | 400 | 
+seal | seals | a | long | 180 | 
+walrus | walruses | a | long | 300 | 
+sea lion | sea lions | a | long | 220 | 
+beluga whale | beluga whales | a | long | 450 | 

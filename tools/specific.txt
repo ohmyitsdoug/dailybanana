@@ -32,7 +32,7 @@ lane of highway
 emperor penguin
 anaconda
 redwood tree
-TV (55-inch)
+55-inch TV
 leek
 wheel of cheese
 rigatoni noodle
@@ -160,3 +160,9 @@ Hubble telescope
 Apollo lunar module
 Voyager antenna
 meteor crater
+canal boat
+golf green
+bowling pin rack
+articulated bus
+surf leash
+hay bale
