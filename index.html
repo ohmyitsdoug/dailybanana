@@ -98,7 +98,7 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .cta{display:flex;flex-direction:column;gap:12px}
 .main-col,.side-col{display:flex;flex-direction:column;gap:12px}
 .page.home{display:contents}
-@media (max-height:720px) and (max-width:899px){.app:has(.home){gap:12px}.home .daily h1{font-size:44px}}
+@media (max-height:720px) and (max-width:1099px){.app:has(.home){gap:12px}.home .daily h1{font-size:44px}}
 .howlink{font-size:14px;font-weight:500}
 .narrow{display:flex;flex-direction:column;gap:16px}
 
@@ -274,6 +274,12 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 .acctdd>summary::-webkit-details-marker{display:none}
 .acctdd[open] .chev{transform:rotate(180deg)}
 .chev{display:inline-block;transition:transform .15s}
+.lrow.old{color:var(--mut);opacity:.55;cursor:default}
+.lrow .hl{padding:0 2px}
+.lrow.live .hl{background:var(--acc);color:var(--acc-ink);padding:1px 5px;font-weight:700}
+.chip{background:var(--acc);color:var(--acc-ink);border:2px solid var(--ink);font-size:12px;font-weight:700;padding:1px 7px;white-space:nowrap}
+.pager{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 0}
+.pager .sq[disabled]{opacity:.35;cursor:default}
 .disclaim{font-size:12px;color:var(--mut);line-height:1.4}
 .help h3{margin:8px 0 0;font-size:12px;letter-spacing:1.5px;color:var(--mut);font-weight:500}
 .help p,.help li{margin:0;font-size:16px;max-width:60ch}
@@ -299,7 +305,7 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 @media (prefers-reduced-motion:reduce){.in,.out,.pop,.caret{animation:none!important}}
 
 /* desktop */
-@media (min-width:900px){
+@media (min-width:1100px){
   .app{max-width:1120px;padding:0 32px 0;gap:0}
   .nav{padding:18px 0;margin:0 -32px;padding-inline:32px}
   .page{flex:1;display:flex;flex-wrap:wrap;gap:64px;align-items:center;padding:64px 0}
@@ -646,7 +652,7 @@ function showMenu(jump){
   const scores=hist.map(x=>x.res.total);
   const have=store.get('badges',{});
   const todayRes=saved(TODAY.n);
-  const games=[...hist.map(x=>({...x,t:new Date(x.d.date+'T12:00').getTime()})),...quickList().map(q=>({q,t:q.at}))].sort((a,b)=>b.t-a.t);
+  HGAMES=[...hist.map(x=>({...x,t:x.res.at||new Date(x.d.date+'T12:00').getTime()})),...quickList().map(q=>({q,t:q.at}))].sort((a,b)=>b.t-a.t);HPAGE=0;
   app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:18px">
     <div class="head in" style="--d:1"><h2>Menu</h2><button class="sq" id="back">Back</button></div>
     <div id="opench" class="in" style="--d:2;display:flex;flex-direction:column;gap:10px"></div>
@@ -664,9 +670,7 @@ function showMenu(jump){
     <div class="eyebrow in" style="--d:5">History</div>
     <div class="list in" style="--d:5">
       ${todayRes?'':`<button class="lrow" data-n="${TODAY.n}"><span>Today · #${pad3(TODAY.n)}</span><span class="mut">${liveSaved(TODAY.n)?'Paused':'Not played'}</span></button>`}
-      ${games.map(g=>g.d?`<button class="lrow" data-n="${g.d.n}"><span>Daily #${pad3(g.d.n)} · ${fmtDate(g.d.date)}</span><b>${fmt(g.res.total)}</b></button>`
-        :`<button class="lrow" data-q="${g.q.id}"><span>${g.q.chal?(g.q.own?'Your challenge':`Challenge from ${esc(g.q.chal.host)}`):'Quick play'} · ${fmtDate(dateOf(g.q.at))} ${timeLabel(g.q.at)}</span><b>${fmt(g.q.total)}</b></button>`).join('')}
-      ${games.length?'':'<div class="note" style="padding:10px 2px">Your finished games will show up here.</div>'}
+      <div id="hist"></div>
     </div>
     <div class="eyebrow in" style="--d:6">Settings</div>
     <div class="list in" style="--d:6">
@@ -679,7 +683,7 @@ function showMenu(jump){
     </div>
   </div>${footer(7)}`;
   wireNav();
-  app.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const q=quickList().find(x=>x.id===b.dataset.q);if(q&&q.chal)return showChallenge(q.chal.code);if(q)showResults({...puzzleFor({rounds:fromNames(q.rounds)}),n:0,quick:true,chal:q.chal},q)});
+  renderHistory();
   document.getElementById('opt-help').onclick=showHelp;
   wireAcct();openChallenges();
   if(jump==='badges')setTimeout(()=>{const el=document.getElementById('badges');if(el)window.scrollTo(0,el.getBoundingClientRect().top+scrollY-12)},50);
@@ -732,7 +736,7 @@ function showQuestion(){
   const g=document.getElementById('g');
   // the clock starts at the first keystroke, or a moment after the round appears
   g.oninput=()=>{document.getElementById('m').textContent=g.value;if(S&&!S.clock)startClock()};
-  g.onfocus=()=>{if(!matchMedia('(min-width:900px)').matches){window.scrollTo(0,0);setTimeout(()=>window.scrollTo(0,0),300)}};
+  g.onfocus=()=>{if(!matchMedia('(min-width:1100px)').matches){window.scrollTo(0,0);setTimeout(()=>window.scrollTo(0,0),300)}};
   document.getElementById('f').onsubmit=e=>{e.preventDefault();if(!S)return;if(!S.clock)startClock();submit(g.value);if(S&&S.phase==='play'){g.value='';g.oninput();g.focus()}};
   document.getElementById('go').onpointerdown=e=>e.preventDefault();   // keep the keyboard open
   document.getElementById('pause').onclick=pause;
@@ -837,7 +841,7 @@ function finish(why){
   const r=R.r;
   while(R.answers.length<ROUNDS)R.answers.push({guess:null,p:0});
   const total=R.answers.reduce((t,a)=>t+(a.p||0),0);
-  const res={why,answers:R.answers,total,pauses:R.pauses};
+  const res={why,answers:R.answers,total,pauses:R.pauses,at:Date.now()};
   if(!r.quick){
     store.del('live:'+r.n);
     store.set('v07:'+r.n,res);
@@ -1074,6 +1078,33 @@ async function chalBox(res){
     if(!c.ok){document.getElementById('cherr').textContent=c.error||'Could not make a link right now. Try again.';e.currentTarget.disabled=false;return}
     res.chal={code:c.code,host:c.host};res.own=true;saveQuick(res);earnBadge('host');chalBox(res);
   };
+}
+// the Menu's game history: 10 a page, newest first
+let HGAMES=[],HPAGE=0;const HPER=10;
+function renderHistory(){
+  const box=document.getElementById('hist');if(!box)return;
+  const pages=Math.max(1,Math.ceil(HGAMES.length/HPER));HPAGE=Math.min(HPAGE,pages-1);
+  const slice=HGAMES.slice(HPAGE*HPER,HPAGE*HPER+HPER),now=Date.now();
+  box.innerHTML=(slice.map(g=>{
+    if(g.d)return`<button class="lrow" data-n="${g.d.n}"><span>Daily #${pad3(g.d.n)} · ${fmtDate(g.d.date)}</span><b>${fmt(g.res.total)}</b></button>`;
+    const q=g.q,when=`${fmtDate(dateOf(q.at))} ${timeLabel(q.at)}`;
+    if(q.chal)return`<button class="lrow" data-ch="${esc(q.chal.code)}"><span><span class="hl">${q.own?'Your challenge':`Challenge from ${esc(q.chal.host)}`}</span> · ${when}</span><span style="display:flex;gap:8px;align-items:center"><span class="chip" data-chip="${esc(q.chal.code)}" hidden></span><b>${fmt(q.total)}</b></span></button>`;
+    // a quick game can be opened (to make a challenge link) only within an hour of finishing it
+    return now-q.at<CHALLENGE_WITHIN?`<button class="lrow" data-q="${q.id}"><span>Quick play · ${when}</span><b>${fmt(q.total)}</b></button>`
+      :`<div class="lrow old" aria-disabled="true"><span>Quick play · ${when}</span><b>${fmt(q.total)}</b></div>`;
+  }).join('')||'<div class="note" style="padding:10px 2px">Your finished games will show up here.</div>')
+  +(pages>1?`<div class="pager"><button class="sq" id="hprev" ${HPAGE?'':'disabled'}>← Newer</button><span class="mut">Page ${HPAGE+1} of ${pages}</span><button class="sq" id="hnext" ${HPAGE<pages-1?'':'disabled'}>Older →</button></div>`:'');
+  box.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const r=puzzleFor(DAILIES.find(x=>x.n===+b.dataset.n)),s=saved(r.n);s?showResults(r,s):r.n===TODAY.n?showStart():leave(r,liveSaved(r.n))});
+  box.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{const q=quickList().find(x=>x.id===b.dataset.q);if(q)showResults({...puzzleFor({rounds:fromNames(q.rounds)}),n:0,quick:true,chal:q.chal},q)});
+  box.querySelectorAll('[data-ch]').forEach(b=>b.onclick=()=>showChallenge(b.dataset.ch));
+  const pv=document.getElementById('hprev'),nx=document.getElementById('hnext');
+  if(pv)pv.onclick=()=>{HPAGE--;renderHistory()};if(nx)nx.onclick=()=>{HPAGE++;renderHistory()};
+  // open challenges on this page: yellow highlight and a chip with the time left
+  if(!API)return;
+  slice.filter(g=>g.q&&g.q.chal&&now-g.q.at<25*HOUR).forEach(async g=>{
+    const c=await getChal(g.q.chal.code);if(!c||!c.open)return;
+    document.querySelectorAll(`[data-chip="${g.q.chal.code}"]`).forEach(ch=>{ch.textContent=leftLabel(c.closes-Date.now());ch.hidden=false;ch.closest('.lrow').classList.add('live')});
+  });
 }
 // open challenges you made or played, on the Menu: time left, players, your place
 async function openChallenges(){
