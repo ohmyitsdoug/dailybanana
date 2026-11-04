@@ -1,0 +1,22 @@
+# Daily Banana
+
+> Daily Banana (dailybanana.io, "Banana for scale") is a free daily size-guessing game by Smidgen Games LLC. Each round asks how many of one everyday thing would line up to match another, such as "How many bananas long is a school bus?" Players type a number; points are their accuracy as a percent.
+
+Key facts:
+- 6 rounds per daily, 25 seconds each, up to 100 points per round (600 per game).
+- Points = the smaller of the guess and the answer divided by the bigger, as a percent. Half or twice the answer scores 50; 10x off scores 10.
+- All sizes are approximations: typical averages from publicly available data, rounded. Players should picture an average example of each thing.
+- A new daily arrives at midnight in each player's own time zone; everyone gets the same questions for the same daily number.
+- Past dailies, with answers, real sizes, average scores and typical guesses, are posted in the archive once each daily has finished everywhere.
+- Also: quick play (random questions), 24-hour challenge links to play the same questions as friends, badges, and optional sign-in with Google or Discord. Free, no ads. No AI runs in the game.
+
+## Pages
+- [Play Daily Banana](https://dailybanana.io/): today's daily and quick play
+- [Daily archive](https://dailybanana.io/archive): every past daily with answers and how players did
+- [About](https://dailybanana.io/about): what the game is and who makes it
+- [FAQ](https://dailybanana.io/faq): rules, scoring, sizes, reset time, challenges, badges, accounts
+- [Privacy and terms](https://dailybanana.io/privacy)
+
+## Contact
+- dailybanana@playsmidgen.com
+- Smidgen Games: https://playsmidgen.com

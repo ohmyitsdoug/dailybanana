@@ -671,6 +671,7 @@ function showMenu(jump){
     <div class="eyebrow in" style="--d:6">Settings</div>
     <div class="list in" style="--d:6">
       <button class="lrow" id="opt-help"><span>How to play</span><span class="mut">→</span></button>
+      <a class="lrow" href="/archive" target="_blank" rel="noopener"><span>Archive</span><span class="mut" aria-label="opens in a new tab"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg></span></a>
       <button class="lrow" id="opt-theme"><span>Dark mode</span><span class="toggle ${document.documentElement.dataset.theme==='dark'?'on':''}" aria-hidden="true"></span></button>
       <button class="lrow" id="opt-motion"><span>Animations</span><span class="toggle ${SET.motion?'on':''}" aria-hidden="true"></span></button>
       ${SESSION&&SESSION.user.admin?'<a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">→</span></a>':''}

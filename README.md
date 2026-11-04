@@ -10,8 +10,11 @@ package.json        one dependency for the server functions: @netlify/blobs
 data/items.json     720 items with typical sizes (built from tools/scale_items.txt)
 data/dailies.json   365 dailies, 6 rounds each (built by tools/make_scale.py)
 privacy.html        privacy policy and terms (/privacy, /terms)
+about.html, faq.html  public About and FAQ (built by tools/make_pages.mjs; edit the text there and rerun)
+llms.txt, robots.txt  for AI tools and search engines; /sitemap.xml is built by netlify/functions/sitemap.mjs
 netlify/functions/  log (anonymous visits, games, shares), stats (daily ranking), auth + sync (accounts),
-                    challenge (challenge links), admin (admin numbers)
+                    challenge (challenge links), admin (admin numbers),
+                    archive (/archive and /archive/000: public past dailies, posted once over everywhere)
 netlify/lib/        storage helpers (Netlify Blobs) and sign-in helpers
 tools/              scale_items.txt (items), core.txt (well-known units), specific.txt (hyper-specific items), make_scale.py (schedule)
 ```

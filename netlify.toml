@@ -32,12 +32,22 @@
 [[redirects]]
   from = "/privacy"
   to = "/privacy.html"
-  status = 301
+  status = 200
 
 [[redirects]]
   from = "/terms"
   to = "/privacy.html#terms"
   status = 301
+
+[[redirects]]
+  from = "/about"
+  to = "/about.html"
+  status = 200
+
+[[redirects]]
+  from = "/faq"
+  to = "/faq.html"
+  status = 200
 
 # one address for everyone, so sign-in redirects always match
 [[redirects]]
