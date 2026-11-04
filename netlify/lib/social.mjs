@@ -3,7 +3,7 @@
 //
 // Weekly plan (Eastern time):           Mon 12:15 carousel · Tue 12:15 fun fact · Wed 7:15pm guess this
 //   Thu 9:15am answer story, 12:15 banana for scale · Fri 12:15 week in review (fun fact until 500+ dailies a week)
-//   Sat 10:15am weekend challenge (open until midnight Pacific Sunday) · Sun 11:15 closest guess, 7:15pm last-call story
+//   Sat 10:15am weekend challenge post (it opens 12am Eastern Saturday, closes midnight Pacific Sunday) · Sun 11:15 closest guess, 7:15pm last-call story
 // Milestones post at 12:15 or 7:15pm only, never within 2 hours of a scheduled post, at most one a day, each mark once.
 // Every feed post is also shared as a story.
 //
@@ -160,7 +160,7 @@ export async function build(kind, store, { date = etParts().date, preview = fals
     if (!wk) return null;
     const code = preview ? 'PREVIEW' : (await openWeekend(store, wk, items)).code;
     const img = P.weekendPost(wk, code);
-    return { kind, ...withTags('sat', `This weekend’s challenge is live! Same 6 questions for everyone, open all weekend, one try.\nLink in bio, or tap “Join” and enter ${code}.\nPost your score in the comments 👇`), images: [img], story: [P.storyOf(img, false)], extra: { code, n: wk.n } };
+    return { kind, ...withTags('sat', `Join this weekend’s challenge! 🍌 Same 6 questions for everyone, open all weekend, one try.\nLink in bio, or tap “Join” and enter ${code}.\nPost your score in the comments 👇`), images: [img], story: [P.storyOf(img, false)], extra: { code, n: wk.n } };
   }
   if (kind === 'sun_story') {
     const cur = await store.get('weekend/current', { type: 'json' }).catch(() => null), wks = await data('weekend');

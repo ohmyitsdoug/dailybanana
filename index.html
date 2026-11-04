@@ -1549,7 +1549,7 @@ function showJoin(prefill=''){
   };
 }
 // ---------- the weekend challenge: open, counting down (on the player's own Saturday), or last weekend's ----------
-// it opens Saturday 10:15am Eastern, so players in Europe and elsewhere see a countdown on their Saturday until then
+// it opens 12am Eastern on Saturday, so players whose Saturday starts earlier (Europe, Asia) see a countdown until then
 const wkSoon=w=>!!w&&!w.open&&!!w.next&&new Date().getDay()===6&&w.next.opens>Date.now()-30*60e3;
 let wkTick=null;
 function wkCountdown(w,id,fmtFn){clearInterval(wkTick);
