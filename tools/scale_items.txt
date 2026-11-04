@@ -1116,3 +1116,16 @@ seal | seals | a | long | 180 |
 walrus | walruses | a | long | 300 | 
 sea lion | sea lions | a | long | 220 | 
 beluga whale | beluga whales | a | long | 450 | 
+# ---- everyday basics (more) ----
+spoon | spoons | a | long | 17 | u
+kitchen sponge | kitchen sponges | a | long | 11 | u
+dish soap bottle | dish soap bottles | a | tall | 25 | u
+laundry detergent jug | laundry detergent jugs | a | tall | 30 |
+paper grocery bag | paper grocery bags | a | tall | 43 | u
+to-go coffee cup | to-go coffee cups | a | tall | 15 | u
+chip can | chip cans | a | tall | 24 | u
+fire extinguisher | fire extinguishers | a | tall | 50 |
+hoodie | hoodies | a | long | 70 |
+one-car garage | one-car garages | a | long | 610 |
+grocery store checkout belt | checkout belts | a | long | 300 |
+school hallway locker | hallway lockers | a | tall | 180 |

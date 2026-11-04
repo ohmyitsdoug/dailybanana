@@ -13,7 +13,7 @@ privacy.html        privacy policy and terms (/privacy, /terms)
 netlify/functions/  log (anonymous visits, games, shares), stats (daily ranking), auth + sync (accounts),
                     challenge (challenge links), admin (admin numbers)
 netlify/lib/        storage helpers (Netlify Blobs) and sign-in helpers
-tools/              scale_items.txt (items), specific.txt (hyper-specific items), make_scale.py (schedule)
+tools/              scale_items.txt (items), core.txt (well-known units), specific.txt (hyper-specific items), make_scale.py (schedule)
 ```
 
 ## Rules (what players see) · v0.6 beta "Banana for Scale"
@@ -35,6 +35,7 @@ One open challenge per person (per device); joining others is unlimited. Server:
 Items live in `tools/scale_items.txt` (`name | plural | article | long/tall/across/deep | cm | u`, where `u` means it can be the counting unit).
 Edit sizes there, then run `python3 tools/make_scale.py` to rebuild `data/items.json` and `data/dailies.json` (365 days; Daily #000 is 2026-11-03, #001 the next day).
 Each day has one answer from each size range (2-10 up to 300-1,000) in a random order, and the thing measured doesn't repeat within 10 days.
+Counting units come only from `tools/core.txt` (well-known, standard-size things), and most rounds measure one of those too.
 Hyper-specific items are listed in `tools/specific.txt` (landmarks, niche gear): only 1-2 rounds a day, in dailies and quick play. Dailies up to `FROZEN` in make_scale.py are never regenerated.
 Challenges store item names, so keep names stable once live (changing a size is fine).
 

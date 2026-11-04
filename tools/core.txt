@@ -1,0 +1,153 @@
+# Core items: things nearly everyone has handled or seen, in a standard size.
+# Only these can be the counting unit ("how many BANANAS..."), and most rounds also measure one of these.
+# One name per line, exactly as in scale_items.txt.
+penny
+nickel
+dime
+quarter
+dollar bill
+credit card
+playing card
+business card
+sticky note
+paper clip
+AA battery
+LEGO brick
+golf ball
+ping pong ball
+tennis ball
+baseball
+softball
+basketball
+soccer ball
+football
+bowling ball
+bowling pin
+chicken egg
+banana
+apple
+orange
+lemon
+grape
+M&M
+Oreo cookie
+jelly bean
+gummy bear
+marshmallow
+Tic Tac
+sugar cube
+die
+domino
+Rubik's Cube
+soda can
+water bottle
+2-liter soda bottle
+milk jug
+coffee mug
+to-go coffee cup
+wine bottle
+juice box
+cereal box
+egg carton
+pizza box
+large pizza
+slice of pizza
+stick of butter
+slice of bread
+hot dog
+hamburger
+donut
+bagel
+cupcake
+pancake
+French fry
+chicken nugget
+candy bar
+carrot
+ear of corn
+pencil
+crayon
+ballpoint pen
+marker
+ruler
+yardstick
+sheet of paper
+notebook
+paperback book
+envelope
+smartphone
+TV remote
+computer mouse
+keyboard
+laptop
+toothbrush
+fork
+spoon
+chopstick
+drinking straw
+toothpick
+matchstick
+popsicle stick
+dinner plate
+paper plate
+ice cube
+key
+light bulb
+toilet paper roll
+paper towel roll
+shoebox
+adult shoe
+flip-flop
+brick
+cinder block
+two-by-four
+skateboard
+baseball bat
+golf club
+tennis racket
+umbrella
+broom
+acoustic guitar
+hockey stick
+yoga mat
+bicycle
+shopping cart
+adult person
+newborn baby
+house cat
+golden retriever
+horse
+cow
+elephant
+giraffe
+front door
+interior door
+staircase step
+refrigerator
+queen bed
+sofa
+bathtub
+dining chair
+desk
+ladder
+car
+pickup truck
+school bus
+semi truck
+shipping container
+telephone pole
+two-story house
+basketball hoop
+stop sign
+traffic cone
+fire hydrant
+mailbox
+parking space
+car tire
+license plate
+tennis court
+basketball court
+football field
+Olympic swimming pool
+jumbo jet
+blue whale

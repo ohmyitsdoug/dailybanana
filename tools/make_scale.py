@@ -3,6 +3,7 @@ Items come from tools/scale_items.txt. Each daily has 6 rounds: "How many [unit]
 Each day has one answer from each size range, from small (2-10) to big (300-1,000), the unit is always something smaller and
 familiar, and a thing being measured doesn't come back within 10 days.
 Hyper-specific items (tools/specific.txt: landmarks, niche gear) show up in only 1-2 rounds a day.
+Counting units come only from tools/core.txt (well-known, standard sizes); about 2/3 of the other rounds measure a core item too.
 Dailies up to FROZEN (already played) are kept exactly as they are in data/dailies.json.
 Usage: python3 tools/make_scale.py 2026-11-03 365
 """
@@ -21,6 +22,13 @@ missing = SPECIFIC - {i['name'] for i in items}
 if missing: sys.exit(f'specific.txt names items that are not in scale_items.txt: {sorted(missing)}')
 for i in items:
     if i['name'] in SPECIFIC: i['x'] = True   # hyper-specific
+# core items (tools/core.txt): well-known, standard-size things. Only they are counting units, and most rounds measure one.
+CORE = {l.strip() for l in open(os.path.join(HERE, 'core.txt')) if l.strip() and not l.startswith('#')}
+missing = CORE - {i['name'] for i in items}
+if missing: sys.exit(f'core.txt names items that are not in scale_items.txt: {sorted(missing)}')
+for i in items:
+    i['unit'] = i['name'] in CORE
+    if i['unit']: i['core'] = True
 try: OLD_NAMES = [i['name'] for i in json.load(open(os.path.join(HERE, '..', 'data', 'items.json')))]
 except Exception: OLD_NAMES = []
 json.dump(items, open(os.path.join(HERE, '..', 'data', 'items.json'), 'w'), separators=(',', ':'))
@@ -50,9 +58,10 @@ for d in range(days):
     today, rounds = set(), []
     want = set(random.sample(range(len(BUCKETS)), random.choice((1, 1, 2))))   # which rounds get the one or two specific items
     for k in range(len(BUCKETS)):
+        core_b = random.random() < 2 / 3   # most everyday rounds measure a core item too
         for gap in (10, 5, 2, 0):
             c = [p for p in pairs[k] if p not in used_pairs and not ({p[0], p[1]} & today) and d - last.get(p[1], -99) >= gap]
-            c2 = [p for p in c if spec(p) == (k in want)]
+            c2 = [p for p in c if spec(p) == (k in want) and (k in want or not core_b or items[p[1]].get('core'))]
             if c2: c = c2; break
             if c and gap == 0: break
         p = random.choice(c)
