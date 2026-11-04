@@ -165,8 +165,9 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .app{--topx:0px}
 @media (max-height:700px){.app{--topx:8px}}
 .safetop{position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--bg);z-index:40;pointer-events:none}
-.bgb span{position:absolute;opacity:.22;animation:floaty 9s ease-in-out infinite;animation-delay:calc(var(--d) * -1)}
-:root[data-theme="dark"] .bgb span{opacity:.14}
+.bgb span{position:absolute;opacity:.13;animation:floaty 9s ease-in-out infinite;animation-delay:calc(var(--d) * -1)}
+:root[data-theme="dark"] .bgb span{opacity:.09}
+.nobgb .bgb{display:none}
 @keyframes floaty{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-22px) rotate(8deg)}}
 .app{position:relative;z-index:1}
 .answer{font-size:18px}
@@ -429,8 +430,8 @@ const ICON={
 const store={get(k,d){try{const v=localStorage.getItem('snug:'+k);return v==null?d:JSON.parse(v)}catch(_){return d}},
   set(k,v){try{localStorage.setItem('snug:'+k,JSON.stringify(v))}catch(_){}},
   del(k){try{localStorage.removeItem('snug:'+k)}catch(_){}}};
-const SET=Object.assign({motion:true},store.get('settings',{}));
-function applySettings(){document.documentElement.classList.toggle('calm',!SET.motion)}
+const SET=Object.assign({motion:true,bgb:true},store.get('settings',{}));
+function applySettings(){const h=document.documentElement;h.classList.toggle('calm',!SET.motion);h.classList.toggle('nobgb',!SET.bgb)}
 applySettings();
 const reduced=()=>!SET.motion||matchMedia('(prefers-reduced-motion: reduce)').matches;
 function toggleTheme(){const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;store.set('theme',t);const m=document.getElementById('tc');if(m)m.content=t==='dark'?'#2A1A0E':'#FFF0A0'}
@@ -730,6 +731,7 @@ function showMenu(jump){
       <a class="lrow" href="/archive" target="_blank" rel="noopener"><span>Archive</span><span class="mut" aria-label="opens in a new tab"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg></span></a>
       <button class="lrow" id="opt-theme"><span>Dark mode</span><span class="toggle ${document.documentElement.dataset.theme==='dark'?'on':''}" aria-hidden="true"></span></button>
       <button class="lrow" id="opt-motion"><span>Animations</span><span class="toggle ${SET.motion?'on':''}" aria-hidden="true"></span></button>
+      <button class="lrow" id="opt-bgb" aria-pressed="${SET.bgb}"><span>Background bananas</span><span class="toggle ${SET.bgb?'on':''}" aria-hidden="true"></span></button>
       ${SESSION&&SESSION.user.admin?'<a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">→</span></a><button class="lrow" id="opt-social"><span>Social post image</span><span class="mut">→</span></button>':''}
       ${SESSION?`<button class="lrow" id="delacct"><span>Delete my account</span><span class="mut">Can't be undone</span></button>`:''}
     </div>
@@ -744,6 +746,7 @@ function showMenu(jump){
   app.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const r=puzzleFor(DAILIES.find(x=>x.n===+b.dataset.n)),s=saved(r.n);s?showResults(r,s):r.n===TODAY.n?showStart():leave(r,liveSaved(r.n))});
   document.getElementById('back').onclick=showStart;
   document.getElementById('opt-theme').onclick=e=>{toggleTheme();e.currentTarget.querySelector('.toggle').classList.toggle('on',document.documentElement.dataset.theme==='dark')};
+  document.getElementById('opt-bgb').onclick=e=>{SET.bgb=!SET.bgb;store.set('settings',SET);applySettings();e.currentTarget.querySelector('.toggle').classList.toggle('on',SET.bgb);e.currentTarget.setAttribute('aria-pressed',SET.bgb)};
   document.getElementById('opt-motion').onclick=e=>{SET.motion=!SET.motion;store.set('settings',SET);applySettings();e.currentTarget.querySelector('.toggle').classList.toggle('on',SET.motion)};
   window.scrollTo(0,0);
 }
