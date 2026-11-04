@@ -2,93 +2,236 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Daily Banana Admin</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
 <script>(function(){var t;try{t=JSON.parse(localStorage.getItem('snug:theme'))}catch(e){}if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t})();</script>
 <style>
-:root,:root[data-theme="light"]{--bg:#FFF0A0;--ink:#3B2412;--mut:#6B4F30;--card:#FFFAE0;--line:#E6D38A;--acc:#FFD43B;--accsh:#B97E00;color-scheme:light}
-:root[data-theme="dark"]{--bg:#2A1A0E;--ink:#FFF3C9;--mut:#CDB68C;--card:#382415;--line:#4E3622;--acc:#FFD43B;--accsh:#FFD43B;color-scheme:dark}
+:root,:root[data-theme="light"]{--bg:#FFF0A0;--ink:#3B2412;--mut:#6B4F30;--card:#FFFAE0;--line:#E6D38A;--acc:#FFD43B;--acc-ink:#3B2412;--accsh:#B97E00;--bar:#B97E00;color-scheme:light}
+:root[data-theme="dark"]{--bg:#2A1A0E;--ink:#FFF3C9;--mut:#CDB68C;--card:#382415;--line:#4E3622;--acc:#FFD43B;--acc-ink:#2A1A0E;--accsh:#FFD43B;--bar:#FFD43B;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;font-size:15px}
 a{color:var(--ink)}
 .top{border-bottom:2px solid var(--ink)}
-.top>div{max-width:1100px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
-.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:19px}
-.logo .a{font-size:12px;padding:1px 6px;border:2px solid var(--ink)}
-main{max-width:1100px;margin:0 auto;padding:24px 16px 60px;display:flex;flex-direction:column;gap:14px}
-h2{font-weight:500;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut);margin:18px 0 0}
-.dim{color:var(--mut)} .small{font-size:13px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
-.stat{border:2px solid var(--ink);background:var(--card);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
-.stat b{font-size:28px;font-variant-numeric:tabular-nums;line-height:1.1}
-.stat span{font-size:13px;color:var(--mut)}
-.stat.big{box-shadow:4px 4px 0 var(--accsh)}
-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;background:var(--card)}
-th,td{text-align:right;padding:8px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
-th{font-size:12px;letter-spacing:.5px;color:var(--mut);font-weight:500;border-bottom:2px solid var(--ink)}
+.wrapx{max-width:1120px;margin:0 auto;padding:14px 20px}
+.top .wrapx{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:19px;text-decoration:none}
+.chipa{font-size:11px;letter-spacing:1px;padding:1px 6px;border:2px solid var(--ink);font-weight:700}
+.range{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.range button{font:inherit;font-weight:700;font-size:13px;height:34px;padding:0 11px;background:var(--bg);color:var(--ink);border:2px solid var(--ink);cursor:pointer}
+.range button.on{background:var(--ink);color:var(--bg);box-shadow:3px 3px 0 var(--accsh)}
+.range input{font:inherit;font-size:13px;height:34px;border:2px solid var(--ink);background:var(--card);color:var(--ink);padding:0 6px}
+main.wrapx{padding-top:22px;padding-bottom:60px;display:flex;flex-direction:column;gap:12px}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:30px;letter-spacing:-1px}
+h2{font-weight:500;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut);margin:20px 0 0}
+.mut{color:var(--mut)} .small{font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.grid.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.grid.g5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.grid.g6{grid-template-columns:repeat(6,minmax(0,1fr))}
+.card{border:2px solid var(--ink);background:var(--card);padding:12px 14px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.card.big{box-shadow:4px 4px 0 var(--accsh);padding:14px 16px}
+.card .l{font-size:13px;color:var(--mut)}
+button.card{font:inherit;color:inherit;text-align:left;cursor:pointer;width:100%}
+button.card:hover .qi,button.card:focus-visible .qi,button.card[aria-expanded="true"] .qi{opacity:1}
+.qi{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border:1.5px solid var(--mut);border-radius:50%;font-size:10px;font-weight:700;opacity:.55;vertical-align:1px;margin-left:2px}
+.pop{position:absolute;z-index:20;max-width:300px;background:var(--ink);color:var(--bg);padding:10px 12px;font-size:13px;line-height:1.45;box-shadow:4px 4px 0 var(--accsh)}
+.pop b{display:block;font-size:14px;margin-bottom:3px}
+.chart .l{cursor:pointer}
+.card b{font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.card.big b{font-size:36px}
+.card .s{font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+.card .s.up{color:var(--ink);font-weight:700}
+.chart{border:2px solid var(--ink);background:var(--card);padding:14px 16px 10px;position:relative}
+.chart .bars{display:flex;align-items:flex-end;gap:2px;height:120px;margin-top:10px;border-bottom:2px solid var(--ink)}
+.chart .bars span{flex:1;min-width:2px;background:var(--bar);border-radius:3px 3px 0 0;position:relative;outline:none}
+.chart .bars span:hover,.chart .bars span:focus{background:var(--ink)}
+.chart .x{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:4px}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:4px 8px;white-space:nowrap;transform:translate(-50%,-100%);display:none}
+.tip b{font-size:14px}
+details.table{border:2px solid var(--ink);background:var(--card)}
+details.table summary{cursor:pointer;padding:10px 14px;font-weight:700}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+th,td{text-align:right;padding:7px 10px;border-top:1px solid var(--line);white-space:nowrap}
+th{font-size:12px;color:var(--mut);font-weight:500;border-top:2px solid var(--ink)}
 th:first-child,td:first-child{text-align:left}
-.wrap{overflow-x:auto;border:2px solid var(--ink)}
-.msg{border:2px solid var(--ink);box-shadow:3px 3px 0 var(--accsh);padding:10px 12px;font-weight:500;background:var(--card)}
+.notes{font-size:12px;color:var(--mut);line-height:1.5;display:flex;flex-direction:column;gap:2px;margin-top:8px}
+.msg{border:2px solid var(--ink);box-shadow:3px 3px 0 var(--accsh);padding:10px 12px;background:var(--card)}
 .gate{max-width:420px;margin:80px auto;padding:0 16px;display:flex;flex-direction:column;gap:12px}
-button{font-family:inherit;font-weight:700;height:36px;background:var(--card);color:var(--ink);border:2px solid var(--ink);padding:0 12px;cursor:pointer}
+@media (max-width:1000px){.grid,.grid.g5,.grid.g6{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:640px){.grid,.grid.g3,.grid.g5,.grid.g6{grid-template-columns:repeat(2,minmax(0,1fr))}.card.big b{font-size:30px}h1{font-size:26px}}
 </style>
 </head>
 <body>
 <div id="m"></div>
 <script>
-// Daily Banana admin: player numbers only. Opens for the account set as ADMIN_EMAIL (Google) or ADMIN_DISCORD_ID (Discord)
-// in Netlify, using the sign-in from the game's Menu.
+// Daily Banana admin dashboard. Opens for the account set as ADMIN_EMAIL (Google) or ADMIN_DISCORD_ID (Discord) in Netlify,
+// using the sign-in from the game's Menu. Numbers come from /.netlify/functions/admin?from=&to= (Eastern days).
 const API=(window.MATRYO_CONFIG&&window.MATRYO_CONFIG.api)||'/.netlify/functions';
 const m=document.getElementById('m');
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const n=v=>v==null?'–':Number(v).toLocaleString('en-US');
+const p=v=>v==null?'–':`${v}%`;
 const fmtDay=d=>{const [y,mo,dd]=d.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo-1]+' '+(+dd)};
+const add=(iso,k)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+k);return d.toISOString().slice(0,10)};
+const todayET=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 let TOKEN='';try{TOKEN=(JSON.parse(localStorage.getItem('snug:session')||'null')||{}).token||''}catch(_){}
-const logo='<div class="logo"><img src="favicon.svg" width="24" height="24" alt="">dailybanana <span class="a">ADMIN</span></div>';
+let RANGE='30',CUSTOM={from:'',to:''};try{RANGE=sessionStorage.getItem('db-admin-range')||'30'}catch(_){}
+const logo='<a class="logo" href="./"><img src="favicon.svg" width="24" height="24" alt="">dailybanana</a><span class="chipa">ADMIN</span>';
 
 function gate(msg){
-  m.innerHTML=`<div class="gate">${logo}${msg?`<div class="msg">${esc(msg)}</div>`:''}
-    <div class="small dim">Sign in on the game's Menu with your admin account (Google or Discord), then come back here.</div>
+  m.innerHTML=`<div class="gate"><div style="display:flex;gap:8px;align-items:center">${logo}</div>${msg?`<div class="msg">${esc(msg)}</div>`:''}
+    <div class="small mut">Sign in on the game's Menu with your admin account (Google or Discord), then come back here.</div>
     <a href="./" style="font-weight:700">Go to the game →</a></div>`;
+}
+function rangeDates(){
+  const t=todayET();
+  if(RANGE==='custom'&&CUSTOM.from&&CUSTOM.to)return{from:CUSTOM.from,to:CUSTOM.to};
+  if(RANGE==='1')return{from:t,to:t};
+  if(RANGE==='all')return{from:'2026-11-03',to:t};
+  return{from:add(t,-(+RANGE||30)+1),to:t};
 }
 async function load(){
   if(!TOKEN)return gate();
-  m.innerHTML=`<main><div class="dim">Loading…</div></main>`;
-  const r=await fetch(`${API}/admin`,{headers:{authorization:'Bearer '+TOKEN}}).catch(()=>null);
-  if(!r)return m.innerHTML='<main><div class="msg">Could not reach the server.</div></main>';
+  const {from,to}=rangeDates();
+  if(!m.querySelector('main'))m.innerHTML='<main class="wrapx"><div class="mut">Loading…</div></main>';
+  const r=await fetch(`${API}/admin?from=${from}&to=${to}`,{headers:{authorization:'Bearer '+TOKEN}}).catch(()=>null);
+  if(!r)return m.innerHTML='<main class="wrapx"><div class="msg">Could not reach the server.</div></main>';
   if(r.status===401)return gate('This account isn\'t the admin. Sign in with your admin Google or Discord account on the game\'s Menu.');
-  const d=await r.json().catch(()=>null);if(!d||!d.totals)return m.innerHTML='<main><div class="msg">Server error.</div></main>';
+  const d=await r.json().catch(()=>null);if(!d||!d.health)return m.innerHTML='<main class="wrapx"><div class="msg">Server error.</div></main>';
   draw(d);
 }
-function draw({totals:t,days}){
-  const today=days[0]||{};
-  const stat=(v,label,big)=>`<div class="stat ${big?'big':''}"><b>${v}</b><span>${label}</span></div>`;
-  m.innerHTML=`<div class="top"><div>${logo}<div style="flex:1"></div><button id="re">Refresh</button><a href="./" class="small">← Back to game</a></div></div>
-  <main>
-    <h2>Today</h2>
-    <div class="stats">
-      ${stat(n(today.visitors),'unique visitors',1)}${stat(n(today.returning),'returning visitors',1)}${stat(n(today.players),'players',1)}
-      ${stat(n(today.dailies),'dailies finished')}${stat(n(today.quick),'quick games')}${stat(n(today.avg_points),'avg points per game')}
-      ${stat(today.avg_bananas??'–','avg 🍌 per game')}${stat(n(today.shares),'shares copied')}${stat(n(today.challenges),'challenges made')}
+// a change vs the previous period: arrow + number, never color alone
+const DEF={
+  'Daily active players':'Unique players (devices) who finished at least one game, daily or quick play, on the last day of the range. Compared with the day before.',
+  'Weekly active players':'Unique players who finished at least one game in the 7 days ending on the last day of the range. Compared with the 7 days before that.',
+  'Monthly active players':'Unique players who finished at least one game in the 30 days ending on the last day of the range. Compared with the 30 days before that.',
+  'New players':'Players whose first finished game ever falls inside the range. Compared with the same number of days just before it. Visiting without playing doesn\'t count.',
+  'Players per day':'Unique players who finished at least one game on each day of the range. Hover or tap a bar for the exact number.',
+  'D1 retention':'Of the new players in this range, the share who finished a game again exactly 1 day after their first game. Only counts players whose next day has already happened.',
+  'D7 retention':'Of the new players in this range, the share who finished a game again exactly 7 days after their first game. Only counts players at least 7 days in.',
+  'D30 retention':'Of the new players in this range, the share who finished a game again exactly 30 days after their first game. Only counts players at least 30 days in.',
+  'Starts':'Players who started a daily in the range, counted once per player per daily. Tracked from Nov 4.',
+  'Completions':'Dailies finished in the range, counted once per player per daily even if their score was sent twice.',
+  'Completion rate':'Of the players who started a daily in the range, the share who finished it. Completions ÷ starts.',
+  'Avg accuracy':'Average daily score as a percent of the 600 possible. Each round scores your accuracy: the smaller of guess and answer divided by the bigger.',
+  'Avg time guessing':'Average time spent on the six rounds of a daily, from each question appearing to the guess (25 seconds max per round). Reading the reveals isn\'t counted. Tracked from Nov 4.',
+  'Games started':'Quick play games started in the range, including challenge games. Tracked from Nov 4.',
+  'Games finished':'Quick play games finished in the range, including challenge games.',
+  'Unique players':'Players who finished at least one quick play game in the range.',
+  'Finish rate':'Quick play games finished ÷ quick play games started, for days with start tracking.',
+  'Challenges made':'Challenge links created in the range.',
+  'Challenge joins':'Times someone other than the creator played a challenge in the range.',
+  'Bananas earned':'Rounds scored 90 or more (within about 10% of the answer), across dailies and quick play in the range.',
+  'Players with a banana':'Players who earned at least one banana in the range.',
+  'Avg bananas per player':'Bananas earned in the range ÷ players who finished a game in the range.',
+  'Banana rate':'Bananas earned ÷ all rounds played in the range.',
+  'Unique visitors':'Devices that opened the game in the range, whether or not they played.',
+  'Returning visitors':'Visitors in the range whose first visit was on an earlier day.',
+  'Visitor → player':'Of the visitors in the range, the share who finished at least one game.',
+  'Results copied':'Times players copied or shared their results in the range.',
+  'Challenge links copied':'Times players copied or shared a challenge link in the range.',
+  'New accounts':'Accounts created in the range with Google or Discord sign-in.',
+};
+const ch=c=>c==null?'<span class="s up">new</span>':`<span class="s ${c>0?'up':''}">${c>0?'▲':c<0?'▼':'•'} ${Math.abs(c)}% vs previous</span>`;
+const card=(label,val,sub='',big=false)=>`<button class="card ${big?'big':''}" data-def="${esc(label)}" aria-expanded="false"><span class="l">${label} <span class="qi" aria-hidden="true">?</span></span><b>${val}</b>${sub?`<span class="s">${sub}</span>`:''}</button>`;
+const since=(d,key)=>d.from<d.since[key]?`tracked from ${fmtDay(d.since[key])}`:'';
+
+function draw(d){
+  const H=d.health,R=d.retention,D=d.daily,Q=d.quick,B=d.bananas,T=d.traffic;
+  const label=RANGE==='1'?'Today':RANGE==='all'?'All time':RANGE==='custom'?`${fmtDay(d.from)} – ${fmtDay(d.to)}`:`Last ${RANGE} days`;
+  const ret=(k,days)=>R[k].v==null?card(`D${days} retention`,'–',`needs ${days} day${days>1?'s':''} of data`):card(`D${days} retention`,p(R[k].v),`of ${n(R[k].n)} new player${R[k].n===1?'':'s'}`);
+  const series=[...d.days].reverse().slice(-90),max=Math.max(1,...series.map(x=>x.players));
+  m.innerHTML=`<div class="top"><div class="wrapx">${logo}<div style="flex:1"></div>
+    <div class="range" role="group" aria-label="Date range">${[['1','Today'],['7','7D'],['30','30D'],['90','90D'],['all','All']].map(([k,l])=>`<button data-r="${k}" class="${RANGE===k?'on':''}">${l}</button>`).join('')}
+      <button data-r="custom" class="${RANGE==='custom'?'on':''}">Custom</button>
+      ${RANGE==='custom'?`<input type="date" id="cf" value="${d.from}" aria-label="From"><input type="date" id="ct" value="${d.to}" aria-label="To">`:''}</div>
+    <a href="./" class="small">← Game</a></div></div>
+  <main class="wrapx">
+    <div class="head"><h1>Overview</h1><span class="mut small">${label} · ${fmtDay(d.from)}–${fmtDay(d.to)}</span></div>
+
+    <h2>Player health</h2>
+    <div class="grid">
+      ${card('Daily active players',n(H.dau.v),ch(H.dau.ch),true)}${card('Weekly active players',n(H.wau.v),ch(H.wau.ch),true)}
+      ${card('Monthly active players',n(H.mau.v),ch(H.mau.ch),true)}${card('New players',n(H.new.v),ch(H.new.ch),true)}
     </div>
-    <h2>All time</h2>
-    <div class="stats">
-      ${stat(n(t.unique_visitors),'unique visitors')}${stat(n(t.players),'unique players')}${stat(n(t.games),'total games')}
-      ${stat(n(t.dailies),'dailies finished')}${stat(n(t.quick),'quick games')}${stat(n(t.challenge_games),'challenge games')}
-      ${stat(n(t.points),'total points')}${stat(n(t.avg_points),'avg points per game')}${stat(t.avg_bananas??'–','avg 🍌 per game')}
-      ${stat(n(t.share_results),'results copied')}${stat(n(t.share_challenge),'challenge links copied')}${stat(n(t.challenges),'challenges made')}
-      ${stat(n(t.accounts),'accounts')}
+    <div class="chart" id="chart"><button class="l small mut" data-def="Players per day" aria-expanded="false" style="font:inherit;font-size:13px;background:none;border:0;padding:0;color:var(--mut);cursor:pointer">Players per day <span class="qi" aria-hidden="true">?</span></button>
+      <div class="bars">${series.map(x=>`<span tabindex="0" data-d="${x.day}" data-v="${x.players}" style="height:${Math.max(2,(x.players/max)*100)}%" aria-label="${fmtDay(x.day)}: ${x.players} players"></span>`).join('')}</div>
+      <div class="x"><span>${series.length?fmtDay(series[0].day):''}</span><span>max ${n(max)}</span><span>${series.length?fmtDay(series[series.length-1].day):''}</span></div>
+      <div class="tip" id="tip"></div></div>
+
+    <h2>Retention</h2>
+    <div class="grid g3">${ret('d1',1)}${ret('d7',7)}${ret('d30',30)}</div>
+
+    <h2>The daily</h2>
+    <div class="grid g5">
+      ${card('Starts',n(D.starts),D.starts==null?'tracked from Nov 4':since(d,'starts'))}${card('Completions',n(D.completions))}
+      ${card('Completion rate',p(D.rate),D.rate==null?'needs start tracking':'')}${card('Avg accuracy',p(D.accuracy),D.avg_score!=null?`avg ${n(D.avg_score)} / 600`:'')}
+      ${card('Avg time guessing',D.time==null?'–':`${Math.floor(D.time/60)}:${String(D.time%60).padStart(2,'0')}`,D.time==null?'tracked from Nov 4':'all 6 rounds')}
     </div>
-    <h2>Last 14 days</h2>
-    <div class="wrap"><table><thead><tr><th>Day</th><th>Visitors</th><th>Returning</th><th>New</th><th>Players</th><th>Dailies</th><th>Quick</th><th>Points</th><th>Avg pts</th><th>Avg 🍌</th><th>Shares</th><th>Challenges</th><th>Accounts</th></tr></thead>
-      <tbody>${days.map(x=>`<tr><td>${fmtDay(x.day)}</td><td>${n(x.visitors)}</td><td>${n(x.returning)}</td><td>${n(x.new_visitors)}</td><td>${n(x.players)}</td><td>${n(x.dailies)}</td><td>${n(x.quick)}</td><td>${n(x.points)}</td><td>${n(x.avg_points)}</td><td>${x.avg_bananas??'–'}</td><td>${n(x.shares)}</td><td>${n(x.challenges)}</td><td>${n(x.accounts)}</td></tr>`).join('')}</tbody></table></div>
-    <div class="small dim">Days are Eastern time (players each get the new daily at their own midnight). A visitor is one device; returning = it first visited on an earlier day. 🍌 = a round scoring 90+. Points and averages count dailies and quick games together.</div>
+
+    <h2>Quick play</h2>
+    <div class="grid g6">
+      ${card('Games started',n(Q.started),Q.started==null?'tracked from Nov 4':'')}${card('Games finished',n(Q.completed))}
+      ${card('Unique players',n(Q.players))}${card('Finish rate',p(Q.rate),Q.rate==null?'needs start tracking':'')}
+      ${card('Challenges made',n(Q.challenges))}${card('Challenge joins',n(Q.joins),'friends who played one')}
+    </div>
+
+    <h2>Bananas</h2>
+    <div class="grid">
+      ${card('Bananas earned',n(B.total),'rounds scored 90+')}${card('Players with a banana',n(B.players))}
+      ${card('Avg bananas per player',B.per_player??'–')}${card('Banana rate',p(B.rate),'of all rounds played')}
+    </div>
+
+    <h2>Traffic &amp; sharing</h2>
+    <div class="grid g6">
+      ${card('Unique visitors',n(T.visitors))}${card('Returning visitors',n(T.returning),'visited on an earlier day')}
+      ${card('Visitor → player',p(T.conversion),'finished a game')}${card('Results copied',n(T.share_results))}
+      ${card('Challenge links copied',n(T.share_challenge))}${card('New accounts',n(T.accounts))}
+    </div>
+
+    <details class="table"><summary>Day by day</summary><div class="wrap"><table>
+      <thead><tr><th>Day</th><th>Players</th><th>New</th><th>Dailies</th><th>Quick</th><th>Visitors</th><th>Returning</th><th>🍌</th><th>Shares</th></tr></thead>
+      <tbody>${d.days.map(x=>`<tr><td>${fmtDay(x.day)}</td><td>${n(x.players)}</td><td>${n(x.new)}</td><td>${n(x.dailies)}</td><td>${n(x.quick)}</td><td>${n(x.visitors)}</td><td>${n(x.returning)}</td><td>${n(x.bananas)}</td><td>${n(x.shares)}</td></tr>`).join('')}</tbody>
+    </table></div></details>
+
+    <div class="notes">
+      <span>A player is a device that finished at least one game; visits alone don't count. Signed-in players on two devices count twice for now.</span>
+      <span>Daily, weekly and monthly active players end on the range's last day. Retention follows new players from their first game: D1 = played again the next day.</span>
+      <span>“–” means not tracked yet or not enough time has passed, never zero. Days are Eastern time. 🍌 = a round scored 90+ (within about 10%).</span>
+    </div>
   </main>`;
-  document.getElementById('re').onclick=load;
+  m.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{RANGE=b.dataset.r;try{sessionStorage.setItem('db-admin-range',RANGE)}catch(_){}
+    if(RANGE==='custom'&&!CUSTOM.from){CUSTOM={from:d.from,to:d.to}}load()});
+  const cf=document.getElementById('cf'),ct=document.getElementById('ct');
+  if(cf)cf.onchange=ct.onchange=()=>{CUSTOM={from:cf.value,to:ct.value};if(CUSTOM.from&&CUSTOM.to)load()};
+  // tap a number for what it means and how it's worked out
+  m.querySelectorAll('[data-def]').forEach(el=>el.onclick=e=>{e.stopPropagation();showDef(el)});
+  // hover/focus readout on the bars
+  const tip=document.getElementById('tip'),chart=document.getElementById('chart');
+  chart.querySelectorAll('.bars span').forEach(s=>{
+    const show=()=>{const r=s.getBoundingClientRect(),c=chart.getBoundingClientRect();tip.innerHTML='';const b=document.createElement('b');b.textContent=s.dataset.v;tip.append(b,document.createTextNode(` players · ${fmtDay(s.dataset.d)}`));
+      tip.style.left=(r.left-c.left+r.width/2)+'px';tip.style.top=(r.top-c.top-6)+'px';tip.style.display='block'};
+    s.onmouseenter=show;s.onfocus=show;s.onmouseleave=s.onblur=()=>{tip.style.display='none'};
+  });
 }
+let POP=null;
+function hideDef(){if(POP){POP.el.setAttribute('aria-expanded','false');POP.box.remove();POP=null}}
+function showDef(el){
+  const same=POP&&POP.el===el;hideDef();if(same)return;
+  const box=document.createElement('div');box.className='pop';box.setAttribute('role','tooltip');
+  const t=document.createElement('b');t.textContent=el.dataset.def;const d=document.createElement('span');d.textContent=DEF[el.dataset.def]||'';box.append(t,d);
+  document.body.appendChild(box);
+  const r=el.getBoundingClientRect(),w=box.offsetWidth;
+  box.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left+scrollX))+'px';box.style.top=(r.bottom+scrollY+8)+'px';
+  el.setAttribute('aria-expanded','true');POP={el,box};
+}
+document.addEventListener('click',hideDef);document.addEventListener('keydown',e=>{if(e.key==='Escape')hideDef()});
+addEventListener('resize',hideDef);
 load();
 </script>
 </body>
