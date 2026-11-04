@@ -1205,6 +1205,19 @@ function socialPick(){
   const guess=Math.random()<.5?q.ans*p/100:q.ans*100/p;   // a guess that scores exactly p, too low or too high
   return{q,a:{guess,p}};
 }
+// the Facebook cover (1640×624): the logo in the middle, faded bananas around it, on the dark brown
+async function drawCover(){
+  const W=1640,H=624,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
+  await document.fonts.load('700 60px "Space Grotesk"').catch(()=>{});
+  const INK='#FFF3C9',CARD='#382415',ACC='#FFD43B',sp=bananaSprite({b:'#3B2412',y:'#FFD43B',l:'#FFEC8C',d:'#E8A317',s:'#7A4A1E'});
+  const ban=(cx,cy,px,rot,a)=>{const h=px*17/16;x.save();x.globalAlpha=a;x.imageSmoothingEnabled=!!rot;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.drawImage(sp,-px/2,-h/2,px,h);x.restore()};
+  x.fillStyle='#2A1A0E';x.fillRect(0,0,W,H);
+  [[150,140,150,-18,.22],[360,470,110,22,.18],[110,520,90,8,.14],[560,90,80,-30,.14],[1500,130,160,24,.22],[1290,500,120,-14,.18],[1560,470,90,40,.14],[1090,80,80,12,.14],[760,560,70,-8,.12],[880,60,60,30,.1]].forEach(a=>ban(...a));
+  const T='dailybanana.io';x.font='700 112px "Space Grotesk",system-ui,sans-serif';const tw=x.measureText(T).width,tile=176,gap=44,X=(W-(tile+gap+tw))/2,Y=(H-tile)/2;
+  x.fillStyle=ACC;x.fillRect(X+12,Y+12,tile,tile);x.fillStyle=CARD;x.fillRect(X,Y,tile,tile);x.lineWidth=8;x.strokeStyle=INK;x.strokeRect(X+4,Y+4,tile-8,tile-8);
+  ban(X+tile/2,Y+tile/2,116,0,1);x.fillStyle=INK;x.textBaseline='middle';x.fillText(T,X+tile+gap,H/2+4);
+  return cv;
+}
 async function showSocial(pick){
   if(!(SESSION&&SESSION.user.admin))return showStart();
   const cur=pick||socialPick();
@@ -1213,10 +1226,12 @@ async function showSocial(pick){
     <span class="note">A random quick-play question and a random score from 40 to 100. Only you can see this.</span>
     <img id="soimg" alt="Post preview" style="width:100%;aspect-ratio:4/5;border:2px solid var(--ink);background:var(--card)">
     <div class="cprow"><button class="btn main" id="sodl" style="flex:1"><span>Download</span>${ICON.download}</button><button class="btn" id="sonew">New one</button></div>
+    <button class="btn" id="socover"><span>Download the Facebook cover</span>${ICON.download}</button>
   </div>`;
   wireNav();
   document.getElementById('back').onclick=()=>showMenu();
   document.getElementById('sonew').onclick=()=>showSocial();
+  document.getElementById('socover').onclick=async()=>{const cv=await drawCover();cv.toBlob(b=>{const u=URL.createObjectURL(b),el=document.createElement('a');el.href=u;el.download='dailybanana-facebook-cover.png';document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)},'image/png')};
   const c=await drawRound(cur.q,cur.a,{generic:true});
   const img=document.getElementById('soimg');if(img)img.src=c.toDataURL('image/png');
   document.getElementById('sodl').onclick=()=>c.toBlob(b=>{const u=URL.createObjectURL(b),el=document.createElement('a');el.href=u;el.download=`daily-banana-post-${todayISO()}.png`;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)},'image/png');
