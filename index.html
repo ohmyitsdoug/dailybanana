@@ -284,6 +284,8 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 :root[data-theme="dark"] .emo{filter:none}
 .legend-row{display:flex;justify-content:space-between;gap:6px;font-size:12px;color:var(--mut);white-space:nowrap}
 @media (max-width:370px){.legend-row{font-size:10.5px;gap:3px;letter-spacing:-.2px}}
+.nextd{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;border:2px solid var(--ink);background:var(--card);padding:6px 12px;font-size:15px;box-shadow:3px 3px 0 var(--accsh)}
+.nextd b{font-size:18px;letter-spacing:.5px}
 .cprow{display:flex;gap:10px}
 .cprow #cp{flex:1}
 .sharebtn{width:60px;height:60px;padding:0;flex:none}
@@ -617,6 +619,7 @@ function showStart(){
         <h1>Banana for scale</h1>
         <p class="lead">Ridiculous measurements for everyday items. Do you know how many bananas long a bus is?</p>
         <div class="fine">6 rounds · 25 seconds each. The closer your guess, the more it scores.</div>
+        ${res?`<div class="nextd">Next daily in <b class="num" id="hcd">${untilMidnight()}</b></div>`:''}
       </div>
       <div class="cta in" style="--d:4">
         <button class="btn main" id="daily">${play}</button>
@@ -629,6 +632,9 @@ function showStart(){
   wireNav();
   document.getElementById('daily').onclick=()=>res?showResults(p,res):live?leave(p,live):leave(p);
   document.getElementById('quick').onclick=()=>QUICK?leave(QUICK.r,QUICK):quick();
+  // after today's daily, count down to the next one (and roll over to it at midnight)
+  if(res)tick=setInterval(()=>{const el=document.getElementById('hcd');if(!el)return clearInterval(tick);
+    if(todayISO()!==TODAY.date){clearInterval(tick);location.reload();return}el.textContent=untilMidnight()},1000);
   window.scrollTo(0,0);
 }
 // ---------- help ----------
