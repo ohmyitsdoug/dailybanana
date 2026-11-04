@@ -877,7 +877,7 @@ async function showFact(r){
   const el=document.getElementById('factt');if(!el||!FACTS.length)return;
   el.textContent=FACTS[r.quick?Math.floor(Math.random()*FACTS.length):r.n%FACTS.length];document.getElementById('fact').hidden=false;
 }
-const RESULTS_LAYOUT='B';   // B: sharing and Play again above your rounds · A: below them
+const RESULTS_LAYOUT='A';   // A: your rounds, then sharing and Play again · B: sharing above the rounds
 function showResults(r,res){
   clearInterval(tick);
   const title=r.quick?(res.chal?'Daily Banana · challenge':'Daily Banana · quick play'):`Daily Banana #${pad3(r.n)}`;
