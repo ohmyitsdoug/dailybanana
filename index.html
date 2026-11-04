@@ -245,6 +245,17 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 .btn .pi svg{width:22px;height:22px}
 .btn.prov{justify-content:flex-start}
 .btn.prov .go{margin-left:auto}
+.welcome{position:fixed;inset:0;z-index:60;background:rgba(59,36,18,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.welcome .box{width:100%;max-width:400px;max-height:calc(100dvh - 32px);overflow:auto;background:var(--bg);color:var(--ink);border:2px solid var(--ink);box-shadow:6px 6px 0 var(--accsh);padding:22px 20px;display:flex;flex-direction:column;gap:14px}
+.welcome h2{margin:0;font-size:32px;letter-spacing:-1px;line-height:1.05}
+.welcome p{margin:0;font-size:16px;line-height:1.4}
+.welcome .pt{display:flex;gap:12px;align-items:flex-start}
+.welcome .pt b{display:block}
+.welcome .pt .ic{flex:none;width:28px;display:flex;justify-content:center;padding-top:2px}
+.welcome .box>*{flex:none}
+.welcome #wgo{position:sticky;bottom:0}
+.welcome .box:focus{outline:none}
+@media (max-height:700px){.welcome .box{gap:10px;padding:16px}.welcome h2{font-size:26px}.welcome p{font-size:14.5px}.welcome .btn.main{height:52px}}
 .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,16px);z-index:50;background:var(--ink);color:var(--bg);border:2px solid var(--ink);box-shadow:4px 4px 0 var(--accsh);
   padding:12px 18px;font-weight:700;font-size:15px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap}
 .toast.on{opacity:1;transform:translate(-50%,0)}
@@ -319,7 +330,7 @@ button.stat{font:inherit;color:inherit;background:transparent;text-align:left;cu
 // =====================================================================
 const CFG=Object.assign({api:'/.netlify/functions'},window.MATRYO_CONFIG||{});
 const API=CFG.api;   // Netlify server functions: logging, shared stats, words added after launch
-const VERSION='0.6';
+const VERSION='0.7';
 // v0.5 "Banana for Scale": 5 quick rounds a day. "How many bananas long is a school bus?"
 // Answer with a number. Points come from how far off you are, measured in multiples:
 //   within 10% = 100, sliding down to 0 at 10x too high or too low.
@@ -1072,6 +1083,24 @@ async function postChallenge(res){
   await chalApi({action:'play',code:res.chal.code,name:store.get('name','')||(SESSION?SESSION.user.name:GUEST),score:res.total,marks:res.answers.map(markA).join('')});
 }
 
+// ---------- first visit: what the game is, and that every size is an approximation ----------
+function welcome(then){
+  const w=document.createElement('div');w.className='welcome';w.setAttribute('role','dialog');w.setAttribute('aria-modal','true');w.setAttribute('aria-labelledby','wt');
+  w.innerHTML=`<div class="box" tabindex="-1">
+    <div style="display:flex;align-items:center;gap:10px">${BANANA(30)}<span style="font-weight:700">dailybanana.io</span></div>
+    <h2 id="wt">Banana for scale</h2>
+    <p>Each round asks how many of one thing would line up to match another, like how many bananas long a school bus is. Type your best guess.</p>
+    <div class="pt"><span class="ic" aria-hidden="true">≈</span><p><b>Every size is an approximation.</b>Sizes are typical averages drawn from publicly available data and rounded. Real things vary.</p></div>
+    <div class="pt"><span class="ic" aria-hidden="true">${BANANA(20)}</span><p><b>Picture an average one.</b>A regular banana, a standard school bus, an adult shoe. Not the biggest or smallest you've seen.</p></div>
+    <div class="pt"><span class="ic" aria-hidden="true">◎</span><p><b>Close counts.</b>The nearer your guess, the more points. 6 rounds, 25 seconds each, and a new daily every day.</p></div>
+    <button class="btn main" id="wgo"><span>Let's go</span><span aria-hidden="true">→</span></button>
+  </div>`;
+  document.body.appendChild(w);
+  const go=document.getElementById('wgo');w.querySelector('.box').focus();
+  go.onclick=()=>{store.set('welcomed',true);w.remove();then()};
+}
+const isNew=()=>!store.get('welcomed',false)&&!playedDailies().length&&!quickList().length;
+
 // ---------- boot ----------
 document.getElementById('bgb').innerHTML=[[8,14,72,0],[80,8,52,3],[68,38,64,4],[16,62,60,6],[84,70,80,2],[50,88,46,5]].map(([x,y,s,d])=>`<span style="left:${x}%;top:${y}%;--s:${s}px;--d:${d}s">${BANANA(s)}</span>`).join('');
 app.innerHTML='<div class="note" style="padding:40px 0">Loading…</div>';
@@ -1088,7 +1117,9 @@ loadData().then(()=>{
   const code=new URLSearchParams(location.search).get('c');
   signInReturn().then(handled=>{
     if(handled)return;
-    if(code){history.replaceState(null,'',location.pathname);showChallenge(code)}else showStart();
+    if(code)history.replaceState(null,'',location.pathname);
+    const open=()=>code?showChallenge(code):showStart();
+    if(isNew()){showStart();welcome(open)}else open();
     // pull scores from your other devices, then refresh the home screen if it's showing
     if(SESSION)syncNow().then(()=>{testerCheck();if(!S&&document.querySelector('.home'))showStart()});
   });
