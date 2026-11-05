@@ -12,7 +12,7 @@ const TH = {
 };
 
 export const fmt = (n) => Number(n).toLocaleString('en-US');
-export const shownAns = (n) => (n<10?Math.round(n*10)/10:n<100?Math.round(n):n<1000?Math.round(n/10)*10:n<10000?Math.round(n/50)*50:Math.round(n/500)*500);   // the answer as players see it (rounding from Nov 6)
+export const shownAns = (n) => (n<10?Math.round(n*10)/10:n<100?Math.round(n):n<1000?Math.round(n/10)*10:n<10000?Math.round(n/50)*50:Math.round(n/500)*500);   // the answer as players see it (rounding from v1.1)
 export function nice(n) { if (n < 10) return Math.round(n * 10) / 10; const p = 10 ** Math.max(0, Math.floor(Math.log10(n)) - 1); return Math.round(n / p) * p; }
 export const the = (b) => (b.art ? `${b.art} ${b.name}` : b.name);
 export const question = (q) => `How many ${q.A.plural} ${q.B.dim} is ${the(q.B)}?`;

@@ -8,6 +8,7 @@ import { userFor } from '../lib/auth.mjs';
 const MAX_BYTES = 400000;
 export function merge(a = {}, b = {}) {
   const results = { ...(b.results || {}), ...(a.results || {}) };      // a daily's first finished result wins
+  for (const [n, r] of Object.entries(b.results || {})) if (r && r.v3 && results[n] && !results[n].v3) results[n] = r;   // v1.1 rescoring of the same game replaces the old score
   const byId = new Map();
   for (const q of [...(a.quick || []), ...(b.quick || [])]) if (q && q.id) byId.set(q.id, { ...(byId.get(q.id) || {}), ...q });
   const quick = [...byId.values()].sort((x, y) => (y.at || 0) - (x.at || 0)).slice(0, 200);

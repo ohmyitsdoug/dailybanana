@@ -4,8 +4,8 @@ export const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&am
 export const fmt = (n) => Number(n).toLocaleString('en-US');
 export const SCORE_V2 = '2026-11-05';
 export const shownAns = (n) => (n < 100 ? Math.round(n * 10) / 10 : Math.round(n));   // Nov 5: tenths under 100, whole numbers from 100
-export const SCORE_V3 = '2026-11-06';
-export const roundAns = (n) => (n<10?Math.round(n*10)/10:n<100?Math.round(n):n<1000?Math.round(n/10)*10:n<10000?Math.round(n/50)*50:Math.round(n/500)*500);   // from Nov 6
+export const SCORE_V3 = '2026-11-05';
+export const roundAns = (n) => (n<10?Math.round(n*10)/10:n<100?Math.round(n):n<1000?Math.round(n/10)*10:n<10000?Math.round(n/50)*50:Math.round(n/500)*500);   // from Nov 5 (v1.1)
 export function nice(n) { if (n < 10) return Math.round(n * 10) / 10; const p = 10 ** Math.max(0, Math.floor(Math.log10(n)) - 1); return Math.round(n / p) * p; }
 export function len(cm) {
   const m = cm >= 100000 ? `${fmt(nice(cm / 100000))} km` : cm >= 100 ? `${fmt(nice(cm / 100))} m` : `${nice(cm)} cm`;
