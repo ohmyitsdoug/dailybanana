@@ -26,7 +26,9 @@ async function view(store, code, device, user) {
   const c = await store.get(`challenges/${code}`, { type: 'json' }).catch(() => null);
   if (!c) return null;
   const entries = (await getAll(store, `entries/${code}/`))
-    .map((e) => ({ name: e.name, score: e.score, marks: e.marks, at: e.at, you: e.key.endsWith('/' + device) }))
+    // "you" by this device, or by the signed-in account (its creator entry, or an entry it played from another device)
+    .map((e) => ({ name: e.name, score: e.score, marks: e.marks, at: e.at,
+      you: (!!device && e.key.endsWith('/' + device)) || (!!user && ((!!e.uid && e.uid === user.uid) || (!!c.uid && c.uid === user.uid && e.key.endsWith('/' + c.creator)))) }))
     .sort((a, b) => b.score - a.score || a.at - b.at);
   return { code, host: c.host, weekend: c.weekend || null, rounds: c.rounds, created: c.created, closes: c.closes, open: isOpen(c), closed: !!c.closed, mine: owns(c, device, user), entries };
 }
@@ -64,7 +66,7 @@ export default async (req) => {
     const name = cleanName(b.name);
     const c = { code, rounds, creator: device, uid: user ? user.uid : null, host: name, created: now, closes: now + OPEN_FOR, closed: false };
     await store.setJSON(`challenges/${code}`, c);
-    await store.setJSON(`entries/${code}/${device}`, { name, score: cleanScore(b.score), marks: cleanMarks(b.marks), at: now });
+    await store.setJSON(`entries/${code}/${device}`, { name, score: cleanScore(b.score), marks: cleanMarks(b.marks), at: now, uid: user ? user.uid : null });
     await store.setJSON(`hosting/${device}`, { code, closes: c.closes });
     return json(await view(store, code, device, user));
   }
@@ -76,7 +78,7 @@ export default async (req) => {
   if (b.action === 'play') {
     if (!isOpen(c, now)) return json({ error: 'This challenge is closed.', ...(await view(store, code, device, user)) }, 409);
     const have = await store.get(`entries/${code}/${device}`).catch(() => null);
-    if (!have) await store.setJSON(`entries/${code}/${device}`, { name: cleanName(b.name), score: cleanScore(b.score), marks: cleanMarks(b.marks), at: now });
+    if (!have) await store.setJSON(`entries/${code}/${device}`, { name: cleanName(b.name), score: cleanScore(b.score), marks: cleanMarks(b.marks), at: now, uid: user ? user.uid : null });
     return json(await view(store, code, device, user));
   }
   if (b.action === 'close') {
