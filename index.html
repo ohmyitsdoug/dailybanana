@@ -281,6 +281,11 @@ button.stat{font:inherit;color:inherit;background:var(--bg);text-align:left;curs
 .welcome .box>*{flex:none}
 .welcome #wgo{position:sticky;bottom:0}
 .welcome .box:focus{outline:none}
+.vbtn{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer}
+.rel{border-top:2px solid var(--ink);padding-top:12px}
+.relh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
+.relh b{font-size:18px}.relh .mut{font-size:13px}
+.rel ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:15px;line-height:1.4}
 .btn.danger{background:#B3261E;color:#fff;box-shadow:4px 4px 0 var(--ink)}
 .welcome .btn{justify-content:center}
 @media (max-height:700px){.welcome .box{gap:10px;padding:16px}.welcome h2{font-size:26px}.welcome p{font-size:14.5px}.welcome .btn.main{height:52px}}
@@ -393,7 +398,42 @@ button.stat{font:inherit;color:inherit;background:var(--bg);text-align:left;curs
 // =====================================================================
 const CFG=Object.assign({api:'/.netlify/functions'},window.MATRYO_CONFIG||{});
 const API=CFG.api;   // Netlify server functions: logging, shared stats, words added after launch
-const VERSION='1.0';
+// release notes, newest first; a release shows (and becomes the version number) from its date
+const RELEASES=[
+  {v:'1.1',from:'2026-11-05',date:'Nov 5, 2026',notes:[
+    'Type the exact answer shown and you score 100.',
+    'Answers under 100 show to one decimal. Bigger answers show whole numbers.',
+    'Weekend challenges: a new themed challenge every Saturday, open all weekend.',
+    'The Join screen and the Menu count down to the next weekend challenge.']},
+  {v:'1.0',from:'2026-11-04',date:'Nov 4, 2026',notes:[
+    'Join a challenge with a code, right from the home screen.',
+    'Copy a challenge code from the top of its page.',
+    'Close the app mid-game and quick play picks up where you left off.',
+    'The clock keeps running if you leave in the middle of a question.',
+    'Challenges close right on time, and Bragging rights goes to the winner.',
+    'Share your daily as an image.',
+    'Turn off the background bananas in Settings.',
+    'Buy me a banana, if you’d like to support the game.']},
+  {v:'0.1–0.9',from:'2026-01-01',date:'Beta, through Nov 3, 2026',notes:[
+    'The daily: 6 rounds, 25 seconds each, a new one every midnight.',
+    'Quick play, as many games as you like.',
+    'Challenges: send friends the same 6 questions for 24 hours.',
+    'Badges, streaks and stats.',
+    'Sign in with Google or Discord to keep your games on every device.',
+    'The archive of past dailies, with answers.',
+    'Dark mode.']},
+];
+const shownReleases=()=>RELEASES.filter(r=>r.from<=todayISO());
+const version=()=>shownReleases()[0].v;   // (a function: the date helpers are defined further down)
+function showNotes(){
+  const back=document.activeElement,w=document.createElement('div');w.className='welcome';w.setAttribute('role','dialog');w.setAttribute('aria-modal','true');w.setAttribute('aria-labelledby','rnt');
+  w.innerHTML=`<div class="box" tabindex="-1"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 id="rnt" style="font-size:28px">What’s new</h2><button class="sq" id="rnx">Close</button></div>
+    ${shownReleases().map(r=>`<div class="rel"><div class="relh"><b>v${esc(r.v)}</b><span class="mut">${esc(r.date)}</span></div><ul>${r.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul></div>`).join('')}</div>`;
+  document.body.appendChild(w);w.querySelector('.box').focus();
+  const end=()=>{w.remove();removeEventListener('keydown',key);if(back&&back.focus)back.focus()},key=e=>{if(e.key==='Escape')end()};
+  addEventListener('keydown',key);w.onclick=e=>{if(e.target===w)end()};document.getElementById('rnx').onclick=end;
+}
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.vbtn'))showNotes()});
 // v0.5 "Banana for Scale": 5 quick rounds a day. "How many bananas long is a school bus?"
 // Answer with a number. Points come from how far off you are, measured in multiples:
 //   within 10% = 100, sliding down to 0 at 10x too high or too low.
@@ -649,7 +689,7 @@ const nav=(right='')=>`<header class="nav in" style="--d:0">
 const KOFI='https://ko-fi.com/dougpuccetti';
 const kofiBtn=(d)=>`<div class="kofiw in" style="--d:${d}"><a class="kofi" href="${KOFI}" target="_blank" rel="noopener">🍌 Buy me a banana</a></div>`;
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.kofi'))log('kofi',{device:DEVICE})});
-const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}"><div class="ftxt">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · v${VERSION}<br><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></div></div>`;
+const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}"><div class="ftxt">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · <button class="vbtn" aria-label="Version ${version()}, see what's new">v${version()}</button><br><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></div></div>`;
 function wireNav(){
   const on=(id,f)=>{const el=document.getElementById(id);if(el)el.onclick=f};
   on('home',showStart);on('menu',()=>showMenu());on('theme',toggleTheme);on('banhelp',e=>{e.stopPropagation();banTip(e.currentTarget)});
