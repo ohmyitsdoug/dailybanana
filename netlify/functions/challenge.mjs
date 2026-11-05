@@ -27,7 +27,7 @@ async function view(store, code, device, user) {
   if (!c) return null;
   const entries = (await getAll(store, `entries/${code}/`))
     // "you" by this device, or by the signed-in account (its creator entry, or an entry it played from another device)
-    .map((e) => ({ name: e.name, score: e.score, marks: e.marks, at: e.at,
+    .map((e) => ({ name: e.name, score: e.score, marks: e.marks, at: e.at, creator: e.key.endsWith('/' + c.creator),
       you: (!!device && e.key.endsWith('/' + device)) || (!!user && ((!!e.uid && e.uid === user.uid) || (!!c.uid && c.uid === user.uid && e.key.endsWith('/' + c.creator)))) }))
     .sort((a, b) => b.score - a.score || a.at - b.at);
   return { code, host: c.host, weekend: c.weekend || null, rounds: c.rounds, created: c.created, closes: c.closes, open: isOpen(c), closed: !!c.closed, mine: owns(c, device, user), entries };
