@@ -1382,7 +1382,7 @@ async function showSocial(pick){
   wireAutopost();
   document.getElementById('sodisc').onclick=async()=>{const o=document.getElementById('sodiscout');o.textContent='Setting up…';
     const j=await fetch('/discord?setup=1',{headers:authHdr()}).then(x=>x.json()).catch(()=>({error:'Could not reach the server.'}));
-    o.innerHTML=j.ok?`Done: ${esc(j.commands.join(', '))}.<br>Add the app to a server: <a href="${esc(j.install)}" target="_blank" rel="noopener">install link</a>`:esc(j.error||'Something went wrong.')};
+    o.innerHTML=j.ok?`Done: ${esc(j.commands.join(', '))}.<br>Slash commands only: <a href="${esc(j.install)}" target="_blank" rel="noopener">install link</a><br>Commands plus automatic daily and weekend posts in a channel: <a href="${esc(j.posts)}" target="_blank" rel="noopener">daily posts link</a><br><span class="mut">For the daily posts link, add ${esc(j.redirect)} under OAuth2 → Redirects in the Discord developer portal first.</span>`:esc(j.error||'Something went wrong.')};
   document.getElementById('someta').onclick=async()=>{const o=document.getElementById('sometaout');o.textContent='Checking…';
     const j=await fetch(`${API}/meta`,{headers:authHdr()}).then(x=>x.json()).catch(()=>({error:'Could not reach the server.'}));
     o.innerHTML=j.ok?(j.pages.length?j.pages.map(p=>`<b>${esc(p.name)}</b> · Page ID ${esc(p.id)}<br>Instagram: ${p.instagram?`@${esc(p.instagram.username)} · ID ${esc(p.instagram.id)}`:'none linked'}`).join('<br><br>'):'The token works, but it can\'t see any Pages. Check the system user\'s assets.'):esc(j.error||'Something went wrong.')};

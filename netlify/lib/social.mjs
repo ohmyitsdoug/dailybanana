@@ -368,5 +368,8 @@ export async function run(store, t = Date.now()) {
     if (cfg.live) rec = await publish(store, rec);
     log.push(`${kind}: ${rec.status}`);
   }
+  // Discord channels that asked for the automatic posts (not affected by the practice switch: servers opted in)
+  const { discordRun } = await import('./discord.mjs');
+  log.push(...(await discordRun(store, t, { date, dow, h, m }).catch((e) => ['discord error: ' + e.message])));
   return { date, dow, h, m, live: cfg.live, log };
 }

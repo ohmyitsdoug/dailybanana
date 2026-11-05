@@ -8,18 +8,16 @@
 // (from the Discord developer portal) plus the existing DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET.
 // Images: /discord/yesterday/N.jpg (drawn once, then kept in blobs at discord/img/N).
 import { createPublicKey, verify } from 'node:crypto';
-import { db, json, getAllCached } from '../lib/db.mjs';
+import { db, json } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
 import { data, fonts, SITE } from '../lib/social.mjs';
 import { resultsCard } from '../lib/posts.mjs';
+import { publishedAt, results, todayDaily, lastFinished, dailyEmbed, yesterdayEmbed, weekendNow, weekendEmbed, button } from '../lib/discord.mjs';
 
 export const config = { path: ['/discord', '/discord/*'] };
-const DAY = 86400e3, GOLD = 0xffd43b;
-const publishedAt = (d) => Date.parse(d.date + 'T12:00:00Z') + DAY;   // same rule as the archive
-const etDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-const pad3 = (n) => String(n).padStart(3, '0');
-const button = (label, url) => [{ type: 1, components: [{ type: 2, style: 5, label, url }] }];
 const reply = (o) => json({ type: 4, data: { allowed_mentions: { parse: [] }, ...o } });
+const CONNECT = `${SITE}/discord/connect`;
+const postsLink = () => `https://discord.com/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&scope=webhook.incoming+applications.commands&response_type=code&redirect_uri=${encodeURIComponent(CONNECT)}`;
 
 function verified(req, body) {
   const key = process.env.DISCORD_PUBLIC_KEY, sig = req.headers.get('x-signature-ed25519'), ts = req.headers.get('x-signature-timestamp');
@@ -42,15 +40,7 @@ async function setup() {
   if (!t.access_token) return { ok: false, error: 'Discord did not give a token: ' + (t.error_description || t.error || 'unknown') };
   const r = await fetch(`https://discord.com/api/v10/applications/${id}/commands`, { method: 'PUT', headers: { authorization: 'Bearer ' + t.access_token, 'content-type': 'application/json' }, body: JSON.stringify(COMMANDS) });
   const j = await r.json().catch(() => ({}));
-  return r.ok ? { ok: true, commands: j.map((c) => '/' + c.name), install: `https://discord.com/oauth2/authorize?client_id=${id}&scope=applications.commands`, endpoint: `${SITE}/discord` } : { ok: false, error: (j && j.message) || `Discord answered ${r.status}` };
-}
-
-async function results(store, d, items) {
-  const plays = (await getAllCached(store, `plays/${d.n}/`)).filter((p) => Array.isArray(p.points) && p.points.length === 6);
-  const first = new Map(); for (const p of plays) if (!first.has(p.device)) first.set(p.device, p);
-  const ps = [...first.values()], scores = ps.map((p) => p.score || p.points.reduce((a, b) => a + b, 0));
-  return { n: d.n, date: d.date, players: ps.length, avg: ps.length ? scores.reduce((a, b) => a + b, 0) / ps.length : null, best: ps.length ? Math.max(...scores) : null,
-    rounds: d.rounds.map((r) => { const A = items[r.a], B = items[r.b]; return { q: { A, B, ans: B.cm / A.cm } }; }) };
+  return r.ok ? { ok: true, commands: j.map((c) => '/' + c.name), install: `https://discord.com/oauth2/authorize?client_id=${id}&scope=applications.commands`, posts: postsLink(), redirect: CONNECT, endpoint: `${SITE}/discord` } : { ok: false, error: (j && j.message) || `Discord answered ${r.status}` };
 }
 
 export default async (req) => {
@@ -64,6 +54,18 @@ export default async (req) => {
     if (!img) { await fonts(); img = resultsCard(await results(store, d, await data('items'))).jpeg(90); await store.set(`discord/img/${n}`, img); }
     return new Response(img, { headers: { 'content-type': 'image/jpeg', 'cache-control': 'public, max-age=3600' } });
   }
+  // a server connected a channel for the automatic posts (the "daily posts" link comes back here)
+  if (url.pathname === '/discord/connect') {
+    const page = (t, b) => new Response(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${t} · Daily Banana</title><body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#2A1A0E;color:#FFF3C9;font-family:system-ui,sans-serif;text-align:center;padding:24px"><div><h1 style="font-size:28px">${t}</h1><p style="color:#CDB68C;max-width:420px">${b}</p><p><a style="color:#FFD43B" href="${SITE}">dailybanana.io</a></p></div>`, { headers: { 'content-type': 'text/html; charset=utf-8' } });
+    const code = url.searchParams.get('code');
+    if (!code) return page('Not connected', 'Discord didn’t send a code. Try the link again and pick a channel.');
+    const t = await fetch('https://discord.com/api/v10/oauth2/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: CONNECT, client_id: process.env.DISCORD_CLIENT_ID, client_secret: process.env.DISCORD_CLIENT_SECRET }) }).then((r) => r.json()).catch(() => ({}));
+    const w = t.webhook;
+    if (!w || !w.url) return page('Not connected', 'Discord didn’t give us a channel to post in. Try the link again and pick a channel.');
+    await store.setJSON(`discord/hooks/${w.id}`, { url: w.url, guild: w.guild_id, channel: w.channel_id, at: Date.now() });
+    return page('You’re all set! 🍌', 'Daily Banana will post in that channel every morning (yesterday’s results and today’s daily) and every Saturday (the weekend challenge). To stop, delete the Daily Banana webhook in the channel’s settings.');
+  }
   if (req.method === 'GET') {
     if (url.searchParams.get('setup')) { if (!isAdminUser(await userFor(req, store))) return json({ error: 'not the admin account' }, 401); return json(await setup()); }
     return new Response('Daily Banana Discord app');
@@ -75,20 +77,16 @@ export default async (req) => {
   if (i.type !== 2) return json({ type: 1 });
   const name = i.data && i.data.name, dailies = await data('dailies');
   if (name === 'daily') {
-    const today = etDate(), d = dailies.find((x) => x.date === today) || dailies.filter((x) => x.date <= today).pop();
-    return reply({ embeds: [{ title: `Daily Banana #${pad3(d.n)}`, url: SITE, color: GOLD, description: 'Today’s 6 questions are up. 25 seconds each, and the closer your guess, the more it scores.\nA new daily every midnight, your time.' }], components: button('Play the daily', SITE) });
+    return reply({ embeds: [dailyEmbed(await todayDaily())], components: button('Play the daily', SITE) });
   }
   if (name === 'yesterday') {
-    const d = dailies.filter((x) => publishedAt(x) <= Date.now()).pop();
+    const d = await lastFinished();
     if (!d) return reply({ content: 'The first daily’s results come out once it’s finished everywhere in the world.' });
-    const r = await results(store, d, await data('items'));
-    return reply({ embeds: [{ title: `Daily Banana #${pad3(d.n)} results`, url: `${SITE}/archive/${pad3(d.n)}`, color: GOLD,
-      description: r.players ? `${r.players} player${r.players === 1 ? '' : 's'} · average ${Math.round(r.avg)} / 600 · best ${r.best}` : 'No scores came in for this one.',
-      image: { url: `${SITE}/discord/yesterday/${d.n}.jpg` } }], components: button('Play today’s daily', SITE) });
+    return reply({ embeds: [await yesterdayEmbed(store, d)], components: button('Play today’s daily', SITE) });
   }
   if (name === 'weekend') {
-    const w = await fetch(`${SITE}/weekend?json=1`).then((r) => r.json()).catch(() => ({}));
-    if (w && w.open) return reply({ embeds: [{ title: `Weekend challenge: ${w.theme}`, url: `${SITE}/c/${w.code}`, color: GOLD, description: `Same 6 questions for everyone, a different unit each time. One try.\nCode **${w.code}** · closes <t:${Math.floor(w.closes / 1000)}:R>` }], components: button('Play the weekend challenge', `${SITE}/c/${w.code}`) });
+    const w = await weekendNow();
+    if (w && w.open) return reply({ embeds: [weekendEmbed(w)], components: button('Play the weekend challenge', `${SITE}/c/${w.code}`) });
     if (w && w.next) return reply({ content: `The next weekend challenge opens <t:${Math.floor(w.next.opens / 1000)}:R> (<t:${Math.floor(w.next.opens / 1000)}:F>).` });
     return reply({ content: 'No weekend challenge right now.' });
   }
