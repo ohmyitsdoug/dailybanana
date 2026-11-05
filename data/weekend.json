@@ -2,573 +2,677 @@
 {
 "n": 1,
 "date": "2026-11-07",
-"name": "wombat",
-"plural": "wombats",
-"art": "a",
-"dim": "long",
-"cm": 100,
-"hint": "Somewhere between the size of a corgi and a Labrador",
-"tagline": "How well do you know wombats?"
+"theme": "Zoo animals",
+"units": [
+"penguin",
+"kangaroo",
+"zebra",
+"lion",
+"giraffe",
+"African elephant"
+]
 },
 {
 "n": 2,
 "date": "2026-11-14",
-"name": "capybara",
-"plural": "capybaras",
-"art": "a",
-"dim": "long",
-"cm": 120,
-"hint": "Somewhere between the size of a Labrador and a bathtub",
-"tagline": "Measure the world in capybaras"
+"theme": "In the kitchen",
+"units": [
+"wooden spoon",
+"rolling pin",
+"frying pan",
+"whisk",
+"mason jar",
+"cast-iron skillet"
+]
 },
 {
 "n": 3,
 "date": "2026-11-21",
-"name": "rubber chicken",
-"plural": "rubber chickens",
-"art": "a",
-"dim": "long",
-"cm": 50,
-"hint": "Somewhere between the size of a bowling pin and a baseball bat",
-"tagline": "Squeak if you know this one"
+"theme": "Toy box",
+"units": [
+"rubber duck",
+"yo-yo",
+"teddy bear",
+"LEGO brick",
+"toy car",
+"Jenga block"
+]
 },
 {
 "n": 4,
 "date": "2026-11-28",
-"name": "roast turkey",
-"plural": "roast turkeys",
-"art": "a",
-"dim": "long",
-"cm": 40,
-"hint": "Somewhere between the size of a football and a pillow",
-"tagline": "Gobble up these measurements"
+"theme": "Thanksgiving dinner",
+"units": [
+"roast turkey",
+"pumpkin pie",
+"ear of corn",
+"dinner roll",
+"gravy boat",
+"cranberry"
+]
 },
 {
 "n": 5,
 "date": "2026-12-05",
-"name": "dreidel",
-"plural": "dreidels",
-"art": "a",
-"dim": "tall",
-"cm": 5,
-"hint": "Somewhere between the size of a golf ball and a tennis ball",
-"tagline": "Spin to win"
+"theme": "Cozy winter",
+"units": [
+"mitten",
+"scarf",
+"snow globe",
+"coffee mug",
+"sled",
+"snowman"
+]
 },
 {
 "n": 6,
 "date": "2026-12-12",
-"name": "snow globe",
-"plural": "snow globes",
-"art": "a",
-"dim": "tall",
-"cm": 12,
-"hint": "Somewhere between the size of a coffee mug and a water bottle",
-"tagline": "Shake things up"
+"theme": "Holiday decor",
+"units": [
+"candy cane",
+"ornament",
+"wreath",
+"stocking",
+"string of lights",
+"gingerbread house"
+]
 },
 {
 "n": 7,
 "date": "2026-12-19",
-"name": "reindeer",
-"plural": "reindeer",
-"art": "a",
-"dim": "tall",
-"cm": 110,
-"hint": "Somewhere between the size of a kitchen counter and a 10-year-old",
-"tagline": "Know your reindeer?"
+"theme": "North Pole",
+"units": [
+"reindeer",
+"polar bear",
+"Christmas tree",
+"nutcracker",
+"sleigh",
+"elf hat"
+]
 },
 {
 "n": 8,
 "date": "2026-12-26",
-"name": "nutcracker",
-"plural": "nutcrackers",
-"art": "a",
-"dim": "tall",
-"cm": 35,
-"hint": "Somewhere between the size of a pineapple and a bowling pin",
-"tagline": "A tough nut to crack"
+"theme": "Game night",
+"units": [
+"domino",
+"chess pawn",
+"playing card",
+"die",
+"checkers piece",
+"board game box"
+]
 },
 {
 "n": 9,
 "date": "2027-01-02",
-"name": "champagne bottle",
-"plural": "champagne bottles",
-"art": "a",
-"dim": "tall",
-"cm": 30,
-"hint": "Somewhere between the size of a water bottle and a bowling pin",
-"tagline": "New year, new unit"
+"theme": "New Year's",
+"units": [
+"champagne bottle",
+"party hat",
+"balloon",
+"disco ball",
+"wristwatch",
+"wall clock"
+]
 },
 {
 "n": 10,
 "date": "2027-01-09",
-"name": "igloo",
-"plural": "igloos",
-"art": "an",
-"dim": "across",
-"cm": 300,
-"hint": "Somewhere between the size of a queen bed and a minivan",
-"tagline": "Chill out and measure"
+"theme": "Arctic",
+"units": [
+"polar bear",
+"emperor penguin",
+"walrus",
+"igloo",
+"narwhal tusk",
+"icicle"
+]
 },
 {
 "n": 11,
 "date": "2027-01-16",
-"name": "narwhal tusk",
-"plural": "narwhal tusks",
-"art": "a",
-"dim": "long",
-"cm": 250,
-"hint": "Somewhere between the size of a front door and a ping pong table",
-"tagline": "Unicorns of the sea, as a ruler"
+"theme": "Office",
+"units": [
+"stapler",
+"paper clip",
+"sticky note",
+"three-ring binder",
+"desk lamp",
+"office chair"
+]
 },
 {
 "n": 12,
 "date": "2027-01-23",
-"name": "axolotl",
-"plural": "axolotls",
-"art": "an",
-"dim": "long",
-"cm": 23,
-"hint": "Somewhere between the size of a banana and a shoe",
-"tagline": "Smile, it's axolotl week"
+"theme": "Breakfast",
+"units": [
+"waffle",
+"pancake",
+"bagel",
+"croissant",
+"strip of bacon",
+"chicken egg"
+]
 },
 {
 "n": 13,
 "date": "2027-01-30",
-"name": "curling stone",
-"plural": "curling stones",
-"art": "a",
-"dim": "across",
-"cm": 29,
-"hint": "Somewhere between the size of a basketball and a large pizza",
-"tagline": "Hurry hard"
+"theme": "Winter sports",
+"units": [
+"hockey puck",
+"hockey stick",
+"ice skate",
+"ski",
+"snowboard",
+"curling stone"
+]
 },
 {
 "n": 14,
 "date": "2027-02-06",
-"name": "foam finger",
-"plural": "foam fingers",
-"art": "a",
-"dim": "tall",
-"cm": 50,
-"hint": "Somewhere between the size of a bowling pin and a baseball bat",
-"tagline": "We're #1 (foam finger)"
+"theme": "Football",
+"units": [
+"football",
+"football helmet",
+"foam finger",
+"cooler",
+"tortilla chip",
+"football goalpost"
+]
 },
 {
 "n": 15,
 "date": "2027-02-13",
-"name": "heart-shaped box of chocolates",
-"plural": "heart-shaped boxes of chocolates",
-"art": "a",
-"dim": "across",
-"cm": 25,
-"hint": "Somewhere between the size of a smartphone and a dinner plate",
-"tagline": "Be my measurement"
+"theme": "Valentine's",
+"units": [
+"rose",
+"heart-shaped box of chocolates",
+"teddy bear",
+"greeting card",
+"candle",
+"chocolate bar"
+]
 },
 {
 "n": 16,
 "date": "2027-02-20",
-"name": "platypus",
-"plural": "platypuses",
-"art": "a",
-"dim": "long",
-"cm": 45,
-"hint": "Somewhere between the size of a bowling pin and a baseball bat",
-"tagline": "Nature's weirdest ruler"
+"theme": "Pets",
+"units": [
+"goldfish",
+"hamster",
+"guinea pig",
+"parakeet",
+"house cat",
+"Labrador"
+]
 },
 {
 "n": 17,
 "date": "2027-02-27",
-"name": "ukulele",
-"plural": "ukuleles",
-"art": "an",
-"dim": "long",
-"cm": 53,
-"hint": "Somewhere between the size of a house cat and an acoustic guitar",
-"tagline": "Strum up an answer"
+"theme": "Music",
+"units": [
+"guitar pick",
+"drumstick",
+"ukulele",
+"trumpet",
+"violin",
+"grand piano"
+]
 },
 {
 "n": 18,
 "date": "2027-03-06",
-"name": "okapi",
-"plural": "okapis",
-"art": "an",
-"dim": "tall",
-"cm": 150,
-"hint": "Somewhere between the size of a 10-year-old and an adult",
-"tagline": "Half zebra, half giraffe, all ruler"
+"theme": "Snack time",
+"units": [
+"potato chip",
+"gummy bear",
+"Oreo cookie",
+"pretzel rod",
+"candy bar",
+"microwave popcorn bag"
+]
 },
 {
 "n": 19,
 "date": "2027-03-13",
-"name": "four-leaf clover",
-"plural": "four-leaf clovers",
-"art": "a",
-"dim": "across",
-"cm": 3,
-"hint": "Somewhere between the size of a penny and a golf ball",
-"tagline": "Feeling lucky?"
+"theme": "Lucky",
+"units": [
+"four-leaf clover",
+"penny",
+"die",
+"horseshoe",
+"top hat",
+"gold bar"
+]
 },
 {
 "n": 20,
 "date": "2027-03-20",
-"name": "banana slug",
-"plural": "banana slugs",
-"art": "a",
-"dim": "long",
-"cm": 18,
-"hint": "Somewhere between the size of a crayon and a pencil",
-"tagline": "Banana for scale… but slimier"
+"theme": "Garden",
+"units": [
+"earthworm",
+"tulip",
+"flower pot",
+"watering can",
+"garden gnome",
+"sunflower"
+]
 },
 {
 "n": 21,
 "date": "2027-03-27",
-"name": "chocolate bunny",
-"plural": "chocolate bunnies",
-"art": "a",
-"dim": "tall",
-"cm": 20,
-"hint": "Somewhere between the size of a soda can and a water bottle",
-"tagline": "Ears first"
+"theme": "Spring treats",
+"units": [
+"jelly bean",
+"chicken egg",
+"marshmallow peep",
+"chocolate bunny",
+"picnic basket",
+"rabbit"
+]
 },
 {
 "n": 22,
 "date": "2027-04-03",
-"name": "rain boot",
-"plural": "rain boots",
-"art": "a",
-"dim": "tall",
-"cm": 38,
-"hint": "Somewhere between the size of a pineapple and a house cat",
-"tagline": "April showers, boot measurements"
+"theme": "Rainy day",
+"units": [
+"snail",
+"frog",
+"rain boot",
+"umbrella",
+"raincoat",
+"bath towel"
+]
 },
 {
 "n": 23,
 "date": "2027-04-10",
-"name": "quokka",
-"plural": "quokkas",
-"art": "a",
-"dim": "long",
-"cm": 50,
-"hint": "Somewhere between the size of a house cat and a corgi",
-"tagline": "The happiest unit on Earth"
+"theme": "Baseball",
+"units": [
+"baseball",
+"hot dog",
+"baseball glove",
+"home plate",
+"baseball base",
+"baseball bat"
+]
 },
 {
 "n": 24,
 "date": "2027-04-17",
-"name": "boomerang",
-"plural": "boomerangs",
-"art": "a",
-"dim": "across",
-"cm": 40,
-"hint": "Somewhere between the size of a football and a house cat",
-"tagline": "It always comes back"
+"theme": "Toolbox",
+"units": [
+"screwdriver",
+"wrench",
+"hammer",
+"power drill",
+"toolbox",
+"two-by-four"
+]
 },
 {
 "n": 25,
 "date": "2027-04-24",
-"name": "Galápagos tortoise",
-"plural": "Galápagos tortoises",
-"art": "a",
-"dim": "long",
-"cm": 150,
-"hint": "Somewhere between the size of a golden retriever and a sofa",
-"tagline": "Slow and steady wins"
+"theme": "Forest",
+"units": [
+"acorn",
+"pinecone",
+"maple leaf",
+"squirrel",
+"deer",
+"oak tree"
+]
 },
 {
 "n": 26,
 "date": "2027-05-01",
-"name": "piñata",
-"plural": "piñatas",
-"art": "a",
-"dim": "tall",
-"cm": 75,
-"hint": "Somewhere between the size of a bowling pin and a kitchen counter",
-"tagline": "Take a swing"
+"theme": "Party",
+"units": [
+"birthday candle",
+"cupcake",
+"party hat",
+"balloon",
+"birthday cake",
+"piñata"
+]
 },
 {
 "n": 27,
 "date": "2027-05-08",
-"name": "teacup",
-"plural": "teacups",
-"art": "a",
-"dim": "tall",
-"cm": 7,
-"hint": "Somewhere between the size of a golf ball and a coffee mug",
-"tagline": "Tea time for Mom"
+"theme": "Tea party",
+"units": [
+"tea bag",
+"teacup",
+"cupcake",
+"kettle",
+"flower pot",
+"rose"
+]
 },
 {
 "n": 28,
 "date": "2027-05-15",
-"name": "emu",
-"plural": "emus",
-"art": "an",
-"dim": "tall",
-"cm": 170,
-"hint": "Somewhere between the size of a 10-year-old and a front door",
-"tagline": "Emu-sing measurements"
+"theme": "Birds",
+"units": [
+"hummingbird",
+"pigeon",
+"owl",
+"flamingo",
+"emu",
+"bald eagle"
+]
 },
 {
 "n": 29,
 "date": "2027-05-22",
-"name": "lawn flamingo",
-"plural": "lawn flamingos",
-"art": "a",
-"dim": "tall",
-"cm": 80,
-"hint": "Somewhere between the size of a fire hydrant and a kitchen counter",
-"tagline": "Pink, plastic and precise"
+"theme": "Bathroom",
+"units": [
+"bar of soap",
+"toothbrush",
+"rubber duck",
+"toilet paper roll",
+"shampoo bottle",
+"bath towel"
+]
 },
 {
 "n": 30,
 "date": "2027-05-29",
-"name": "inflatable tube man",
-"plural": "inflatable tube men",
-"art": "an",
-"dim": "tall",
-"cm": 600,
-"hint": "Somewhere between the size of a giraffe and a telephone pole",
-"tagline": "Wacky, waving, measuring"
+"theme": "Cookout",
+"units": [
+"hamburger",
+"ketchup bottle",
+"cooler",
+"lawn chair",
+"grill",
+"picnic table"
+]
 },
 {
 "n": 31,
 "date": "2027-06-05",
-"name": "hermit crab",
-"plural": "hermit crabs",
-"art": "a",
-"dim": "across",
-"cm": 4,
-"hint": "Somewhere between the size of a grape and a golf ball",
-"tagline": "Come out of your shell"
+"theme": "Beach day",
+"units": [
+"seashell",
+"flip-flop",
+"sandcastle bucket",
+"beach ball",
+"beach towel",
+"surfboard"
+]
 },
 {
 "n": 32,
 "date": "2027-06-12",
-"name": "kazoo",
-"plural": "kazoos",
-"art": "a",
-"dim": "long",
-"cm": 13,
-"hint": "Somewhere between the size of a crayon and a banana",
-"tagline": "Hum along"
+"theme": "Bugs",
+"units": [
+"bumblebee",
+"beetle",
+"caterpillar",
+"butterfly",
+"dragonfly",
+"grasshopper"
+]
 },
 {
 "n": 33,
 "date": "2027-06-19",
-"name": "handlebar mustache",
-"plural": "handlebar mustaches",
-"art": "a",
-"dim": "across",
-"cm": 12,
-"hint": "Somewhere between the size of a golf ball and a banana",
-"tagline": "Dad's choice of unit"
+"theme": "Dad stuff",
+"units": [
+"handlebar mustache",
+"TV remote",
+"spatula",
+"necktie",
+"golf club",
+"lawn mower"
+]
 },
 {
 "n": 34,
 "date": "2027-06-26",
-"name": "accordion",
-"plural": "accordions",
-"art": "an",
-"dim": "tall",
-"cm": 45,
-"hint": "Somewhere between the size of a bowling pin and a baseball bat",
-"tagline": "Squeeze out a guess"
+"theme": "Ocean",
+"units": [
+"starfish",
+"seahorse",
+"octopus",
+"sea turtle",
+"dolphin",
+"great white shark"
+]
 },
 {
 "n": 35,
 "date": "2027-07-03",
-"name": "sparkler",
-"plural": "sparklers",
-"art": "a",
-"dim": "long",
-"cm": 36,
-"hint": "Somewhere between the size of a shoe and a baseball bat",
-"tagline": "Light it up"
+"theme": "Fourth of July",
+"units": [
+"hot dog",
+"sparkler",
+"ear of corn",
+"watermelon",
+"flag",
+"Statue of Liberty"
+]
 },
 {
 "n": 36,
 "date": "2027-07-10",
-"name": "hot tub",
-"plural": "hot tubs",
-"art": "a",
-"dim": "across",
-"cm": 210,
-"hint": "Somewhere between the size of a front door and a ping pong table",
-"tagline": "Jump in"
+"theme": "Pool party",
+"units": [
+"squirt gun",
+"water balloon",
+"life jacket",
+"pool noodle",
+"kiddie pool",
+"diving board"
+]
 },
 {
 "n": 37,
 "date": "2027-07-17",
-"name": "s'more",
-"plural": "s'mores",
-"art": "a",
-"dim": "across",
-"cm": 6.5,
-"hint": "Somewhere between the size of a golf ball and a tennis ball",
-"tagline": "Some more measurements"
+"theme": "Camping",
+"units": [
+"marshmallow",
+"s'more",
+"lantern",
+"canoe paddle",
+"sleeping bag",
+"tent"
+]
 },
 {
 "n": 38,
 "date": "2027-07-24",
-"name": "funnel cake",
-"plural": "funnel cakes",
-"art": "a",
-"dim": "across",
-"cm": 25,
-"hint": "Somewhere between the size of a smartphone and a frisbee",
-"tagline": "Fair-ly tricky"
+"theme": "Fair food",
+"units": [
+"pretzel",
+"popsicle",
+"churro",
+"corn dog",
+"cotton candy",
+"funnel cake"
+]
 },
 {
 "n": 39,
 "date": "2027-07-31",
-"name": "alpaca",
-"plural": "alpacas",
-"art": "an",
-"dim": "tall",
-"cm": 150,
-"hint": "Somewhere between the size of a 10-year-old and an adult",
-"tagline": "Not a llama"
+"theme": "Farm",
+"units": [
+"chicken",
+"sheep",
+"pig",
+"cow",
+"hay bale",
+"tractor"
+]
 },
 {
 "n": 40,
 "date": "2027-08-07",
-"name": "lava lamp",
-"plural": "lava lamps",
-"art": "a",
-"dim": "tall",
-"cm": 37,
-"hint": "Somewhere between the size of a 2-liter bottle and a house cat",
-"tagline": "Groovy measurements"
+"theme": "Fruit",
+"units": [
+"grape",
+"strawberry",
+"banana",
+"apple",
+"pineapple",
+"watermelon"
+]
 },
 {
 "n": 41,
 "date": "2027-08-14",
-"name": "bobblehead",
-"plural": "bobbleheads",
-"art": "a",
-"dim": "tall",
-"cm": 20,
-"hint": "Somewhere between the size of a banana and a football",
-"tagline": "Nod if you know it"
+"theme": "Desserts",
+"units": [
+"donut",
+"chocolate chip cookie",
+"ice cream cone",
+"cupcake",
+"pie",
+"banana split"
+]
 },
 {
 "n": 42,
 "date": "2027-08-21",
-"name": "meerkat",
-"plural": "meerkats",
-"art": "a",
-"dim": "tall",
-"cm": 30,
-"hint": "Somewhere between the size of a soda can and a bowling pin",
-"tagline": "Stand up and measure"
+"theme": "Desert",
+"units": [
+"scorpion",
+"lizard",
+"meerkat",
+"cactus",
+"camel",
+"saguaro cactus"
+]
 },
 {
 "n": 43,
 "date": "2027-08-28",
-"name": "composition notebook",
-"plural": "composition notebooks",
-"art": "a",
-"dim": "tall",
-"cm": 25,
-"hint": "Somewhere between the size of a smartphone and a football",
-"tagline": "Back to school"
+"theme": "School supplies",
+"units": [
+"crayon",
+"glue stick",
+"pencil",
+"ruler",
+"composition notebook",
+"backpack"
+]
 },
 {
 "n": 44,
 "date": "2027-09-04",
-"name": "cowboy hat",
-"plural": "cowboy hats",
-"art": "a",
-"dim": "across",
-"cm": 38,
-"hint": "Somewhere between the size of a football and a skateboard",
-"tagline": "Yeehaw, it's measuring time"
+"theme": "Big machines",
+"units": [
+"forklift",
+"garbage truck",
+"fire truck",
+"cement mixer truck",
+"school bus",
+"semi truck"
+]
 },
 {
 "n": 45,
 "date": "2027-09-11",
-"name": "pocketknife",
-"plural": "pocketknives",
-"art": "a",
-"dim": "long",
-"cm": 9,
-"hint": "Somewhere between the size of a matchstick and a smartphone",
-"tagline": "Small but handy"
+"theme": "Gadgets",
+"units": [
+"headphones",
+"TV remote",
+"game controller",
+"smartphone",
+"tablet",
+"laptop"
+]
 },
 {
 "n": 46,
 "date": "2027-09-18",
-"name": "Clydesdale",
-"plural": "Clydesdales",
-"art": "a",
-"dim": "tall",
-"cm": 180,
-"hint": "Somewhere between the size of an adult and a front door",
-"tagline": "Hold your horses"
+"theme": "Ball sports",
+"units": [
+"golf ball",
+"tennis ball",
+"softball",
+"soccer ball",
+"basketball",
+"bowling ball"
+]
 },
 {
 "n": 47,
 "date": "2027-09-25",
-"name": "caramel apple",
-"plural": "caramel apples",
-"art": "a",
-"dim": "tall",
-"cm": 18,
-"hint": "Somewhere between the size of a soda can and a shoe",
-"tagline": "Sweet as fall"
+"theme": "Autumn",
+"units": [
+"apple",
+"caramel apple",
+"pumpkin",
+"rake",
+"scarecrow",
+"corn stalk"
+]
 },
 {
 "n": 48,
 "date": "2027-10-02",
-"name": "orangutan arm span",
-"plural": "orangutan arm spans",
-"art": "an",
-"dim": "across",
-"cm": 220,
-"hint": "Somewhere between the size of a front door and a ping pong table",
-"tagline": "Reach for it"
+"theme": "Jungle",
+"units": [
+"toucan",
+"python",
+"sloth",
+"chimpanzee",
+"orangutan",
+"gorilla"
+]
 },
 {
 "n": 49,
 "date": "2027-10-09",
-"name": "tombstone",
-"plural": "tombstones",
-"art": "a",
-"dim": "tall",
-"cm": 90,
-"hint": "Somewhere between the size of a fire hydrant and a kitchen counter",
-"tagline": "Spooky season starts"
+"theme": "Haunted house",
+"units": [
+"candle",
+"tarantula",
+"bat",
+"wall clock",
+"tombstone",
+"coffin"
+]
 },
 {
 "n": 50,
 "date": "2027-10-16",
-"name": "coffin",
-"plural": "coffins",
-"art": "a",
-"dim": "long",
-"cm": 210,
-"hint": "Somewhere between the size of an adult and a canoe",
-"tagline": "Dead serious measurements"
+"theme": "Space",
+"units": [
+"globe",
+"astronaut helmet",
+"Mars rover",
+"Apollo lunar module",
+"Hubble telescope",
+"space shuttle"
+]
 },
 {
 "n": 51,
 "date": "2027-10-23",
-"name": "fun-size candy bar",
-"plural": "fun-size candy bars",
-"art": "a",
-"dim": "long",
-"cm": 7,
-"hint": "Somewhere between the size of a matchstick and a crayon",
-"tagline": "Fun-size, full challenge"
+"theme": "Halloween candy",
+"units": [
+"candy corn",
+"peppermint candy",
+"jawbreaker",
+"gummy worm",
+"fun-size candy bar",
+"lollipop"
+]
 },
 {
 "n": 52,
 "date": "2027-10-30",
-"name": "vampire bat",
-"plural": "vampire bats",
-"art": "a",
-"dim": "across",
-"cm": 18,
-"hint": "Somewhere between the size of a crayon and a shoe",
-"tagline": "Fangs for playing"
+"theme": "Costume party",
+"units": [
+"witch hat",
+"vampire bat",
+"broom",
+"jack-o'-lantern",
+"cauldron",
+"pumpkin"
+]
 }
 ]

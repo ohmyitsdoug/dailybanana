@@ -410,7 +410,7 @@ const RELEASES=[
       'Answers round to friendlier numbers: one decimal under 10, whole numbers up to 99, then the nearest 10, 50 or 500.',
       'Every daily now has 2 small, 2 medium and 2 large answers, up to 2,000.',
       'Guess an answer exactly to earn a 💯, plus a new Golden banana badge.',
-      '150 more everyday things to measure, and 100 more to measure them with.',
+      'Almost 200 new everyday things to measure, and 100 more to measure them with.',
       'Weekend challenges: a new themed challenge every Saturday, open all weekend.',
       'The Menu screen now counts down to the next weekend challenge.']}]},
   {v:'1.0',from:'2026-11-04',date:'Nov 4, 2026',groups:[{notes:[
@@ -631,7 +631,7 @@ const nameOf=v=>typeof v==='object'?v.name:ITEMS[v].name;
 const toNames=rounds=>rounds.map(x=>({a:nameOf(x.a),b:nameOf(x.b)}));
 // a weekend challenge measures in its own unit, which isn't in the item list
 const fromNames=(rounds,unit)=>{const m=BYNAME(),f=n=>unit&&n===unit.name?unit:m[n];return rounds.map(x=>({a:f(x.a),b:f(x.b)}))};
-const chalName=c=>c.weekend?`Weekend challenge · ${esc(W(c.weekend.unit.plural))}`:`${esc(c.host)}'s challenge`;
+const chalName=c=>c.weekend?`Weekend challenge · ${esc(c.weekend.theme||(c.weekend.unit?W(c.weekend.unit.plural):''))}`:`${esc(c.host)}'s challenge`;
 function quick(chal){
   const wk=chal&&chal.weekend||null;
   const rounds=chal?fromNames(chal.rounds,wk&&wk.unit):randomRounds();
@@ -911,7 +911,7 @@ function showQuestion(){
       </div>
       <div class="in" style="--d:1">${squares(S.answers,S.i)}</div>
       <div class="ask in" style="--d:1"><span class="lab">Approximately how many</span><b>${esc(q.A.plural)}</b><span class="lab">${esc(q.B.dim)} is</span><b>${esc(the(q.B))}?</b></div>
-      ${S.r.chal&&S.r.chal.weekend?`<p class="wkhint in" style="--d:1">(${esc(S.r.chal.weekend.hint)})</p>`:''}
+      ${S.r.chal&&S.r.chal.weekend&&((S.r.chal.weekend.hints||[])[S.i]||S.r.chal.weekend.hint)?`<p class="wkhint in" style="--d:1">(${esc((S.r.chal.weekend.hints||[])[S.i]||S.r.chal.weekend.hint)})</p>`:''}
       <form id="f" class="in" style="--d:2" autocomplete="off">
         <label for="g" class="field"><span class="mut">≈</span><span class="mirror num" id="m"></span><span class="caret"></span>
           <button type="submit" class="go" id="go" aria-label="Enter guess">Enter</button>
@@ -1665,17 +1665,17 @@ function wkCountdown(w,id,fmtFn){clearInterval(wkTick);
   upd();wkTick=setInterval(upd,1000)}
 function weekendCard(){weekendNow().then(w=>{const el=document.getElementById('wkcard');if(!el||!w)return;
   if(wkSoon(w)){el.innerHTML=`<div class="chal in" style="--d:1"><span class="eyebrow">This weekend</span><h3>Weekend challenge</h3>
-      <span class="note">A new themed challenge: 6 questions, all measured in one surprise unit. Open until midnight Pacific on Sunday.</span>
+      <span class="note">A new themed challenge: 6 questions, each measured with something from a surprise theme. Open until midnight Pacific on Sunday.</span>
       <div class="btn" role="status" aria-live="polite" style="cursor:default;justify-content:center;background:var(--acc);color:#2A1A0E"><span id="wkcd">Starting in…</span></div></div>`;
     return wkCountdown(w,'wkcd',t=>t.startsWith('starting')?'Starting any moment…':`Starting in ${t}`)}
   if(!w.code)return;
-  el.innerHTML=`<div class="chal in" style="--d:1"><span class="eyebrow">${w.open?'This weekend':'Last weekend'}</span><h3>${esc(w.tagline)}</h3>
-    <span class="note">${w.open?`6 questions, all measured in ${esc(w.plural)} · closes in ${leftLabel(w.closes-Date.now())}`:`Measured in ${esc(w.plural)} · closed`}</span>
+  el.innerHTML=`<div class="chal in" style="--d:1"><span class="eyebrow">${w.open?'This weekend':'Last weekend'}</span><h3>${esc(w.theme)}</h3>
+    <span class="note">${w.open?`6 questions, a different unit each time · closes in ${leftLabel(w.closes-Date.now())}`:`${esc(w.theme)} · closed`}</span>
     <button class="btn ${w.open?'main':''}" id="wkgo"><span>${w.open?'Play the weekend challenge':'See the final scoreboard'}</span><span aria-hidden="true">→</span></button></div>`;
   document.getElementById('wkgo').onclick=async()=>{if(!w.open)return showChallenge(w.code);const c=await getChal(w.code);if(!c)return;
     const played=c.entries.some(x=>x.you)||quickList().some(q=>q.chal&&q.chal.code===c.code);played?showChallenge(c.code):quick(c)}})}
 function weekendMenu(){weekendNow().then(w=>{const el=document.getElementById('wkmenu');if(!el||!w||!(w.open||wkSoon(w)))return;
-  el.innerHTML=`<div class="list in" style="--d:1"><button class="lrow" id="wkm" style="border:2px solid var(--ink);background:var(--acc);color:#2A1A0E;padding-left:14px;padding-right:14px"><span>Weekend challenge${w.open?` · ${esc(W(w.plural))}`:''}</span><span id="wkmcd">${w.open?`closes in ${leftLabel(w.closes-Date.now())} →`:''}</span></button></div>`;
+  el.innerHTML=`<div class="list in" style="--d:1"><button class="lrow" id="wkm" style="border:2px solid var(--ink);background:var(--acc);color:#2A1A0E;padding-left:14px;padding-right:14px"><span>Weekend challenge${w.open?` · ${esc(w.theme)}`:''}</span><span id="wkmcd">${w.open?`closes in ${leftLabel(w.closes-Date.now())} →`:''}</span></button></div>`;
   document.getElementById('wkm').onclick=()=>showJoin();
   if(!w.open)wkCountdown(w,'wkmcd',t=>t.startsWith('starting')?'starting soon':`starts in ${t}`)})}
 // a finished challenge game posts its score (one try per person)

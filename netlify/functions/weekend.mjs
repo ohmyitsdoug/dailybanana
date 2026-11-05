@@ -23,7 +23,7 @@ export default async (req) => {
   const c = cur && (await store.get(`challenges/${cur.code}`, { type: 'json' }).catch(() => null));
   const open = !!c && !c.closed && c.closes > now;
   if (new URL(req.url).searchParams.get('json')) {
-    const out = c ? { code: c.code, open, closes: c.closes, tagline: c.weekend.tagline, plural: c.weekend.unit.plural, name: c.weekend.unit.name } : {};
+    const out = c ? { code: c.code, open, closes: c.closes, theme: c.weekend.theme || c.weekend.tagline } : {};
     if (!open) {
       const today = etDate(now), nx = (await weekends()).find((w) => w.date >= today && (!cur || w.n !== cur.n));
       if (nx) out.next = { opens: opensAt(nx.date) };

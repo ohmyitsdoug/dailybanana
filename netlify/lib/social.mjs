@@ -212,19 +212,35 @@ export function sundayNightPacific(satIso) {
   const h = +new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', hour12: false }).format(new Date(t)) % 24;
   return t - h * HOUR;   // in daylight time 08:00Z is 1am, so step back an hour
 }
+// a hint for each unit: two familiar things just smaller and just bigger (never something with a known exact length)
+const NO_HINT = new Set(['ruler', 'yardstick', 'sheet of paper', 'dollar bill', 'credit card', 'index card', 'business card', 'playing card', 'tape measure',
+  'crosswalk stripe', 'tennis net', 'hockey rink', 'sidewalk square', 'bowling lane', 'football goalpost', 'golf hole cup', 'manhole cover', 'school bus seat', 'ceiling', 'light switch plate', 'traffic barrel', 'parking space', 'football field', 'tennis court', 'basketball court', 'Olympic swimming pool']);   // known exact lengths, or odd to picture
+export function hintFor(unit, items) {
+  const pool = items.filter((i) => i.unit && !NO_HINT.has(i.name) && i.name !== unit.name && !NEVER.test(i.name));
+  const lo = pool.filter((i) => i.cm < unit.cm * 0.85).sort((a, b) => b.cm - a.cm)[0], hi = pool.filter((i) => i.cm > unit.cm * 1.15).sort((a, b) => a.cm - b.cm)[0];
+  const t = (i) => (i.art ? `${i.art} ${i.name}` : i.name);
+  return lo && hi ? `Somewhere between the size of ${t(lo)} and ${t(hi)}` : hi ? `A bit smaller than ${t(hi)}` : lo ? `A bit bigger than ${t(lo)}` : '';
+}
+// the weekend's 6 units each count one question: the smallest units get the biggest answers, the biggest units the smallest
 export async function openWeekend(store, wk, items) {
   const cur = await store.get('weekend/current', { type: 'json' }).catch(() => null);
   if (cur && cur.n === wk.n) return cur;   // already made (a retry)
-  const unit = { name: wk.name, plural: wk.plural, art: wk.art, dim: wk.dim, cm: wk.cm };
+  const by = Object.fromEntries(items.map((i) => [i.name, i]));
+  const units = wk.units.map((n) => by[n]).filter(Boolean).sort((a, b) => a.cm - b.cm);
+  const ranges = [[250, 2000], [250, 2000], [25, 250], [25, 250], [2, 25], [2, 25]];
   const used = new Set(), rounds = [];
-  for (const [lo, hi] of BUCKETS) {
-    let q = null; for (let t = 0; t < 50 && !q; t++) { const c = randomPair(items, { lo, hi, unit }); if (c && !used.has(c.B.name)) q = c; }
-    if (!q) for (let t = 0; t < 50 && !q; t++) { const c = randomPair(items, { lo: 2, hi: 1500, unit }); if (c && !used.has(c.B.name)) q = c; }
-    if (q) { used.add(q.B.name); rounds.push({ a: wk.name, b: q.B.name }); }
-  }
+  units.forEach((unit, k) => {
+    const [lo, hi] = ranges[k] || [2, 2000];
+    // something to measure: answer in the round's range, not used yet, usually a well-known thing
+    const fits = (l, h) => items.filter((i) => !NEVER.test(i.name) && !used.has(i.name) && !wk.units.includes(i.name) && i.cm / unit.cm >= l && i.cm / unit.cm <= h);
+    let c = fits(lo, hi); if (!c.length) c = fits(2, 2000);
+    const core = c.filter((i) => i.core), B = core.length && Math.random() < 2 / 3 ? pick(core) : c.length ? pick(c) : null;
+    if (B) { used.add(B.name); rounds.push({ a: unit.name, b: B.name, hint: hintFor(unit, items) }); }
+  });
   for (let i = rounds.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [rounds[i], rounds[j]] = [rounds[j], rounds[i]]; }
   let code; for (let i = 0; i < 6; i++) { code = Array.from({ length: 6 }, () => ABC[Math.floor(Math.random() * ABC.length)]).join(''); if (!(await store.get(`challenges/${code}`).catch(() => null))) break; }
-  const now = Date.now(), c = { code, rounds, creator: 'weekend', uid: null, host: 'Daily Banana', weekend: { n: wk.n, tagline: wk.tagline, hint: wk.hint, unit }, created: now, closes: sundayNightPacific(etParts(now).date), closed: false };
+  const now = Date.now(), c = { code, rounds: rounds.map(({ a, b }) => ({ a, b })), creator: 'weekend', uid: null, host: 'Daily Banana',
+    weekend: { n: wk.n, theme: wk.theme, tagline: wk.theme, hints: rounds.map((r) => r.hint) }, created: now, closes: sundayNightPacific(etParts(now).date), closed: false };
   await store.setJSON(`challenges/${code}`, c);
   const rec = { code, n: wk.n, closes: c.closes };
   await store.setJSON('weekend/current', rec);
