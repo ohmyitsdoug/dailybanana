@@ -1454,7 +1454,7 @@ async function wireAutopost(){
   const draw=j=>{
     const sub=document.getElementById('aplivesub'),tog=document.getElementById('apltog');if(!sub)return;
     if(j.error){sub.textContent=j.error;return}
-    tog.classList.toggle('on',!!j.live);sub.textContent=j.live?'On: due posts go to Instagram and Facebook.':'Off (practice): due posts are made and listed here, nothing is published.';
+    tog.classList.toggle('on',!!j.live);sub.textContent=j.live?`On: due posts go to ${['Instagram','Facebook',...(j.dest&&j.dest.threads?['Threads']:[]),...(j.dest&&j.dest.bluesky?['Bluesky']:[])].join(', ').replace(/, ([^,]+)$/,' and $1')}.`:'Off (practice): due posts are made and listed here, nothing is published.';
     // one accordion per day (last 10 days), newest first; open a day to see its posts
     const days=[];j.posts.forEach(p=>{const d=new Date(p.at).toLocaleDateString('en-CA',{timeZone:'America/New_York'});let g=days.find(x=>x.d===d);if(!g)days.push(g={d,posts:[]});g.posts.push(p)});
     const dayName=d=>new Date(d+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});

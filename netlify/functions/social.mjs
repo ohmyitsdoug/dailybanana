@@ -6,7 +6,7 @@
 //   POST { action:'delete', id } / { action:'clear' }   remove one unposted post / every preview
 import { db, json } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
-import { build, save, recent, publish, config, imgUrl, etParts, PLAN, KEEP_DAYS } from '../lib/social.mjs';
+import { build, save, recent, publish, config, imgUrl, etParts, PLAN, KEEP_DAYS, destinations } from '../lib/social.mjs';
 
 const KINDS = ['results_story', 'mon', 'tue', 'wed', 'thu_story', 'thu', 'fri', 'sat', 'sun_story', 'sun', 'milestone'];
 const view = (r) => ({ ...r, images: r.images.map(imgUrl), story: r.story.map(imgUrl) });
@@ -16,7 +16,7 @@ export default async (req) => {
   if (!isAdminUser(await userFor(req, store))) return json({ error: 'not the admin account' }, 401);
   if (req.method === 'GET') {
     const since = Date.now() - KEEP_DAYS * 864e5, posts = (await recent(store, 200)).filter((r) => r.at >= since).map(view), cfg = await config(store);
-    return json({ live: !!cfg.live, posts, plan: PLAN, now: etParts() });
+    return json({ live: !!cfg.live, posts, plan: PLAN, now: etParts(), dest: destinations() });
   }
   let b; try { b = await req.json(); } catch { return json({ error: 'bad json' }, 400); }
   if (b.action === 'live') { await store.setJSON('social/config', { live: !!b.on, changed: Date.now() }); return json({ live: !!b.on }); }

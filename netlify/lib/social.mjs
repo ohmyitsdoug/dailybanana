@@ -1,5 +1,5 @@
 // Daily Banana's automatic social posts: what goes out each day, the captions, milestones, the weekend
-// challenge, and publishing to Instagram (feed, carousel, stories) and the Facebook Page.
+// challenge, and publishing to Instagram (feed, carousel, stories), the Facebook Page, Threads and Bluesky (feed posts only).
 //
 // Weekly plan (Eastern time):           Mon 12:15 carousel · Tue 12:15 fun fact · Wed 7:15pm guess this
 //   Thu 9:15am answer story, 12:15 banana for scale · Fri 12:15 week in review (fun fact until 500+ dailies a week)
@@ -349,11 +349,88 @@ export async function publish(store, rec) {
     const media = Object.fromEntries(ids.map((id, i) => [`attached_media[${i}]`, JSON.stringify({ media_fbid: id })]));
     return (await graph(`${page}/feed`, { message: rec.fb, ...media, access_token: tok })).id;
   });
+  // Threads and Bluesky get the feed post only (neither has stories), with the Facebook caption (#dailybanana only)
+  if (urls.length && threadsToken()) await step('threads', () => threadsPost(urls, rec.fb));
+  if (urls.length && bskyLogin()) await step('bluesky', () => bskyPost(store, rec));
   rec.results = out; rec.status = out.every((x) => x.ok) ? 'posted' : out.some((x) => x.ok) ? 'partly posted' : 'failed';
   rec.postedAt = Date.now();
   await store.setJSON(`social/posts/${rec.id}`, rec);
   return rec;
 }
+
+// ---------- Threads ----------
+const TH = 'https://graph.threads.net/v1.0';
+const threadsToken = () => process.env.THREADS_TOKEN || process.env.THREADS_ACCESS_TOKEN || '';
+async function th(path, params = {}, method = 'POST') {
+  const body = new URLSearchParams({ ...params, access_token: threadsToken() });
+  const r = method === 'GET' ? await fetch(`${TH}/${path}?${body}`) : await fetch(`${TH}/${path}`, { method, body });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.error) throw new Error((j.error && j.error.message) || `Threads answered ${r.status}`);
+  return j;
+}
+async function thReady(id) {
+  for (let i = 0; i < 12; i++) { const s = await th(id, { fields: 'status,error_message' }, 'GET'); if (s.status === 'FINISHED') return; if (s.status === 'ERROR') throw new Error(s.error_message || 'Threads could not process the image'); await sleep(1500); }
+}
+async function threadsPost(urls, text) {
+  const me = (await th('me', { fields: 'id' }, 'GET')).id;
+  const t = [...text].length > 500 ? trimTo(text, 500) : text;
+  let id;
+  if (urls.length === 1) id = (await th(`${me}/threads`, { media_type: 'IMAGE', image_url: urls[0], text: t })).id;
+  else {
+    const kids = await Promise.all(urls.slice(0, 20).map((u) => th(`${me}/threads`, { media_type: 'IMAGE', image_url: u, is_carousel_item: 'true' }).then((x) => x.id)));
+    await Promise.all(kids.map(thReady));
+    id = (await th(`${me}/threads`, { media_type: 'CAROUSEL', children: kids.join(','), text: t })).id;
+  }
+  await thReady(id);
+  return (await th(`${me}/threads_publish`, { creation_id: id })).id;
+}
+
+// ---------- Bluesky ----------
+const BS = 'https://bsky.social/xrpc';
+const bskyLogin = () => { const id = process.env.BSKY_HANDLE || process.env.BLUESKY_HANDLE, pw = process.env.BSKY_APP_PASSWORD || process.env.BLUESKY_APP_PASSWORD || process.env.BLUESKY_PASSWORD; return id && pw ? { identifier: id.replace(/^@/, ''), password: pw } : null; };
+async function bs(method, body, jwt, type = 'application/json') {
+  const r = await fetch(`${BS}/${method}`, { method: 'POST', headers: { 'Content-Type': type, ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}) }, body: type === 'application/json' ? JSON.stringify(body) : body });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.message || j.error || `Bluesky answered ${r.status}`);
+  return j;
+}
+// keep whole lines/sentences that fit, so the words stay the approved ones, just fewer of them
+export function trimTo(text, max) {
+  const g = (x) => [...x].length; if (g(text) <= max) return text;
+  const [body, tags = ''] = text.split(/\n\n(?=#)/), tail = tags ? '\n\n' + tags : '', room = max - g(tail);
+  const parts = body.match(/[^.!?\n]+[.!?]*\s*|\n/g) || [body]; let out = '';
+  for (const s of parts) { if (g(out + s) > room) break; out += s; }
+  out = out.trim() || [...body].slice(0, room - 1).join('') + '…';
+  return out + tail;
+}
+// hashtags and links need "facets" (byte ranges) to be clickable on Bluesky
+export function facets(text) {
+  const enc = new TextEncoder(), at = (i) => enc.encode(text.slice(0, i)).length, out = [];
+  for (const m of text.matchAll(/(^|\s)#([A-Za-z0-9_]+)/g)) { const s = m.index + m[1].length; out.push({ index: { byteStart: at(s), byteEnd: at(s + m[2].length + 1) }, features: [{ $type: 'app.bsky.richtext.facet#tag', tag: m[2] }] }); }
+  for (const m of text.matchAll(/\bdailybanana\.io(\/[^\s]*)?/g)) out.push({ index: { byteStart: at(m.index), byteEnd: at(m.index + m[0].length) }, features: [{ $type: 'app.bsky.richtext.facet#link', uri: 'https://' + m[0] }] });
+  return out;
+}
+async function bskyPost(store, rec) {
+  const s = await bs('com.atproto.server.createSession', bskyLogin());
+  const blobs = [];
+  for (const k of rec.images) {
+    const jpg = await store.get(`social/img/${k}`, { type: 'arrayBuffer' });
+    if (!jpg) throw new Error('image missing');
+    if (jpg.byteLength > 1e6) throw new Error('image is over Bluesky’s 1 MB limit');
+    blobs.push((await bs('com.atproto.repo.uploadBlob', new Uint8Array(jpg), s.accessJwt, 'image/jpeg')).blob);
+  }
+  const alt = 'Daily Banana post image';
+  const post = (text, imgs, reply) => bs('com.atproto.repo.createRecord', { repo: s.did, collection: 'app.bsky.feed.post', record: {
+    $type: 'app.bsky.feed.post', text, facets: facets(text), createdAt: new Date().toISOString(), langs: ['en'],
+    embed: { $type: 'app.bsky.embed.images', images: imgs.map((b) => ({ alt, image: b, aspectRatio: { width: 1080, height: 1350 } })) }, ...(reply ? { reply } : {}) } }, s.accessJwt);
+  // up to 4 images a post: a longer carousel continues as replies underneath
+  const text = trimTo(rec.fb, 300), first = await post(text, blobs.slice(0, 4));
+  const root = { uri: first.uri, cid: first.cid }; let parent = root;
+  for (let i = 4; i < blobs.length; i += 4) { const r = await post('', blobs.slice(i, i + 4), { root, parent }); parent = { uri: r.uri, cid: r.cid }; }
+  return first.uri;
+}
+
+export const destinations = () => ({ threads: !!threadsToken(), bluesky: !!bskyLogin() });
 
 // ---------- the hourly run ----------
 // posts and their images are kept for 10 days, then removed (once a day, at the 3am run)
