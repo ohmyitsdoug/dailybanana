@@ -102,6 +102,7 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .cta{display:flex;flex-direction:column;gap:12px}
 .cta2{display:grid;grid-template-columns:2fr 1fr;gap:12px}
 .cta2 .btn{padding:0 12px;justify-content:center}
+.sqr.on.bull.gold{background:var(--acc);color:#2A1A0E}
 .wkhint{margin:-4px 0 0;text-align:center;color:var(--mut);font-size:15px}
 .codein{height:64px;border:2px solid var(--ink);box-shadow:4px 4px 0 var(--accsh);background:var(--card);color:var(--ink);font:700 30px/1 inherit;font-family:inherit;letter-spacing:6px;text-transform:uppercase;text-align:center;padding:0 12px;width:100%;box-sizing:border-box}
 .codein:focus{outline:3px solid var(--acc);outline-offset:2px}
@@ -404,7 +405,9 @@ const RELEASES=[
     'Type the exact answer shown and you score 100.',
     'Answers under 100 show to one decimal. Bigger answers show whole numbers.',
     'Weekend challenges: a new themed challenge every Saturday, open all weekend.',
-    'The Join screen and the Menu count down to the next weekend challenge.']},
+    'The Join screen and the Menu count down to the next weekend challenge.',
+    'Guess an answer exactly and you get a golden banana 🌟, plus a new badge for it.',
+    '150 more everyday things to measure with.']},
   {v:'1.0',from:'2026-11-04',date:'Nov 4, 2026',notes:[
     'Join a challenge with a code, right from the home screen.',
     'Copy a challenge code from the top of its page.',
@@ -464,7 +467,9 @@ const BANANA_PX=[
 ''];
 // colours from the banana vector artwork
 const BAN_C={b:'#3D2411',y:'#FED53C',l:'#FFE46F',d:'#EAA317',s:'#7B4B1F'};
-const BANANA=(px=16)=>{const C=BAN_C;let r='';
+// the golden banana: a round guessed exactly (100)
+const GOLD_C={b:'#5C3A00',y:'#F5B800',l:'#FFF6C2',d:'#C27A00',s:'#8A5600'};
+const BANANA=(px=16,C=BAN_C)=>{let r='';
   // one path per colour, each pixel a hair oversized, so a tilted or faded banana shows no seams between pixels
   const P={};BANANA_PX.forEach((row,y)=>[...row].forEach((c,x)=>{if(C[c])P[c]=(P[c]||'')+`M${x-.03} ${y-.03}h1.06v1.06h-1.06z`}));
   Object.entries(P).forEach(([c,d])=>r+=`<path d="${d}" fill="${C[c]}"/>`);
@@ -553,7 +558,7 @@ function judge(guess,q){
   const p=Math.round(MAX_PTS*Math.min(guess,t)/Math.max(guess,t));
   return{guess,p,off:guess/t};
 }
-const mark=p=>p>=90?'🍌':p>=70?'🟫':p>=40?'🟨':'⬜';   // darker the closer you get, then the banana
+const mark=p=>p>=100?'🌟':p>=90?'🍌':p>=70?'🟫':p>=40?'🟨':'⬜';   // darker the closer you get, then the banana, then the golden banana (exact)
 // small tip under the bananas box
 function banTip(el){
   const old=document.getElementById('banpop');if(old){old.remove();el.setAttribute('aria-expanded','false');return}
@@ -569,10 +574,10 @@ function banTip(el){
 function toast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.className='toast';t.setAttribute('role','status');document.body.appendChild(t)}
   t.textContent=msg;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2200)}
 const markA=a=>!a||a.guess==null?'❌':mark(a.p||0);   // ❌ = no guess (time ran out)
-const LEGEND='⬜ under 40 · 🟨 40+ · 🟫 70+ · 🍌 90+ · ❌ no guess';
+const LEGEND='⬜ under 40 · 🟨 40+ · 🟫 70+ · 🍌 90+ · 🌟 exact · ❌ no guess';
 function offLabel(a){
   if(!a||a.guess==null)return'Out of time.';
-  if(a.p>=MAX_PTS)return'Spot on!';
+  if(a.p>=MAX_PTS)return'Spot on! A golden banana.';
   const r=a.off,pc=Math.round(Math.abs(r-1)*100);
   if(r>1)return r>=2?`${(Math.round(r*10)/10)}× too high.`:`${pc}% too high.`;
   return 1/r>=2?`${(Math.round(10/r)/10)}× too low.`:`${pc}% too low.`;
@@ -635,6 +640,7 @@ function saveQuick(rec){const l=quickList().filter(x=>x.id!==rec.id);l.unshift(r
 const BADGES=[
   {id:'first',name:'First peel',how:'Finish your first daily'},
   {id:'bull',name:'Spot on',how:'Score 95 or more on a daily round'},
+  {id:'golden',name:'Golden banana',how:'Guess a daily answer exactly'},
   {id:'triple',name:'Top banana',how:'3 rounds of 90+ in one daily'},
   {id:'sharp',name:'Good eye',how:'Every round of a daily 70 or more'},
   {id:'big',name:'Big thinker',how:'90+ on the daily\'s biggest number'},
@@ -671,6 +677,7 @@ function awardBadges(res,r){
   const smallest=r.qs.reduce((b,q,i)=>q.ans<r.qs[b].ans?i:b,0);
   earn('first',true);
   earn('bull',ps.some(p=>p>=95));
+  earn('golden',ps.some(p=>p>=100)&&r.date>=SCORE_V2);   // an exact guess (exact only became reliably 100 on Nov 5)
   earn('triple',ps.filter(p=>p>=90).length>=3);
   earn('sharp',ps.length===ROUNDS&&ps.every(p=>p>=70));
   earn('big',ps[biggest]>=90);
@@ -704,7 +711,7 @@ const dailyBananas=()=>playedDailies().reduce((t,x)=>t+(x.res.answers||[]).filte
 function squares(answers,cur){
   let h='';
   for(let i=0;i<ROUNDS;i++){const a=(answers||[])[i];
-    h+=a?`<span class="sqr on ${a.guess==null||a.p<40?'miss':a.p>=90?'bull':a.p>=70?'good':'mid'}" title="Round ${i+1}: ${a.guess==null?'no guess':a.p||0}">${a.guess==null?'✕':a.p>=90?BANANA(16)+(a.p||0):a.p||0}</span>`
+    h+=a?`<span class="sqr on ${a.guess==null||a.p<40?'miss':a.p>=100?'bull gold':a.p>=90?'bull':a.p>=70?'good':'mid'}" title="Round ${i+1}: ${a.guess==null?'no guess':a.p||0}">${a.guess==null?'✕':a.p>=100?BANANA(16,GOLD_C)+(a.p||0):a.p>=90?BANANA(16)+(a.p||0):a.p||0}</span>`
       :`<span class="sqr ${i===cur?'cur':''}"><span>${i===cur?i+1:'?'}</span></span>`}
   return`<div class="sqrow seven" role="img" aria-label="${(answers||[]).length} of ${ROUNDS} rounds played">${h}</div>`;
 }
@@ -712,7 +719,7 @@ const pairLabel=d=>`${(d.rounds||[]).length} rounds`;
 const timeLabel=t=>new Date(t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
 const dateOf=t=>{const d=new Date(t);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const leftLabel=ms=>{const m=Math.max(0,Math.round(ms/60000));return m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`};
-const badgeIcon=(px=24)=>`<span class="bi">${BANANA(px)}</span>`;
+const badgeIcon=(px=24,C=BAN_C)=>`<span class="bi">${BANANA(px,C)}</span>`;
 function alertBox(msg){app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:14px;padding-top:20px"><p>${esc(msg)}</p><button class="btn" id="homeb">Home</button></div>`;wireNav();document.getElementById('homeb').onclick=showStart}
 
 // ---------- home ----------
@@ -809,7 +816,7 @@ function showMenu(jump){
       <div class="stat"><b class="num">${fmt(qt.b)}</b><span>🍌 collected</span></div>
     </div>
     <div class="eyebrow in" style="--d:4" id="badges">Badges · ${badgeCount(have).replace('/',' of ')}</div>
-    <div class="badges in" style="--d:4">${shownBadges(have).map(b=>`<div class="badge ${have[b.id]?'on':''}">${badgeIcon()}<span class="bt"><b>${b.name}</b><span>${b.how}</span></span></div>`).join('')}</div>
+    <div class="badges in" style="--d:4">${shownBadges(have).map(b=>`<div class="badge ${have[b.id]?'on':''}">${badgeIcon(24,b.id==='golden'?GOLD_C:BAN_C)}<span class="bt"><b>${b.name}</b><span>${b.how}</span></span></div>`).join('')}</div>
     <div class="eyebrow in" style="--d:5">History</div>
     <div class="list in" style="--d:5">
       ${todayRes?'':`<button class="lrow" data-n="${TODAY.n}"><span>Today · #${pad3(TODAY.n)}</span><span class="mut">${liveSaved(TODAY.n)?'Paused':'Not played'}</span></button>`}
@@ -1218,7 +1225,7 @@ async function shareImage(r,res,btn){
     const INK='#3B2412',MUT='#6B4F30',CARD='#FFFAE0',ACC='#FFD43B',ACCSH='#B97E00',F='"Space Grotesk",system-ui,sans-serif';
     await Promise.all(['500','700'].map(w=>document.fonts.load(`${w} 60px "Space Grotesk"`).catch(()=>{})));
     const font=(w,px)=>{x.font=`${w} ${px}px ${F}`};
-    const ban=(px,cx,cy,rot=0,alpha=1)=>{const C=BAN_C,u=px/16;
+    const ban=(px,cx,cy,rot=0,alpha=1,C=BAN_C)=>{const u=px/16;
       const o=bananaSprite(C),hh=px*17/16;   // drawn whole first, so faded or tilted bananas get no seams
       x.save();x.globalAlpha=alpha;x.imageSmoothingEnabled=!!rot;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.drawImage(o,-px/2,-hh/2,px,hh);x.restore()};
     const box=(X,Y,w,h,fill,sh=6,shc=INK,bw=4)=>{x.fillStyle=shc;x.fillRect(X+sh,Y+sh,w,h);x.fillStyle=fill;x.fillRect(X,Y,w,h);x.lineWidth=bw;x.strokeStyle=INK;x.strokeRect(X+bw/2,Y+bw/2,w-bw,h-bw)};
@@ -1241,7 +1248,7 @@ async function shareImage(r,res,btn){
       const fill=bull?CARD:miss?CARD:p>=70?'#8A5A2B':ACC,col=p>=70&&!bull?'#FFF3C9':miss?MUT:INK;
       if(miss){x.fillStyle=fill;x.fillRect(X,sy,sq,sq);x.lineWidth=4;x.strokeStyle=MUT;x.strokeRect(X+2,sy+2,sq-4,sq-4)}else box(X,sy,sq,sq,fill,5);
       x.fillStyle=col;x.textAlign='center';
-      if(bull){ban(54,X+sq/2,sy+sq/2-20);font(700,34);x.fillText(String(p),X+sq/2,sy+sq/2+46)}
+      if(bull){ban(54,X+sq/2,sy+sq/2-20,0,1,p>=100?GOLD_C:BAN_C);font(700,34);x.fillText(String(p),X+sq/2,sy+sq/2+46)}
       else{font(700,44);x.fillText(a.guess==null?'–':String(p),X+sq/2,sy+sq/2+16)}
       x.textAlign='left'}
     x.fillStyle=INK;x.fillRect(L,878,R-L,4);
@@ -1270,7 +1277,7 @@ async function drawRound(q,a,{generic=false}={}){
     const BG='#2A1A0E',INK='#FFF3C9',MUT='#CDB68C',CARD='#382415',ACC='#FFD43B',DARK='#2A1A0E',F='"Space Grotesk",system-ui,sans-serif';
     await Promise.all(['500','700'].map(w=>document.fonts.load(`${w} 60px "Space Grotesk"`).catch(()=>{})));
     const font=(w,px)=>{x.font=`${w} ${px}px ${F}`};
-    const ban=(px,cx,cy,rot=0,alpha=1)=>{const C=BAN_C,u=px/16;
+    const ban=(px,cx,cy,rot=0,alpha=1,C=BAN_C)=>{const u=px/16;
       const o=bananaSprite(C),hh=px*17/16;   // drawn whole first, so faded or tilted bananas get no seams
       x.save();x.globalAlpha=alpha;x.imageSmoothingEnabled=!!rot;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.drawImage(o,-px/2,-hh/2,px,hh);x.restore()};
     const box=(X,Y,w,h,fill,sh,shc)=>{x.fillStyle=shc;x.fillRect(X+sh,Y+sh,w,h);x.fillStyle=fill;x.fillRect(X,Y,w,h);x.lineWidth=4;x.strokeStyle=INK;x.strokeRect(X+2,Y+2,w-4,h-4)};
@@ -1290,7 +1297,7 @@ async function drawRound(q,a,{generic=false}={}){
     // the points
     const hy=Math.max(qEnd+96,560),sy=Math.min(hy+190,860);let sx=L;
     if(!generic){font(700,40);x.fillStyle=ACC;x.fillText('I scored',L,hy)}
-    if(p>=90){ban(120,L+60,sy-70);sx+=140}
+    if(p>=90){ban(120,L+60,sy-70,0,1,p>=100?GOLD_C:BAN_C);sx+=140}
     font(700,200);x.fillStyle=INK;try{x.letterSpacing='-5px'}catch(_){}x.fillText(a&&a.guess==null?'0':String(p),sx-4,sy);const pw=x.measureText(String(p)).width;try{x.letterSpacing='0px'}catch(_){}
     font(700,64);x.fillStyle=MUT;x.fillText(a&&a.guess==null?'/ 100 · out of time':'/ 100',sx+pw+14,sy);
     ban(200,890,sy-90,16,.28);   // floating banana, in the empty space beside the points

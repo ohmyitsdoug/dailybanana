@@ -41,7 +41,7 @@ for a in units:
         r = b['cm'] / a['cm']
         for k, (lo, hi) in enumerate(BUCKETS):
             if lo <= r <= hi: pairs[k].append((a['id'], b['id']))
-FROZEN = 0   # dailies #000..FROZEN stay as they are
+FROZEN = 2   # dailies #000..FROZEN stay as they are (#002 is already being played where it is Nov 5)
 old = {}
 try: old = {d['n']: d for d in json.load(open(os.path.join(HERE, '..', 'data', 'dailies.json')))}
 except Exception: pass

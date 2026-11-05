@@ -1129,3 +1129,155 @@ hoodie | hoodies | a | long | 70 |
 one-car garage | one-car garages | a | long | 610 |
 grocery store checkout belt | checkout belts | a | long | 300 |
 school hallway locker | hallway lockers | a | tall | 180 |
+
+# v1.1 (Nov 5, 2026): 150 more everyday things
+earbud case | earbud cases | an | tall | 4.6 |
+mason jar | mason jars | a | tall | 13.5 |
+coffee pod | coffee pods | a | tall | 4.4 |
+egg cup | egg cups | an | tall | 6 |
+salad spinner | salad spinners | a | across | 26 |
+rice cooker | rice cookers | a | tall | 25 |
+air fryer | air fryers | an | tall | 35 |
+slow cooker | slow cookers | a | long | 40 |
+stand mixer | stand mixers | a | tall | 36 |
+waffle iron | waffle irons | a | long | 30 |
+toaster oven | toaster ovens | a | long | 45 |
+pizza stone | pizza stones | a | across | 38 |
+cast-iron skillet | cast-iron skillets | a | across | 30 |
+bread knife | bread knives | a | long | 33 |
+ice cream scoop | ice cream scoops | an | long | 20 |
+garlic press | garlic presses | a | long | 18 |
+vegetable peeler | vegetable peelers | a | long | 17 |
+cheese grater | cheese graters | a | tall | 24 |
+French press | French presses | a | tall | 24 |
+tea kettle | tea kettles | a | tall | 22 |
+water pitcher | water pitchers | a | tall | 26 |
+thermos | thermoses | a | tall | 27 |
+sippy cup | sippy cups | a | tall | 15 |
+baby bottle | baby bottles | a | tall | 17 |
+pacifier | pacifiers | a | long | 6 |
+diaper | diapers | a | long | 45 |
+glue gun | glue guns | a | long | 18 |
+three-hole punch | three-hole punches | a | long | 30 |
+paper shredder | paper shredders | a | tall | 45 |
+desk lamp | desk lamps | a | tall | 45 |
+mouse pad | mouse pads | a | long | 23 |
+laptop charger | laptop chargers | a | long | 11 |
+HDMI cable | HDMI cables | an | long | 180 |
+webcam | webcams | a | long | 9 |
+external hard drive | external hard drives | an | long | 11 |
+e-reader | e-readers | an | tall | 16 |
+desktop computer tower | computer towers | a | tall | 45 |
+printer paper ream | paper reams | a | long | 28 |
+sticky tape dispenser | tape dispensers | a | long | 15 |
+bookend | bookends | a | tall | 15 |
+pillowcase | pillowcases | a | long | 76 |
+fitted sheet | fitted sheets | a | long | 203 |
+duvet | duvets | a | long | 220 |
+alarm clock radio | clock radios | a | long | 18 |
+hamper | hampers | a | tall | 60 |
+shoe rack | shoe racks | a | long | 80 |
+full-length mirror | full-length mirrors | a | tall | 150 |
+ottoman | ottomans | an | long | 60 |
+futon | futons | a | long | 200 |
+loveseat | loveseats | a | long | 150 |
+yoga ball | yoga balls | a | across | 65 |
+foam roller | foam rollers | a | long | 90 |
+resistance band | resistance bands | a | long | 120 |
+water polo ball | water polo balls | a | across | 22 |
+golf bag | golf bags | a | tall | 90 |
+hockey goal | hockey goals | a | across | 183 |
+lacrosse ball | lacrosse balls | a | across | 6.3 |
+bocce ball | bocce balls | a | across | 10.7 |
+cornhole board | cornhole boards | a | long | 122 |
+horseshoe | horseshoes | a | across | 18 |
+disc golf basket | disc golf baskets | a | tall | 135 |
+kayak paddle | kayak paddles | a | long | 220 |
+paddleboard | paddleboards | a | long | 320 |
+wetsuit | wetsuits | a | long | 160 |
+snorkel | snorkels | a | long | 40 |
+swim fin | swim fins | a | long | 60 |
+pool ladder | pool ladders | a | tall | 120 |
+inflatable pool float | pool floats | an | long | 180 |
+camp stove | camp stoves | a | long | 55 |
+lantern | lanterns | a | tall | 25 |
+cooler bag | cooler bags | a | long | 35 |
+hiking boot | hiking boots | a | long | 30 |
+trekking pole | trekking poles | a | long | 130 |
+compass | compasses | a | across | 6 |
+binoculars | pairs of binoculars | a pair of | long | 15 |
+hammock stand | hammock stands | a | long | 400 |
+bird bath | bird baths | a | tall | 70 |
+garden hose reel | hose reels | a | tall | 80 |
+rain barrel | rain barrels | a | tall | 90 |
+compost bin | compost bins | a | tall | 100 |
+leaf rake | leaf rakes | a | long | 165 |
+snow shovel | snow shovels | a | long | 130 |
+ice scraper | ice scrapers | an | long | 30 |
+car wash sponge | car wash sponges | a | long | 20 |
+tire pressure gauge | tire gauges | a | long | 14 |
+jumper cables | sets of jumper cables | a set of | long | 365 |
+gas can | gas cans | a | tall | 35 |
+license plate frame | plate frames | a | long | 32 |
+bike lock | bike locks | a | long | 25 |
+bike pump | bike pumps | a | tall | 60 |
+windshield wiper | windshield wipers | a | long | 55 |
+car battery | car batteries | a | long | 26 |
+vending machine | vending machines | a | tall | 183 |
+ATM | ATMs | an | tall | 150 |
+gumball machine | gumball machines | a | tall | 40 |
+claw machine | claw machines | a | tall | 210 |
+photo booth | photo booths | a | tall | 210 |
+water fountain | water fountains | a | tall | 100 |
+hand dryer | hand dryers | a | tall | 28 |
+paper towel dispenser | towel dispensers | a | tall | 40 |
+newspaper box | newspaper boxes | a | tall | 115 |
+exit sign | exit signs | an | long | 30 |
+door hinge | door hinges | a | tall | 9 |
+outlet cover | outlet covers | an | tall | 11.4 |
+9-volt battery | 9-volt batteries | a | tall | 4.9 |
+paint stirrer | paint stirrers | a | long | 30 |
+caulk gun | caulk guns | a | long | 33 |
+utility knife | utility knives | a | long | 16 |
+zip tie | zip ties | a | long | 20 |
+duct tape roll | duct tape rolls | a | across | 12 |
+stud finder | stud finders | a | long | 15 |
+sawhorse | sawhorses | a | tall | 80 |
+shop vac | shop vacs | a | tall | 60 |
+pegboard | pegboards | a | long | 120 |
+milk crate | milk crates | a | long | 33 |
+shopping bag | shopping bags | a | tall | 40 |
+soy sauce packet | soy sauce packets | a | long | 6 |
+cake stand | cake stands | a | across | 30 |
+birthday candle | birthday candles | a | tall | 6 |
+party hat | party hats | a | tall | 18 |
+gift bag | gift bags | a | tall | 33 |
+wreath | wreaths | a | across | 60 |
+stocking | stockings | a | long | 45 |
+ornament | ornaments | an | across | 8 |
+string of lights | light strings | a | long | 750 |
+gingerbread house | gingerbread houses | a | tall | 25 |
+jack-in-the-box | jack-in-the-boxes | a | tall | 15 |
+kaleidoscope | kaleidoscopes | a | long | 25 |
+spinning top | spinning tops | a | tall | 6 |
+fidget spinner | fidget spinners | a | across | 7.5 |
+toy drum | toy drums | a | across | 25 |
+tambourine | tambourines | a | across | 25 |
+xylophone | xylophones | a | long | 50 |
+banjo | banjos | a | long | 95 |
+electric guitar | electric guitars | an | long | 100 |
+saxophone | saxophones | a | tall | 70 |
+trumpet | trumpets | a | long | 48 |
+clarinet | clarinets | a | long | 66 |
+music stand | music stands | a | tall | 120 |
+guitar case | guitar cases | a | long | 110 |
+pizza peel | pizza peels | a | long | 60 |
+butter dish | butter dishes | a | long | 18 |
+spice rack | spice racks | a | long | 40 |
+dish rack | dish racks | a | long | 45 |
+paper towel holder | paper towel holders | a | tall | 33 |
+napkin holder | napkin holders | a | long | 18 |
+trivet | trivets | a | across | 18 |
+lazy Susan | lazy Susans | a | across | 45 |
+laundry pod | laundry pods | a | long | 4.5 |
+dryer sheet | dryer sheets | a | long | 23 |
