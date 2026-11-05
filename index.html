@@ -1400,12 +1400,14 @@ async function wireAutopost(){
     <span class="note">${esc(new Date(p.at).toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}))}${p.results&&p.results.length?' · '+p.results.map(r=>esc(r.where)+(r.ok?' ✓':' ✗ '+esc(r.error))).join(' · '):''}</span>
     <div style="display:flex;gap:8px;overflow-x:auto">${[...p.images,...p.story].map((u,i)=>`<a href="${esc(u)}" target="_blank" rel="noopener" style="flex:none"><img src="${esc(u)}" alt="${i<p.images.length?'Post image':'Story image'} ${i+1}" loading="lazy" style="height:${i<p.images.length?160:180}px;border:2px solid var(--ink);display:block"></a>`).join('')}</div>
     ${p.caption?`<p style="margin:0;white-space:pre-wrap;font-size:14px">${esc(p.caption)}</p>`:'<span class="note">Story only, no caption.</span>'}
-    ${p.status==='posted'||p.status==='preview'?'':`<button class="btn" data-pub="${esc(p.id)}" style="height:44px;font-size:14px">Post this now</button>`}</div>`;
+    <div style="display:flex;gap:8px">${p.status==='posted'||p.status==='preview'?'':`<button class="btn" data-pub="${esc(p.id)}" style="height:44px;font-size:14px;flex:1">Post this now</button>`}${p.status==='posted'||p.status==='partly posted'?'':`<button class="btn" data-del="${esc(p.id)}" style="height:44px;font-size:14px">Delete</button>`}</div></div>`;
   const draw=j=>{
     const sub=document.getElementById('aplivesub'),tog=document.getElementById('apltog');if(!sub)return;
     if(j.error){sub.textContent=j.error;return}
     tog.classList.toggle('on',!!j.live);sub.textContent=j.live?'On: due posts go to Instagram and Facebook.':'Off (practice): due posts are made and listed here, nothing is published.';
-    document.getElementById('aplist').innerHTML=j.posts.length?j.posts.map(card).join(''):'<span class="note">Nothing yet. Posts show up here as they come due.</span>';
+    document.getElementById('aplist').innerHTML=(j.posts.some(p=>p.status==='preview')?'<button class="btn" id="apclear" style="height:44px;font-size:14px">Delete all previews</button>':'')+(j.posts.length?j.posts.map(card).join(''):'<span class="note">Nothing yet. Posts show up here as they come due.</span>');
+    const cl=document.getElementById('apclear');if(cl)cl.onclick=async()=>{if(!await confirmBox({title:'Delete all previews?',body:'Previews were never posted. Anything already posted stays.',yes:'Delete previews',no:'Keep them'}))return;await api({action:'clear'});draw(await api())};
+    document.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{b.disabled=true;await api({action:'delete',id:b.dataset.del});draw(await api())});
     document.querySelectorAll('[data-pub]').forEach(b=>b.onclick=async()=>{
       if(!await confirmBox({title:'Post this now?',body:'It goes to Instagram (and its story) and the Facebook Page right away.',yes:'Post it',no:'Not now'}))return;
       b.disabled=true;b.textContent='Posting…';const r=await api({action:'publish',id:b.dataset.pub});if(r.error)toast(r.error);draw(await api())});

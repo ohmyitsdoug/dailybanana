@@ -3,6 +3,7 @@
 //   POST { action:'live', on }            turn real posting on or off (off = practice)
 //   POST { action:'preview', kind }       make one post of that kind now, saved as a practice post (never published)
 //   POST { action:'publish', id }         publish one saved post right now
+//   POST { action:'delete', id } / { action:'clear' }   remove one unposted post / every preview
 import { db, json } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
 import { build, save, recent, publish, config, imgUrl, etParts, PLAN } from '../lib/social.mjs';
@@ -30,6 +31,18 @@ export default async (req) => {
     if (!rec) return json({ error: 'not found' }, 404);
     if (rec.status === 'posted') return json({ error: 'Already posted.' }, 409);
     return json({ post: view(await publish(store, rec)) });
+  }
+  if (b.action === 'delete' || b.action === 'clear') {
+    // remove previews (or one post) and their images; anything already posted stays
+    const ids = b.action === 'clear' ? (await recent(store, 200)).filter((r) => r.status === 'preview').map((r) => r.id) : [String(b.id || '').replace(/[^a-z0-9]/g, '')];
+    let n = 0;
+    for (const id of ids) {
+      const rec = await store.get(`social/posts/${id}`, { type: 'json' }).catch(() => null);
+      if (!rec || rec.status === 'posted' || rec.status === 'partly posted') continue;
+      await Promise.all([...rec.images, ...rec.story].map((k) => store.delete(`social/img/${k}`).catch(() => {})));
+      await store.delete(`social/posts/${id}`); n++;
+    }
+    return json({ deleted: n });
   }
   return json({ error: 'unknown action' }, 400);
 };
