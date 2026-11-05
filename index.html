@@ -602,7 +602,7 @@ const BADGES=[
   {id:'bunch',name:'Whole bunch',how:'Score 500 or more in one daily'},
   {id:'streak7',name:'Week streak',how:'Play 7 dailies in a row'},
   {id:'host',name:'Ringleader',how:'Start a challenge'},
-  {id:'beat24',name:'Bragging rights',how:'Beat a friend in a challenge that ran the full 24 hours'},
+  {id:'beat24',name:'Bragging rights',how:'Win a challenge that ran the full 24 hours'},
   {id:'linked',name:'Banana ID',how:'Sign in with Google or Discord'},
   {id:'tester',name:'Playtester',how:'Played a daily in the first two weeks',secret:true},
 ];
@@ -1437,7 +1437,7 @@ function board(c){
   const me=c.entries.find(e=>e.you)||((c.mine||ownChal(c.code))&&c.entries.find(e=>e.creator))||null;
   c.entries.forEach(e=>{e.you=e===me});
   // Bragging rights: only once the challenge has run its full 24 hours (closing it early doesn't count)
-  if(!c.weekend&&!c.open&&!c.closed&&me&&c.entries.length>1&&c.entries.some(e=>!e.you&&e.score<me.score)&&earnBadge('beat24'))pushSync();
+  if(!c.weekend&&!c.open&&!c.closed&&me&&c.entries.length>1&&c.entries.every(e=>e.you||e.score<me.score)&&earnBadge('beat24'))pushSync();   // a win: the top score outright
   return`<div class="board">${c.entries.map((e,i)=>`<div class="${e.you?'you':''}"><span class="n num">${i+1}</span><span class="nm">${esc(e.name)}${e.you?' (you)':''}</span><span>${esc(e.marks||'')}</span><b class="num">${fmt(e.score)}</b></div>`).join('')}</div>`;
 }
 const status=c=>c.open?`Open · closes in ${leftLabel(c.closes-Date.now())}`:'Closed';
