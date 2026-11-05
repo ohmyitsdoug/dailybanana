@@ -286,6 +286,7 @@ button.stat{font:inherit;color:inherit;background:var(--bg);text-align:left;curs
 .rel{border-top:2px solid var(--ink);padding-top:12px}
 .relh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px}
 .relh b{font-size:18px}.relh .mut{font-size:13px}
+.relg{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut);margin:10px 0 4px}
 .rel ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:15px;line-height:1.4}
 .btn.danger{background:#B3261E;color:#fff;box-shadow:4px 4px 0 var(--ink)}
 .welcome .btn{justify-content:center}
@@ -401,37 +402,39 @@ const CFG=Object.assign({api:'/.netlify/functions'},window.MATRYO_CONFIG||{});
 const API=CFG.api;   // Netlify server functions: logging, shared stats, words added after launch
 // release notes, newest first; a release shows (and becomes the version number) from its date
 const RELEASES=[
-  {v:'1.1',from:'2026-11-05',date:'Nov 5, 2026',notes:[
-    'Type the exact answer shown and you score 100.',
-    'Answers under 100 show to one decimal. Bigger answers show whole numbers.',
-    'Weekend challenges: a new themed challenge every Saturday, open all weekend.',
-    'The Join screen and the Menu count down to the next weekend challenge.',
-    'Guess an answer exactly and you get a golden banana 🌟, plus a new badge for it.',
-    '150 more everyday things to measure with.']},
-  {v:'1.0',from:'2026-11-04',date:'Nov 4, 2026',notes:[
+  {v:'1.1',from:'2026-11-05',date:'Nov 5, 2026',groups:[
+    {t:'Bug Fixes',notes:[
+      'Exact answer match now scores 100.',
+      'Challenge links ending after 24 hours now close properly and award the Bragging Rights Medal.']},
+    {t:'Updates',notes:[
+      'Answers under 100 show to one decimal. Bigger answers show whole numbers.',
+      'Guess an answer exactly to earn a golden banana 🌟, plus a new badge.',
+      '150 more everyday things to measure.',
+      'Weekend challenges: a new themed challenge every Saturday, open all weekend.',
+      'The Menu screen now counts down to the next weekend challenge.']}]},
+  {v:'1.0',from:'2026-11-04',date:'Nov 4, 2026',groups:[{notes:[
     'Join a challenge with a code, right from the home screen.',
     'Copy a challenge code from the top of its page.',
     'Close the app mid-game and quick play picks up where you left off.',
     'The clock keeps running if you leave in the middle of a question.',
-    'Challenges close right on time, and Bragging rights goes to the winner.',
     'Share your daily as an image.',
     'Turn off the background bananas in Settings.',
-    'Buy me a banana, if you’d like to support the game.']},
-  {v:'0.1–0.9',from:'2026-01-01',date:'Beta, through Nov 3, 2026',notes:[
+    'Buy me a banana, if you’d like to support the game.']}]},
+  {v:'0.1–0.9',from:'2026-01-01',date:'Beta, through Nov 3, 2026',groups:[{notes:[
     'The daily: 6 rounds, 25 seconds each, a new one every midnight.',
     'Quick play, as many games as you like.',
     'Challenges: send friends the same 6 questions for 24 hours.',
     'Badges, streaks and stats.',
     'Sign in with Google or Discord to keep your games on every device.',
     'The archive of past dailies, with answers.',
-    'Dark mode.']},
+    'Dark mode.']}]},
 ];
 const shownReleases=()=>RELEASES.filter(r=>r.from<=todayISO());
 const version=()=>shownReleases()[0].v;   // (a function: the date helpers are defined further down)
 function showNotes(){
   const back=document.activeElement,w=document.createElement('div');w.className='welcome';w.setAttribute('role','dialog');w.setAttribute('aria-modal','true');w.setAttribute('aria-labelledby','rnt');
   w.innerHTML=`<div class="box" tabindex="-1"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 id="rnt" style="font-size:28px">What’s new</h2><button class="sq" id="rnx">Close</button></div>
-    ${shownReleases().map(r=>`<div class="rel"><div class="relh"><b>v${esc(r.v)}</b><span class="mut">${esc(r.date)}</span></div><ul>${r.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul></div>`).join('')}</div>`;
+    ${shownReleases().map(r=>`<div class="rel"><div class="relh"><b>v${esc(r.v)}</b><span class="mut">${esc(r.date)}</span></div>${r.groups.map(g=>`${g.t?`<div class="relg">${esc(g.t)}</div>`:''}<ul>${g.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`).join('')}</div>`).join('')}</div>`;
   document.body.appendChild(w);w.querySelector('.box').focus();
   const end=()=>{w.remove();removeEventListener('keydown',key);if(back&&back.focus)back.focus()},key=e=>{if(e.key==='Escape')end()};
   addEventListener('keydown',key);w.onclick=e=>{if(e.target===w)end()};document.getElementById('rnx').onclick=end;
