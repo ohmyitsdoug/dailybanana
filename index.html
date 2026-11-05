@@ -105,6 +105,7 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .sqr.on.bull.gold{background:var(--acc);color:#2A1A0E}
 .wkhint{margin:-4px 0 0;text-align:center;color:var(--mut);font-size:15px}
 #wkmenu:empty{display:none}
+.menu>.eyebrow{margin-bottom:-8px}
 .codein{height:64px;border:2px solid var(--ink);box-shadow:4px 4px 0 var(--accsh);background:var(--card);color:var(--ink);font:700 30px/1 inherit;font-family:inherit;letter-spacing:6px;text-transform:uppercase;text-align:center;padding:0 12px;width:100%;box-sizing:border-box}
 .codein:focus{outline:3px solid var(--acc);outline-offset:2px}
 .codechip{display:inline-flex;align-items:center;gap:8px;border:2px solid var(--ink);background:var(--acc);color:var(--acc-ink);font-weight:700;font-size:15px;letter-spacing:2px;padding:4px 10px;cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
@@ -712,7 +713,7 @@ function awardBadges(res,r){
 // ---------- shared pieces ----------
 const nav=(right='')=>`<header class="nav in" style="--d:0">
   <button class="logo" id="home" aria-label="Home"><span class="m" aria-hidden="true">${BANANA(18)}</span>dailybanana.io</button>
-  <div class="r">${right}<a class="sq icon" id="ig" href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener" aria-label="Daily Banana on Instagram"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a><button class="sq" id="menu">Menu</button></div>
+  <div class="r">${right}<a class="sq icon" id="ig" href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener" aria-label="Daily Banana on Instagram"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a><button class="sq" id="menu">Menu</button></div>
 </header>`;
 const KOFI='https://ko-fi.com/dougpuccetti';
 const kofiBtn=(d)=>`<div class="kofiw in" style="--d:${d}"><a class="kofi" href="${KOFI}" target="_blank" rel="noopener">🍌 Buy me a banana</a></div>`;
@@ -817,8 +818,8 @@ function showMenu(jump){
   const have=store.get('badges',{});
   const todayRes=saved(TODAY.n);
   HGAMES=[...hist.map(x=>({...x,t:x.res.at||new Date(x.d.date+'T12:00').getTime()})),...quickList().map(q=>({q,t:q.at}))].sort((a,b)=>b.t-a.t);HPAGE=0;
-  app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:18px">
-    <div class="head in" style="--d:1"><h2>Menu</h2><button class="sq" id="back">Back</button></div>
+  app.innerHTML=`${nav()}<div class="narrow menu" style="display:flex;flex-direction:column;gap:18px">
+    <div class="head in" style="--d:1;margin-bottom:-16px"><h2>Menu</h2><button class="sq" id="back">Back</button></div>
     <div id="opench" class="in" style="--d:2;display:flex;flex-direction:column;gap:10px"></div>
     <div id="wkmenu"></div>
     <div class="eyebrow in" style="--d:2">Account</div>
