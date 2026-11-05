@@ -60,7 +60,7 @@ h3{font-size:17px;margin:0}
 .faq p{margin:8px 0 0}
 footer{margin-top:44px;font-size:13px;color:var(--mut);display:flex;flex-direction:column;gap:4px}
 `;
-export const BANANA_SVG = (px = 24) => `<img src="/favicon.svg" width="${px}" height="${px}" alt="">`;
+export const BANANA_SVG = (px = 24) => `<img src="/banana.svg" width="${px}" height="${px}" alt="">`;
 
 export function page({ title, description, path, body, jsonld = [] }) {
   const url = SITE_URL + path;
@@ -69,7 +69,7 @@ export function page({ title, description, path, body, jsonld = [] }) {
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${url}">
-<link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-96.png" sizes="96x96" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
 <meta property="og:type" content="article"><meta property="og:site_name" content="Daily Banana">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${url}"><meta property="og:image" content="${SITE_URL}/og.png">

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Daily Banana Admin</title>
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon-96.png" sizes="96x96" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap">
 <script>(function(){var t;try{t=JSON.parse(localStorage.getItem('snug:theme'))}catch(e){}if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t})();</script>
 <style>
@@ -86,7 +86,7 @@ const add=(iso,k)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate
 const todayET=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 let TOKEN='';try{TOKEN=(JSON.parse(localStorage.getItem('snug:session')||'null')||{}).token||''}catch(_){}
 let RANGE='30',CUSTOM={from:'',to:''};try{RANGE=sessionStorage.getItem('db-admin-range')||'30'}catch(_){}
-const logo='<a class="logo" href="./"><img src="favicon.svg" width="24" height="24" alt="">dailybanana</a><span class="chipa">ADMIN</span>';
+const logo='<a class="logo" href="./"><img src="banana.svg" width="24" height="24" alt="">dailybanana</a><span class="chipa">ADMIN</span>';
 
 function gate(msg){
   m.innerHTML=`<div class="gate"><div style="display:flex;gap:8px;align-items:center">${logo}</div>${msg?`<div class="msg">${esc(msg)}</div>`:''}
