@@ -850,7 +850,7 @@ function showMenu(jump){
       <div class="stat"><b class="num">${fmt(qt.b)}</b><span>🍌 collected</span></div>
     </div>
     <div class="eyebrow in" style="--d:4" id="badges">Badges · ${badgeCount(have).replace('/',' of ')}</div>
-    <div class="badges in" style="--d:4">${shownBadges(have).map(b=>`<div class="badge ${have[b.id]?'on':''}">${b.id==='golden'?'<span class="bi emo" style="font-size:22px">💯</span>':badgeIcon()}<span class="bt"><b>${b.name}</b><span>${b.how}</span></span></div>`).join('')}</div>
+    <div class="badges in" style="--d:4">${shownBadges(have).map(b=>`<div class="badge ${have[b.id]?'on':''}">${b.id==='golden'?'<span class="bi"><span style="display:block;width:30px;height:30px;background:url(golden-banana.svg) center/contain no-repeat"></span></span>':badgeIcon()}<span class="bt"><b>${b.name}</b><span>${b.how}</span></span></div>`).join('')}</div>
     <div class="eyebrow in" style="--d:5">History</div>
     <div class="list in" style="--d:5">
       ${todayRes?'':`<button class="lrow" data-n="${TODAY.n}"><span>Today · #${pad3(TODAY.n)}</span><span class="mut">${liveSaved(TODAY.n)?'Paused':'Not played'}</span></button>`}
