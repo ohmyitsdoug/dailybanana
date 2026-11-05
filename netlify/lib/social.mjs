@@ -345,6 +345,13 @@ export async function publish(store, rec) {
     return igPublish(ig, (await graph(`${ig}/media`, { media_type: 'CAROUSEL', children: kids.join(','), caption: rec.caption })).id);
   });
   for (const s of stories) await step('instagram story', async () => igPublish(ig, (await graph(`${ig}/media`, { image_url: s, media_type: 'STORIES' })).id));
+  // Facebook Page stories: upload the photo unpublished, then share it as a story
+  if (page && stories.length) { let tok = null; for (const s of stories) await step('facebook story', async () => {
+    tok = tok || await pageToken(page);
+    const ph = await graph(`${page}/photos`, { url: s, published: 'false', access_token: tok });
+    const r = await graph(`${page}/photo_stories`, { photo_id: ph.id, access_token: tok });
+    return r.post_id || r.id || ph.id;
+  }); }
   if (page && urls.length) await step('facebook', async () => {
     const tok = await pageToken(page);
     if (urls.length === 1) return (await graph(`${page}/photos`, { url: urls[0], message: rec.fb, access_token: tok })).id;
