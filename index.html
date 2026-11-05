@@ -104,6 +104,9 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .cta2 .btn{padding:0 12px;justify-content:center}
 .sqr.on.bull.gold{background:var(--card)}
 .sqr .hundo{font-size:22px;line-height:1}
+.sqr.on.bull.gold{position:relative;overflow:hidden}
+.sqr .gb{display:block;width:112%;aspect-ratio:1;margin:-14% 0 -26%;background:url(golden-banana.svg) center/contain no-repeat;flex:none}
+.sqr.on.bull.gold{justify-content:flex-end;padding-bottom:3px}
 .apsel{flex:1;min-height:44px;border:2px solid var(--ink);background:var(--card);color:var(--ink);font:inherit;font-weight:700;padding:0 10px}
 .apday{border:2px solid var(--ink);background:var(--bg)}
 .apday summary{cursor:pointer;padding:12px 14px;display:flex;flex-direction:column;gap:2px;list-style:none}
@@ -742,7 +745,7 @@ const dailyBananas=()=>playedDailies().reduce((t,x)=>t+(x.res.answers||[]).filte
 function squares(answers,cur){
   let h='';
   for(let i=0;i<ROUNDS;i++){const a=(answers||[])[i];
-    h+=a?`<span class="sqr on ${a.guess==null||a.p<40?'miss':a.p>=100?'bull gold':a.p>=90?'bull':a.p>=70?'good':'mid'}" title="Round ${i+1}: ${a.guess==null?'no guess':a.p||0}">${a.guess==null?'✕':a.p>=100?'<span class="emo hundo">💯</span>':a.p>=90?BANANA(16)+(a.p||0):a.p||0}</span>`
+    h+=a?`<span class="sqr on ${a.guess==null||a.p<40?'miss':a.p>=100?'bull gold':a.p>=90?'bull':a.p>=70?'good':'mid'}" title="Round ${i+1}: ${a.guess==null?'no guess':a.p||0}">${a.guess==null?'✕':a.p>=100?'<span class="gb" aria-hidden="true"></span>'+(a.p||0):a.p>=90?BANANA(16)+(a.p||0):a.p||0}</span>`
       :`<span class="sqr ${i===cur?'cur':''}"><span>${i===cur?i+1:'?'}</span></span>`}
   return`<div class="sqrow seven" role="img" aria-label="${(answers||[]).length} of ${ROUNDS} rounds played">${h}</div>`;
 }
@@ -1280,7 +1283,7 @@ async function shareImage(r,res,btn){
       const fill=bull?CARD:miss?CARD:p>=70?'#8A5A2B':ACC,col=p>=70&&!bull?'#FFF3C9':miss?MUT:INK;
       if(miss){x.fillStyle=fill;x.fillRect(X,sy,sq,sq);x.lineWidth=4;x.strokeStyle=MUT;x.strokeRect(X+2,sy+2,sq-4,sq-4)}else box(X,sy,sq,sq,fill,5);
       x.fillStyle=col;x.textAlign='center';
-      if(bull&&p>=100){x.textBaseline='middle';x.font=`${Math.round(sq*0.55)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;x.fillText('💯',X+sq/2,sy+sq/2+4);x.textBaseline='alphabetic'}   // an exact guess: the same 💯 as the share text
+      if(bull&&p>=100){const gi=await goldImg();x.save();x.beginPath();x.rect(X+4,sy+4,sq-8,sq-8);x.clip();x.drawImage(gi,X+sq/2-sq*0.42,sy+sq/2-20-sq*0.42,sq*0.84,sq*0.84);x.restore();x.fillStyle=col;font(700,34);x.fillText(String(p),X+sq/2,sy+sq/2+46)}   // an exact guess: the golden banana
       else if(bull){ban(54,X+sq/2,sy+sq/2-20);font(700,34);x.fillText(String(p),X+sq/2,sy+sq/2+46)}
       else{font(700,44);x.fillText(a.guess==null?'–':String(p),X+sq/2,sy+sq/2+16)}
       x.textAlign='left'}
@@ -1304,6 +1307,7 @@ async function shareImage(r,res,btn){
   }catch(e){toast('Couldn\'t make the image')}
   btn.disabled=false;
 }
+let GOLDIMG=null;const goldImg=()=>GOLDIMG||(GOLDIMG=new Promise(ok=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>ok(i);i.src='golden-banana.svg'}));
 // a challenge as a 1080×1350 image to post or send: the score to beat, the code and the link
 async function chalImage(code,host,c,btn){
   btn.disabled=true;
