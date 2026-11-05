@@ -143,21 +143,16 @@ export function weekPost(t) {
 
 // SAT · weekend challenge (themed unit, no house score)
 export function weekendPost(wk, code) {
-  const P = poster('light', 'Weekend challenge', ['Link in bio', 'dailybanana.io/weekend']), { x, T, f, ban, box, fit, wrap } = P;
-  ban(890, 330, 170, -14, 0.35);
-  const h = fit(wk.theme, R - L - 200, 96, 3, 60); x.fillStyle = T.ink; h.ls.forEach((t, i) => x.fillText(t, L, 320 + i * h.px * 1.08));
-  const y = 320 + (h.ls.length - 1) * h.px * 1.08 + 90;
-  const sub = wrap(`6 questions, a different unit each time. Open all weekend. One try.`, R - L - 200, 40, 500); x.fillStyle = T.mut; sub.forEach((t, i) => x.fillText(t, L, y + i * 52));
-  // the six units as labels (the things they measure stay a surprise)
-  let cx = L, cy = y + (sub.length - 1) * 52 + 50; const ch = 62, gap = 14;
-  f(700, 32);
-  for (const u of wk.units || []) {
-    const w = x.measureText(u).width + 40;
-    if (cx + w > R) { cx = L; cy += ch + gap; }
-    if (cy + ch > 790) break;
-    box(cx, cy, w, ch, T.card, 5, T.ink); f(700, 32); x.fillStyle = T.ink; x.textBaseline = 'middle'; x.fillText(u, cx + 20, cy + ch / 2 + 2); x.textBaseline = 'alphabetic';
-    cx += w + gap;
-  }
+  const P = poster('light', 'Weekend challenge', ['Link in bio', 'dailybanana.io/weekend']), { x, T, f, ban, box, wrap } = P;
+  ban(905, 300, 140, -14, 0.35);
+  f(700, 40); x.fillStyle = T.mut; x.fillText('THIS WEEKEND', L, 300);
+  // the theme as big as it fits in two lines, clear of the banana
+  let px = 140, ls; for (;;) { ls = wrap(wk.theme, R - L - 170, px); if ((ls.length <= 2 && ls.every((t) => { f(700, px); return x.measureText(t).width <= R - L - 170; })) || px <= 64) break; px -= 6; }
+  f(700, px); x.fillStyle = T.ink; ls.forEach((t, i) => x.fillText(t, L, 300 + px * 1.05 * (i + 1)));
+  const y = 300 + px * 1.05 * ls.length + 80;
+  const sub = wrap('6 questions, a different unit each time. Open all weekend. One try.', R - L, 42, 500); x.fillStyle = T.mut; sub.forEach((t, i) => x.fillText(t, L, y + i * 56));
+  const bandTop = y + (sub.length - 1) * 56 + 40;
+  if (bandTop < 700) [[L + 70, 6], [W / 2, -10], [R - 70, 14]].forEach(([cx, r], k) => ban(cx, (bandTop + 800) / 2 + (k % 2 ? -10 : 10), 96, r, 0.35));
   box(L, 820, R - L, 250, T.card, 8, T.ink); f(500, 34); x.fillStyle = T.mut; x.fillText('Or tap Join on the home page and enter', L + 40, 890);
   f(700, 96); x.fillStyle = T.ink; x.fillText(code, L + 40, 1010);
   P.bar(); return P.c;
@@ -213,4 +208,27 @@ export function answerStory(q) {
 // SUN morning · last call for the weekend challenge
 export function lastCallStory(wk, code) {
   return storyCard('light', 'Weekend challenge', [[700, 96, 'ink', 'Last call!'], [500, 44, 'mut', `The ${wk.theme} challenge closes tonight at midnight Pacific.`], [500, 40, 'mut', 'Tap Join on the home page and enter'], [700, 110, 'ink', code]], ['Link in bio', 'dailybanana.io/weekend']);
+}
+
+// Discord /yesterday · a finished daily's results: average, players, best, and all six answers
+// d = { n, date, avg, players, best, rounds:[{ q, avg }] }
+export function resultsCard(d) {
+  const P = poster('dark', `Daily #${String(d.n).padStart(3, '0')} results`, ['Play today’s daily', 'dailybanana.io']), { x, T, f, ban, box, fit } = P;
+  ban(900, 330, 170, 16, 0.28);
+  f(500, 40); x.fillStyle = T.mut; x.fillText(d.players ? 'Players averaged' : 'No scores yet for this daily', L, 290);
+  if (d.players) {
+    f(700, 170); x.fillStyle = T.ink; const v = fmt(Math.round(d.avg)); x.fillText(v, L - 6, 450); const w = x.measureText(v).width;
+    f(700, 56); x.fillStyle = T.mut; x.fillText('/ 600', L + w + 12, 450);
+    f(500, 34); x.fillText(`${fmt(d.players)} player${d.players === 1 ? '' : 's'} · best ${fmt(d.best)}`, L, 510);
+  }
+  box(L, 560, R - L, 560, T.card, 8, T.acc);
+  f(700, 30); x.fillStyle = T.acc; x.fillText('THE ANSWERS', L + 36, 615);
+  d.rounds.forEach((r, i) => {
+    const y = 680 + i * 72, q = `${r.q.A.plural} ${r.q.B.dim} is ${the(r.q.B)}`;
+    const ans = fmt(shownAns(r.q.ans));
+    f(700, 34); x.fillStyle = T.ink; x.textAlign = 'right'; x.fillText(ans, R - 36, y); const aw = x.measureText(ans).width; x.textAlign = 'left';
+    let px = 30; f(500, px); while (x.measureText(q).width > R - L - 110 - aw && px > 20) { px -= 2; f(500, px); }
+    x.fillStyle = T.mut; x.fillText(q, L + 36, y);
+  });
+  P.bar(); return P.c;
 }

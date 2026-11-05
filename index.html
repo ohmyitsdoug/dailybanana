@@ -1062,7 +1062,7 @@ const RESULTS_LAYOUT='A';   // A: your rounds, then sharing and Play again · B:
 function showResults(r,res){
   clearInterval(tick);
   const title=r.quick?(res.chal?'Daily Banana · challenge':'Daily Banana · quick play'):`Daily Banana #${pad3(r.n)}`;
-  const marks=res.answers.map(markA).join('');
+  const marks=res.answers.map(markA).join(' ');   // a space between each mark, so they don't run together
   const shareTxt=`${title} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n${marks}\n${location.host||'dailybanana.io'}`;
   const SHARE=`<div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(title)} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n<span class="emo">${marks}</span>\n${esc(location.host||'dailybanana.io')}</div>
     <div class="legend-row in" style="--d:4">${LEGEND.split(' · ').map(x=>{const [e,...t]=x.split(' ');return`<span><span class="emo">${e}</span> ${t.join(' ')}</span>`}).join('')}</div>
@@ -1374,11 +1374,15 @@ async function showSocial(pick){
     <div class="cprow"><button class="btn main" id="sodl" style="flex:1"><span>Download</span>${ICON.download}</button><button class="btn" id="sonew">New one</button></div>
     <button class="btn" id="socover"><span>Download the Facebook cover</span>${ICON.download}</button>
     <button class="btn" id="someta"><span>Check the Meta connection</span></button><div class="note" id="sometaout"></div>
+    <button class="btn" id="sodisc"><span>Set up the Discord commands</span></button><div class="note" id="sodiscout"></div>
   </div>`;
   wireNav();
   document.getElementById('back').onclick=()=>showMenu();
   document.getElementById('sonew').onclick=()=>showSocial();
   wireAutopost();
+  document.getElementById('sodisc').onclick=async()=>{const o=document.getElementById('sodiscout');o.textContent='Setting up…';
+    const j=await fetch('/discord?setup=1',{headers:authHdr()}).then(x=>x.json()).catch(()=>({error:'Could not reach the server.'}));
+    o.innerHTML=j.ok?`Done: ${esc(j.commands.join(', '))}.<br>Add the app to a server: <a href="${esc(j.install)}" target="_blank" rel="noopener">install link</a>`:esc(j.error||'Something went wrong.')};
   document.getElementById('someta').onclick=async()=>{const o=document.getElementById('sometaout');o.textContent='Checking…';
     const j=await fetch(`${API}/meta`,{headers:authHdr()}).then(x=>x.json()).catch(()=>({error:'Could not reach the server.'}));
     o.innerHTML=j.ok?(j.pages.length?j.pages.map(p=>`<b>${esc(p.name)}</b> · Page ID ${esc(p.id)}<br>Instagram: ${p.instagram?`@${esc(p.instagram.username)} · ID ${esc(p.instagram.id)}`:'none linked'}`).join('<br><br>'):'The token works, but it can\'t see any Pages. Check the system user\'s assets.'):esc(j.error||'Something went wrong.')};
