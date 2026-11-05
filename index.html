@@ -102,7 +102,8 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .cta{display:flex;flex-direction:column;gap:12px}
 .cta2{display:grid;grid-template-columns:2fr 1fr;gap:12px}
 .cta2 .btn{padding:0 12px;justify-content:center}
-.sqr.on.bull.gold{background:var(--acc);color:#2A1A0E}
+.sqr.on.bull.gold{background:var(--card)}
+.sqr .hundo{font-size:22px;line-height:1}
 .apsel{flex:1;min-height:44px;border:2px solid var(--ink);background:var(--card);color:var(--ink);font:inherit;font-weight:700;padding:0 10px}
 .apday{border:2px solid var(--ink);background:var(--bg)}
 .apday summary{cursor:pointer;padding:12px 14px;display:flex;flex-direction:column;gap:2px;list-style:none}
@@ -595,7 +596,7 @@ const markA=a=>!a||a.guess==null?'❌':mark(a.p||0);   // ❌ = no guess (time r
 const LEGEND='⬜ under 40 · 🟨 40+ · 🟫 70+ · 🍌 90+ · 💯 exact · ❌ no guess';
 function offLabel(a){
   if(!a||a.guess==null)return'Out of time.';
-  if(a.p>=MAX_PTS)return'Spot on! A golden banana.';
+  if(a.p>=MAX_PTS)return'Spot on! 💯';
   const r=a.off,pc=Math.round(Math.abs(r-1)*100);
   if(r>1)return r>=2?`${(Math.round(r*10)/10)}× too high.`:`${pc}% too high.`;
   return 1/r>=2?`${(Math.round(10/r)/10)}× too low.`:`${pc}% too low.`;
@@ -741,7 +742,7 @@ const dailyBananas=()=>playedDailies().reduce((t,x)=>t+(x.res.answers||[]).filte
 function squares(answers,cur){
   let h='';
   for(let i=0;i<ROUNDS;i++){const a=(answers||[])[i];
-    h+=a?`<span class="sqr on ${a.guess==null||a.p<40?'miss':a.p>=100?'bull gold':a.p>=90?'bull':a.p>=70?'good':'mid'}" title="Round ${i+1}: ${a.guess==null?'no guess':a.p||0}">${a.guess==null?'✕':a.p>=100?BANANA(16,GOLD_C)+(a.p||0):a.p>=90?BANANA(16)+(a.p||0):a.p||0}</span>`
+    h+=a?`<span class="sqr on ${a.guess==null||a.p<40?'miss':a.p>=100?'bull gold':a.p>=90?'bull':a.p>=70?'good':'mid'}" title="Round ${i+1}: ${a.guess==null?'no guess':a.p||0}">${a.guess==null?'✕':a.p>=100?'<span class="emo hundo">💯</span>':a.p>=90?BANANA(16)+(a.p||0):a.p||0}</span>`
       :`<span class="sqr ${i===cur?'cur':''}"><span>${i===cur?i+1:'?'}</span></span>`}
   return`<div class="sqrow seven" role="img" aria-label="${(answers||[]).length} of ${ROUNDS} rounds played">${h}</div>`;
 }
@@ -846,7 +847,7 @@ function showMenu(jump){
       <div class="stat"><b class="num">${fmt(qt.b)}</b><span>🍌 collected</span></div>
     </div>
     <div class="eyebrow in" style="--d:4" id="badges">Badges · ${badgeCount(have).replace('/',' of ')}</div>
-    <div class="badges in" style="--d:4">${shownBadges(have).map(b=>`<div class="badge ${have[b.id]?'on':''}">${badgeIcon(24,b.id==='golden'?GOLD_C:BAN_C)}<span class="bt"><b>${b.name}</b><span>${b.how}</span></span></div>`).join('')}</div>
+    <div class="badges in" style="--d:4">${shownBadges(have).map(b=>`<div class="badge ${have[b.id]?'on':''}">${b.id==='golden'?'<span class="bi emo" style="font-size:22px">💯</span>':badgeIcon()}<span class="bt"><b>${b.name}</b><span>${b.how}</span></span></div>`).join('')}</div>
     <div class="eyebrow in" style="--d:5">History</div>
     <div class="list in" style="--d:5">
       ${todayRes?'':`<button class="lrow" data-n="${TODAY.n}"><span>Today · #${pad3(TODAY.n)}</span><span class="mut">${liveSaved(TODAY.n)?'Paused':'Not played'}</span></button>`}
@@ -1279,13 +1280,14 @@ async function shareImage(r,res,btn){
       const fill=bull?CARD:miss?CARD:p>=70?'#8A5A2B':ACC,col=p>=70&&!bull?'#FFF3C9':miss?MUT:INK;
       if(miss){x.fillStyle=fill;x.fillRect(X,sy,sq,sq);x.lineWidth=4;x.strokeStyle=MUT;x.strokeRect(X+2,sy+2,sq-4,sq-4)}else box(X,sy,sq,sq,fill,5);
       x.fillStyle=col;x.textAlign='center';
-      if(bull){ban(54,X+sq/2,sy+sq/2-20,0,1,p>=100?GOLD_C:BAN_C);font(700,34);x.fillText(String(p),X+sq/2,sy+sq/2+46)}
+      if(bull&&p>=100){x.textBaseline='middle';x.font=`${Math.round(sq*0.55)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;x.fillText('💯',X+sq/2,sy+sq/2+4);x.textBaseline='alphabetic'}   // an exact guess: the same 💯 as the share text
+      else if(bull){ban(54,X+sq/2,sy+sq/2-20);font(700,34);x.fillText(String(p),X+sq/2,sy+sq/2+46)}
       else{font(700,44);x.fillText(a.guess==null?'–':String(p),X+sq/2,sy+sq/2+16)}
       x.textAlign='left'}
     x.fillStyle=INK;x.fillRect(L,878,R-L,4);
     // three stats spread evenly across the width
     const today=ans.filter(a=>(a&&a.p||0)>=90).length,qt=quickTotals();
-    const stats=r.quick?[[fmt(today),'bananas this game',true],[fmt(qt.g),'quick games'],[qt.g?fmt(Math.round(qt.t/qt.g)):'–','avg score']]:[[fmt(today),'bananas today',true],[fmt(dailyBananas()),'bananas all time'],[fmt(streak()),'day streak']];
+    const stats=r.quick?[[fmt(today),'bananas this game',true],[`${Math.round(100*res.total/(ROUNDS*MAX_PTS))}%`,'accuracy'],[qt.g?fmt(Math.round(qt.t/qt.g)):'–','avg score']]:[[fmt(today),'bananas today',true],[fmt(dailyBananas()),'bananas all time'],[fmt(streak()),'day streak']];
     const ws=stats.map(([v,l,ic])=>{font(700,80);const vw=x.measureText(v).width+(ic?78:0);font(400,34);return Math.max(vw,x.measureText(l).width)});
     const gap=(R-L-ws.reduce((a,b)=>a+b,0))/(stats.length-1);let sx=L;
     stats.forEach(([v,l,ic],i)=>{let vx=sx;if(ic){ban(64,sx+32,972);vx+=78}font(700,80);x.fillStyle=INK;x.fillText(v,vx,1000);font(400,34);x.fillStyle=MUT;x.fillText(l,sx,1050);sx+=ws[i]+gap});
@@ -1358,7 +1360,8 @@ async function drawRound(q,a,{generic=false}={}){
     // the points
     const hy=Math.max(qEnd+96,560),sy=Math.min(hy+190,860);let sx=L;
     if(!generic){font(700,40);x.fillStyle=ACC;x.fillText('I scored',L,hy)}
-    if(p>=90){ban(120,L+60,sy-70,0,1,p>=100?GOLD_C:BAN_C);sx+=140}
+    if(p>=100){x.textBaseline='middle';x.font='110px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';x.fillText('💯',L,sy-70);x.textBaseline='alphabetic';sx+=150}
+    else if(p>=90){ban(120,L+60,sy-70);sx+=140}
     font(700,200);x.fillStyle=INK;try{x.letterSpacing='-5px'}catch(_){}x.fillText(a&&a.guess==null?'0':String(p),sx-4,sy);const pw=x.measureText(String(p)).width;try{x.letterSpacing='0px'}catch(_){}
     font(700,64);x.fillStyle=MUT;x.fillText(a&&a.guess==null?'/ 100 · out of time':'/ 100',sx+pw+14,sy);
     ban(200,890,sy-90,16,.28);   // floating banana, in the empty space beside the points
