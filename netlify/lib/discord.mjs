@@ -1,6 +1,6 @@
 // Shared Discord pieces: the messages (used by the slash commands and the automatic posts) and posting to the
 // channels servers connected with the "daily posts" link (Discord webhooks owned by our app).
-//   discord/hooks/{id}    { url, guild, channel, at }   one per connected channel
+//   discord/hooks/{id}    { url, guild, channel, at, kinds:['daily','weekend'] }   one per connected channel (no kinds = both)
 //   discord/done/{date}/{kind}                           an automatic post already sent
 import { getAll, getAllCached } from './db.mjs';
 import { data, SITE } from './social.mjs';
@@ -35,8 +35,9 @@ export async function weekendNow() { return fetch(`${SITE}/weekend?json=1`).then
 export const weekendEmbed = (w) => ({ title: `Weekend challenge: ${w.theme}`, url: `${SITE}/c/${w.code}`, color: GOLD, description: `Same 6 questions for everyone, a different unit each time. One try.\nCode **${w.code}** · closes <t:${Math.floor(w.closes / 1000)}:R>` });
 
 // post one message to every connected channel; a channel whose webhook was removed is dropped
-export async function broadcast(store, msg) {
-  const hooks = await getAll(store, 'discord/hooks/');
+const wants = (h, kind) => !Array.isArray(h.kinds) || h.kinds.includes(kind);
+export async function broadcast(store, msg, kind) {
+  const hooks = (await getAll(store, 'discord/hooks/')).filter((h) => !kind || wants(h, kind));
   let ok = 0, gone = 0, failed = 0;
   for (const h of hooks) {
     const send = (m) => fetch(`${h.url}?wait=true`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ allowed_mentions: { parse: [] }, ...m }) });
@@ -49,18 +50,44 @@ export async function broadcast(store, msg) {
   return { channels: hooks.length, ok, gone, failed };
 }
 
-// the automatic posts, checked every hour: the morning one once yesterday's daily has finished everywhere
-// (7:15am Eastern, 8:15 in summer), and the weekend challenge on Saturday at 10:15am Eastern
+// the weekend challenge's results: players, average, the winner and all six answers
+export async function weekendResults(store, code, items) {
+  const c = await store.get(`challenges/${code}`, { type: 'json' }).catch(() => null);
+  if (!c) return null;
+  const es = (await getAll(store, `entries/${code}/`)).sort((a, b) => b.score - a.score || a.at - b.at);
+  const by = Object.fromEntries(items.map((i) => [i.name, i]));
+  return { c, players: es.length, avg: es.length ? es.reduce((t, e) => t + e.score, 0) / es.length : null, best: es.length ? es[0].score : null, winner: es[0] ? es[0].name : null,
+    rounds: c.rounds.map((r) => { const A = by[r.a], B = by[r.b]; return A && B ? { q: { A, B, ans: B.cm / A.cm } } : null; }).filter(Boolean) };
+}
+const weekendResultsEmbed = (w) => ({ title: `Weekend challenge results: ${w.c.weekend.theme}`, url: `${SITE}/c/${w.c.code}`, color: GOLD,
+  description: w.players ? `${w.players} player${w.players === 1 ? '' : 's'} · average ${Math.round(w.avg)} / 600 · 🏆 ${w.winner} with ${w.best}` : 'Nobody played this one.',
+  image: { url: `${SITE}/discord/weekend/${w.c.code}.jpg` } });
+
+// the automatic posts, checked every hour (Eastern time):
+//   daily channels:   every morning once yesterday's daily has finished everywhere (7:15am, 8:15 in summer): yesterday's results + today's daily
+//   weekend channels: Saturday 12:15am when the challenge opens · Sunday 7:15pm last call · Monday 7:15am results and answers
 export async function discordRun(store, t, { date, dow, h, m }) {
   const out = [], done = async (k) => { const key = `discord/done/${date}/${k}`; if (await store.get(key).catch(() => null)) return true; await store.setJSON(key, { at: Date.now() }); return false; };
   if (!(await getAll(store, 'discord/hooks/')).length) return out;
   const y = await lastFinished(t), today = await todayDaily(t);
   if (y && today && y.n === today.n - 1 && !(await done('morning'))) {
-    out.push('discord morning: ' + JSON.stringify(await broadcast(store, { embeds: [await yesterdayEmbed(store, y), dailyEmbed(today)], components: button('Play today’s daily', SITE) })));
+    out.push('discord morning: ' + JSON.stringify(await broadcast(store, { embeds: [await yesterdayEmbed(store, y), dailyEmbed(today)], components: button('Play today’s daily', SITE) }, 'daily')));
   }
-  if (dow === 6 && h === 10 && Math.abs(m - 15) <= 10 && !(await done('weekend'))) {
+  const at = (dd, hh) => dow === dd && h === hh && Math.abs(m - 15) <= 10;
+  if (at(6, 0) || at(6, 1)) {
     const w = await weekendNow();
-    if (w && w.open) out.push('discord weekend: ' + JSON.stringify(await broadcast(store, { embeds: [weekendEmbed(w)], components: button('Play the weekend challenge', `${SITE}/c/${w.code}`) })));
+    if (w && w.open && !(await done('wk-open'))) out.push('discord weekend open: ' + JSON.stringify(await broadcast(store, { embeds: [weekendEmbed(w)], components: button('Play the weekend challenge', `${SITE}/c/${w.code}`) }, 'weekend')));
+  }
+  if (at(0, 19)) {
+    const w = await weekendNow();
+    if (w && w.open && !(await done('wk-last'))) out.push('discord weekend last call: ' + JSON.stringify(await broadcast(store, { embeds: [{ ...weekendEmbed(w), title: `Last call: ${w.theme}`, description: `The weekend challenge closes tonight at midnight Pacific (<t:${Math.floor(w.closes / 1000)}:R>). Same 6 questions for everyone, one try.\nCode **${w.code}**` }], components: button('Play before it closes', `${SITE}/c/${w.code}`) }, 'weekend')));
+  }
+  if (dow === 1 && h >= 7 && h <= 12 && Math.abs(m - 15) <= 10) {
+    const cur = await store.get('weekend/current', { type: 'json' }).catch(() => null);
+    if (cur && cur.closes <= Date.now() && !(await done('wk-results'))) {
+      const w = await weekendResults(store, cur.code, await data('items'));
+      if (w) out.push('discord weekend results: ' + JSON.stringify(await broadcast(store, { embeds: [weekendResultsEmbed(w)], components: button('Play today’s daily', SITE) }, 'weekend')));
+    }
   }
   return out;
 }

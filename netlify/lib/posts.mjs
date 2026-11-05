@@ -213,13 +213,13 @@ export function lastCallStory(wk, code) {
 // Discord /yesterday · a finished daily's results: average, players, best, and all six answers
 // d = { n, date, avg, players, best, rounds:[{ q, avg }] }
 export function resultsCard(d) {
-  const P = poster('dark', `Daily #${String(d.n).padStart(3, '0')} results`, ['Play today’s daily', 'dailybanana.io']), { x, T, f, ban, box, fit } = P;
+  const P = poster('dark', d.chip || `Daily #${String(d.n).padStart(3, '0')} results`, d.foot || ['Play today’s daily', 'dailybanana.io']), { x, T, f, ban, box, fit } = P;
   ban(900, 330, 170, 16, 0.28);
-  f(500, 40); x.fillStyle = T.mut; x.fillText(d.players ? 'Players averaged' : 'No scores yet for this daily', L, 290);
+  f(500, 40); x.fillStyle = T.mut; x.fillText(d.players ? (d.label || 'Players averaged') : 'No scores yet for this one', L, 290);
   if (d.players) {
     f(700, 170); x.fillStyle = T.ink; const v = fmt(Math.round(d.avg)); x.fillText(v, L - 6, 450); const w = x.measureText(v).width;
     f(700, 56); x.fillStyle = T.mut; x.fillText('/ 600', L + w + 12, 450);
-    f(500, 34); x.fillText(`${fmt(d.players)} player${d.players === 1 ? '' : 's'} · best ${fmt(d.best)}`, L, 510);
+    f(500, 34); x.fillText(d.sub || `${fmt(d.players)} player${d.players === 1 ? '' : 's'} · best ${fmt(d.best)}`, L, 510);
   }
   box(L, 560, R - L, 560, T.card, 8, T.acc);
   f(700, 30); x.fillStyle = T.acc; x.fillText('THE ANSWERS', L + 36, 615);

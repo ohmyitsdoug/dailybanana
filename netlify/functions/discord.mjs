@@ -12,7 +12,7 @@ import { db, json, getAll } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
 import { data, fonts, SITE } from '../lib/social.mjs';
 import { resultsCard } from '../lib/posts.mjs';
-import { publishedAt, results, todayDaily, lastFinished, dailyEmbed, yesterdayEmbed, weekendNow, weekendEmbed, button } from '../lib/discord.mjs';
+import { publishedAt, results, todayDaily, lastFinished, dailyEmbed, yesterdayEmbed, weekendNow, weekendEmbed, weekendResults, button } from '../lib/discord.mjs';
 
 export const config = { path: ['/discord', '/discord/*'] };
 const reply = (o) => json({ type: 4, data: { allowed_mentions: { parse: [] }, ...o } });
@@ -34,7 +34,9 @@ const COMMANDS = [
   { name: 'banana-yesterday', description: 'Results and answers from the last finished daily', type: 1 },
   { name: 'banana-weekend', description: 'This weekend’s themed challenge', type: 1 },
   // server admins only (Manage Webhooks)
-  { name: 'banana-setup', description: 'Post the daily, yesterday’s results and the weekend challenge in this channel automatically', type: 1, default_member_permissions: '536870912', dm_permission: false },
+  { name: 'banana-setup', description: 'All the automatic posts in this channel: the daily posts and the weekend posts', type: 1, default_member_permissions: '536870912', dm_permission: false },
+  { name: 'banana-autodaily', description: 'Every morning in this channel: yesterday’s results and today’s daily', type: 1, default_member_permissions: '536870912', dm_permission: false },
+  { name: 'banana-autoweekend', description: 'The weekend challenge in this channel: when it opens, a Sunday reminder and Monday’s results', type: 1, default_member_permissions: '536870912', dm_permission: false },
   { name: 'banana-stop', description: 'Stop the automatic Daily Banana posts in this channel', type: 1, default_member_permissions: '536870912', dm_permission: false },
 ];
 async function setup() {
@@ -68,7 +70,20 @@ export default async (req) => {
     const w = t.webhook;
     if (!w || !w.url) return page('Not connected', 'Discord didn’t give us a channel to post in. Try the link again and pick a channel.');
     await store.setJSON(`discord/hooks/${w.id}`, { url: w.url, guild: w.guild_id, channel: w.channel_id, at: Date.now() });
-    return page('You’re all set! 🍌', 'Daily Banana will post in that channel every morning (yesterday’s results and today’s daily) and every Saturday (the weekend challenge). To stop, delete the Daily Banana webhook in the channel’s settings.');
+    return page('You’re all set! 🍌', 'Daily Banana will post in that channel every morning (yesterday’s results and today’s daily), plus the weekend challenge when it opens on Saturday, a Sunday evening reminder and Monday’s results. To stop, type /banana-stop in that channel.');
+  }
+  // the weekend challenge results image (once it has closed)
+  const wm = url.pathname.match(/^\/discord\/weekend\/([A-Z0-9]{4,8})\.jpg$/);
+  if (wm) {
+    const code = wm[1], c = await store.get(`challenges/${code}`, { type: 'json' }).catch(() => null);
+    if (!c || !c.weekend || c.closes > Date.now()) return new Response('not yet', { status: 404 });
+    let img = await store.get(`discord/img/wk-${code}`, { type: 'arrayBuffer' }).catch(() => null);
+    if (!img) {
+      await fonts(); const w = await weekendResults(store, code, await data('items'));
+      img = resultsCard({ ...w, chip: 'Weekend results', label: `${c.weekend.theme} · players averaged`, sub: w.players ? `${w.players} player${w.players === 1 ? '' : 's'} · winner ${w.winner} with ${w.best}` : '', foot: ['Play today’s daily', 'dailybanana.io'] }).jpeg(90);
+      await store.set(`discord/img/wk-${code}`, img);
+    }
+    return new Response(img, { headers: { 'content-type': 'image/jpeg', 'cache-control': 'public, max-age=3600' } });
   }
   if (req.method === 'GET') {
     if (url.searchParams.get('setup')) { if (!isAdminUser(await userFor(req, store))) return json({ error: 'not the admin account' }, 401); return json(await setup()); }
@@ -95,17 +110,23 @@ export default async (req) => {
     return reply({ content: 'No weekend challenge right now.' });
   }
   const quiet = (content) => reply({ content, flags: 64 });   // only the person who ran it sees it
-  if (name === 'banana-setup') {
-    const ch = i.channel_id || (i.channel && i.channel.id), guild = i.guild_id;
-    if (!guild || !ch) return quiet('Run /banana-setup in a server channel.');
+  const AUTO = { 'banana-setup': ['daily', 'weekend'], 'banana-autodaily': ['daily'], 'banana-autoweekend': ['weekend'] };
+  if (AUTO[name]) {
+    const ch = i.channel_id || (i.channel && i.channel.id), guild = i.guild_id, want = AUTO[name];
+    if (!guild || !ch) return quiet(`Run /${name} in a server channel.`);
+    const say = (k) => 'All set! 🍌 This channel will get ' + [k.includes('daily') && 'yesterday’s results and today’s daily every morning (about 7am Eastern)', k.includes('weekend') && 'the weekend challenge when it opens on Saturday, a last call on Sunday evening and the results on Monday morning'].filter(Boolean).join(', plus ') + '. Use /banana-stop to turn it off.';
     const have = (await getAll(store, 'discord/hooks/')).find((h) => h.channel === ch);
-    if (have) return quiet('This channel already gets the Daily Banana posts. 🍌 Use /banana-stop to turn them off.');
+    if (have) {
+      const { key, ...hk } = have, kinds = [...new Set([...(Array.isArray(hk.kinds) ? hk.kinds : ['daily', 'weekend']), ...want])];
+      await store.setJSON(key, { ...hk, kinds });
+      return quiet(say(kinds));
+    }
     const tok = process.env.DISCORD_BOT_TOKEN;
     const r = tok ? await fetch(`https://discord.com/api/v10/channels/${ch}/webhooks`, { method: 'POST', headers: { authorization: 'Bot ' + tok, 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Daily Banana' }) }).catch(() => null) : null;
     const w = r && r.ok ? await r.json().catch(() => null) : null;
     if (!w || !w.token) return quiet(`I couldn't set up this channel myself. Use this link and pick this channel instead: ${postsLink()}`);
-    await store.setJSON(`discord/hooks/${w.id}`, { url: `https://discord.com/api/webhooks/${w.id}/${w.token}`, guild, channel: ch, at: Date.now() });
-    return quiet('All set! 🍌 This channel will get yesterday’s results and today’s daily every morning (about 7am Eastern) and the weekend challenge every Saturday. Use /banana-stop to turn it off.');
+    await store.setJSON(`discord/hooks/${w.id}`, { url: `https://discord.com/api/webhooks/${w.id}/${w.token}`, guild, channel: ch, at: Date.now(), kinds: want });
+    return quiet(say(want));
   }
   if (name === 'banana-stop') {
     const ch = i.channel_id || (i.channel && i.channel.id);
