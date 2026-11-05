@@ -225,7 +225,7 @@ export function resultsCard(d) {
   f(700, 30); x.fillStyle = T.acc; x.fillText('THE ANSWERS', L + 36, 615);
   d.rounds.forEach((r, i) => {
     const y = 680 + i * 72, q = `${r.q.A.plural} ${r.q.B.dim} is ${the(r.q.B)}`;
-    const ans = fmt(shownAns(r.q.ans));
+    const ans = fmt(r.show ?? shownAns(r.q.ans));
     f(700, 34); x.fillStyle = T.ink; x.textAlign = 'right'; x.fillText(ans, R - 36, y); const aw = x.measureText(ans).width; x.textAlign = 'left';
     let px = 30; f(500, px); while (x.measureText(q).width > R - L - 110 - aw && px > 20) { px -= 2; f(500, px); }
     x.fillStyle = T.mut; x.fillText(q, L + 36, y);

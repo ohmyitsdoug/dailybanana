@@ -56,8 +56,8 @@ export default async (req) => {
   if (m) {
     const n = +m[1], dailies = await data('dailies'), d = dailies.find((x) => x.n === n);
     if (!d || Date.now() < publishedAt(d)) return new Response('not yet', { status: 404 });
-    let img = await store.get(`discord/img/${n}`, { type: 'arrayBuffer' }).catch(() => null);
-    if (!img) { await fonts(); img = resultsCard(await results(store, d, await data('items'))).jpeg(90); await store.set(`discord/img/${n}`, img); }
+    let img = await store.get(`discord/img/r2-${n}`, { type: 'arrayBuffer' }).catch(() => null);
+    if (!img) { await fonts(); img = resultsCard(await results(store, d, await data('items'))).jpeg(90); await store.set(`discord/img/r2-${n}`, img); }
     return new Response(img, { headers: { 'content-type': 'image/jpeg', 'cache-control': 'public, max-age=3600' } });
   }
   // a server connected a channel for the automatic posts (the "daily posts" link comes back here)

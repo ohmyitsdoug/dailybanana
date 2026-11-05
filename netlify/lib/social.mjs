@@ -5,7 +5,8 @@
 //   Thu 9:15am answer story, 12:15 banana for scale · Fri 12:15 week in review (fun fact until 500+ dailies a week)
 //   Sat 10:15am weekend challenge post (it opens 12am Eastern Saturday, closes midnight Pacific Sunday) · Sun 11:15 closest guess, 7:15pm last-call story
 // Milestones post at 12:15 or 7:15pm only, never within 2 hours of a scheduled post, at most one a day, each mark once.
-// Every feed post is also shared as a story.
+// Every feed post is also shared as a story, and every morning at 8:15 a story shows yesterday's results
+// (the daily has finished everywhere by then: 7am Eastern, 8am in summer).
 //
 // Blobs (store "matryo"):
 //   social/config                 { live }            live:false = practice: posts are made and shown in admin, not published
@@ -35,15 +36,15 @@ const dayName = (iso) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new D
 
 // slot = [hour, minute, kind]; feed posts count for the milestone 2-hour rule, stories don't
 export const PLAN = {
-  1: [[12, 15, 'mon']],
-  2: [[12, 15, 'tue']],
-  3: [[19, 15, 'wed']],
-  4: [[9, 15, 'thu_story'], [12, 15, 'thu']],
-  5: [[12, 15, 'fri']],
-  6: [[10, 15, 'sat']],
-  0: [[11, 15, 'sun'], [19, 15, 'sun_story']],
+  1: [[8, 15, 'results_story'], [12, 15, 'mon']],
+  2: [[8, 15, 'results_story'], [12, 15, 'tue']],
+  3: [[8, 15, 'results_story'], [19, 15, 'wed']],
+  4: [[8, 15, 'results_story'], [9, 15, 'thu_story'], [12, 15, 'thu']],
+  5: [[8, 15, 'results_story'], [12, 15, 'fri']],
+  6: [[8, 15, 'results_story'], [10, 15, 'sat']],
+  0: [[8, 15, 'results_story'], [11, 15, 'sun'], [19, 15, 'sun_story']],
 };
-const STORY_ONLY = new Set(['thu_story', 'sun_story']);
+const STORY_ONLY = new Set(['thu_story', 'sun_story', 'results_story']);
 const MILESTONE_WINDOWS = [[12, 15], [19, 15]];
 export function milestoneWindowOk(dow, h, m) {
   if (!MILESTONE_WINDOWS.some(([a, b]) => a === h && b === m)) return false;
@@ -141,6 +142,13 @@ export async function build(kind, store, { date = etParts().date, preview = fals
     const by = Object.fromEntries(items.map((i) => [i.name, i])), A = by[w.extra.q.a], B = by[w.extra.q.b];
     if (!A || !B) return null;
     return { kind, caption: '', fb: '', images: [], story: [P.answerStory({ A, B, ans: B.cm / A.cm })] };
+  }
+  if (kind === 'results_story') {
+    // yesterday's results (the last daily that has finished everywhere), the same card Discord posts
+    const D = await import('./discord.mjs'), d = await D.lastFinished();
+    if (!d) return null;
+    const r = await D.results(store, d, items);
+    return { kind, caption: '', fb: '', images: [], story: [P.storyOf(P.resultsCard(r), true)], extra: { n: d.n } };
   }
   if (kind === 'thu') {
     const banana = items.find((i) => i.name === 'banana'), avoid = new Set(u.pairs), q = randomPair(items, { lo: 3, hi: 60, unit: banana, avoid });
@@ -348,6 +356,13 @@ export async function publish(store, rec) {
 }
 
 // ---------- the hourly run ----------
+// posts and their images are kept for 10 days, then removed (once a day, at the 3am run)
+export const KEEP_DAYS = 10;
+export async function cleanup(store, t = Date.now()) {
+  const old = (await getAll(store, 'social/posts/')).filter((r) => r.at && r.at < t - KEEP_DAYS * 864e5);
+  for (const r of old) { await Promise.all([...(r.images || []), ...(r.story || [])].map((k) => store.delete(`social/img/${k}`).catch(() => {}))); await store.delete(r.key).catch(() => {}); }
+  return old.length;
+}
 export async function config(store) { return (await store.get('social/config', { type: 'json' }).catch(() => null)) || { live: false }; }
 export async function run(store, t = Date.now()) {
   const { date, dow, h, m } = etParts(t), cfg = await config(store), log = [];
@@ -368,6 +383,7 @@ export async function run(store, t = Date.now()) {
     if (cfg.live) rec = await publish(store, rec);
     log.push(`${kind}: ${rec.status}`);
   }
+  if (h === 3 && Math.abs(m - 15) <= 10) log.push(`cleanup: removed ${await cleanup(store, t)} old posts`);
   // Discord channels that asked for the automatic posts (not affected by the practice switch: servers opted in)
   const { discordRun } = await import('./discord.mjs');
   log.push(...(await discordRun(store, t, { date, dow, h, m }).catch((e) => ['discord error: ' + e.message])));

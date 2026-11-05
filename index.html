@@ -103,6 +103,14 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .cta2{display:grid;grid-template-columns:2fr 1fr;gap:12px}
 .cta2 .btn{padding:0 12px;justify-content:center}
 .sqr.on.bull.gold{background:var(--acc);color:#2A1A0E}
+.apsel{flex:1;min-height:44px;border:2px solid var(--ink);background:var(--card);color:var(--ink);font:inherit;font-weight:700;padding:0 10px}
+.apday{border:2px solid var(--ink);background:var(--bg)}
+.apday summary{cursor:pointer;padding:12px 14px;display:flex;flex-direction:column;gap:2px;list-style:none}
+.apday summary::-webkit-details-marker{display:none}
+.apday summary::after{content:'+';position:absolute;right:14px;top:10px;font-weight:700;font-size:20px}
+.apday{position:relative}.apday[open] summary::after{content:'–'}
+.apday summary .mut{font-size:13px;padding-right:22px}
+.apbody{display:flex;flex-direction:column;gap:12px;padding:0 12px 12px}
 .wkhint{margin:-4px 0 0;text-align:center;color:var(--mut);font-size:15px}
 #wkmenu:empty{display:none}
 .menu>.eyebrow{margin-bottom:-8px}
@@ -308,7 +316,7 @@ button.stat{font:inherit;color:inherit;background:var(--bg);text-align:left;curs
 .pager{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 0}
 .pager .sq[disabled]{opacity:.35;cursor:default}
 .emo{filter:drop-shadow(1px 1px 0 var(--ink))}
-:root[data-theme="dark"] .emo{filter:none}
+:root[data-theme="dark"] .emo{filter:drop-shadow(0 0 1px #FFF3C9) drop-shadow(0 0 1px #FFF3C9)}   /* a thin cream outline so red marks (💯 ❌) and dark squares stand out on brown */
 .legend-row{display:flex;justify-content:space-between;gap:6px;font-size:12px;color:var(--mut);white-space:nowrap}
 @media (max-width:370px){.legend-row{font-size:10.5px;gap:3px;letter-spacing:-.2px}}
 .nextd{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;border:2px solid var(--ink);background:var(--card);padding:6px 12px;font-size:15px;box-shadow:3px 3px 0 var(--accsh)}
@@ -824,7 +832,7 @@ function showMenu(jump){
     <div id="wkmenu"></div>
     <div class="eyebrow in" style="--d:2">Account</div>
     <div class="acct in" style="--d:2" id="acct">${acctHtml()}</div>
-    <div class="eyebrow in" style="--d:3">Your stats</div>
+    <div class="eyebrow in" style="--d:3">Your daily stats</div>
     <div class="stats in" style="--d:3;grid-template-columns:repeat(2,minmax(0,1fr))">
       <div class="stat"><b class="num">${hist.length}</b><span>played</span></div>
       <div class="stat"><b class="num">${streak()}</b><span>streak</span></div>
@@ -1366,8 +1374,10 @@ async function showSocial(pick){
     <div class="head"><h2>Social posts</h2><button class="sq" id="back">Back</button></div>
     <div class="eyebrow">Auto-posting</div>
     <button class="lrow" id="aplive" style="border:2px solid var(--ink)"><span><b>Post for real</b><br><span class="mut" id="aplivesub">Loading…</span></span><span class="toggle" id="apltog" aria-hidden="true"></span></button>
-    <span class="note">Make one now to see it (saved as a preview, never posted on its own):</span>
-    <div style="display:flex;flex-wrap:wrap;gap:8px" id="apkinds">${[['mon','Mon carousel'],['tue','Tue fact'],['wed','Wed guess'],['thu_story','Thu answer story'],['thu','Thu scale'],['fri','Fri review'],['sat','Sat challenge'],['sun_story','Sun last call'],['sun','Sun closest'],['milestone','Milestone']].map(([k,l])=>`<button class="btn" style="height:44px;padding:0 12px;font-size:14px" data-k="${k}">${l}</button>`).join('')}</div>
+    <div style="display:flex;gap:8px;align-items:stretch">
+      <select id="apkind" class="apsel" aria-label="Post type to preview">${Object.entries(SKIND).filter(([k])=>k!=='fri_fact').map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join('')}</select>
+      <button class="sq icon" id="apmake" aria-label="Make a preview of this post" title="Make a preview (never posted on its own)" style="height:auto;min-height:44px;width:44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+    </div>
     <div id="apout" class="note" aria-live="polite"></div>
     <div id="aplist" style="display:flex;flex-direction:column;gap:14px"></div>
     <div class="eyebrow" style="margin-top:12px">One-off image</div>
@@ -1395,7 +1405,7 @@ async function showSocial(pick){
   window.scrollTo(0,0);
 }
 // the auto-poster's queue (admin): practice posts, what was posted, and the switch to post for real
-const SKIND={mon:'Monday carousel',tue:'Fun fact',wed:'Guess this',thu_story:'Answer story',thu:'Banana for scale',fri:'Week in review',fri_fact:'Fun fact (Friday)',sat:'Weekend challenge',sun_story:'Last-call story',sun:'Closest guess',milestone:'Milestone'};
+const SKIND={results_story:'Results story',mon:'Monday carousel',tue:'Fun fact',wed:'Guess this',thu_story:'Answer story',thu:'Banana for scale',fri:'Week in review',fri_fact:'Fun fact (Friday)',sat:'Weekend challenge',sun_story:'Last-call story',sun:'Closest guess',milestone:'Milestone'};
 async function wireAutopost(){
   const api=(body)=>fetch(`${API}/social`,body?{method:'POST',headers:{...authHdr(),'content-type':'application/json'},body:JSON.stringify(body)}:{headers:authHdr()}).then(r=>r.json()).catch(()=>({error:'Could not reach the server.'}));
   const card=p=>`<div class="chal" style="gap:10px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>${esc(SKIND[p.kind]||p.kind)}</b><span class="chip">${esc(p.status)}</span></div>
@@ -1407,7 +1417,11 @@ async function wireAutopost(){
     const sub=document.getElementById('aplivesub'),tog=document.getElementById('apltog');if(!sub)return;
     if(j.error){sub.textContent=j.error;return}
     tog.classList.toggle('on',!!j.live);sub.textContent=j.live?'On: due posts go to Instagram and Facebook.':'Off (practice): due posts are made and listed here, nothing is published.';
-    document.getElementById('aplist').innerHTML=(j.posts.some(p=>p.status==='preview')?'<button class="btn" id="apclear" style="height:44px;font-size:14px">Delete all previews</button>':'')+(j.posts.length?j.posts.map(card).join(''):'<span class="note">Nothing yet. Posts show up here as they come due.</span>');
+    // one accordion per day (last 10 days), newest first; open a day to see its posts
+    const days=[];j.posts.forEach(p=>{const d=new Date(p.at).toLocaleDateString('en-CA',{timeZone:'America/New_York'});let g=days.find(x=>x.d===d);if(!g)days.push(g={d,posts:[]});g.posts.push(p)});
+    const dayName=d=>new Date(d+'T12:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    const open=new Set([...document.querySelectorAll('#aplist details[open]')].map(x=>x.dataset.d));
+    document.getElementById('aplist').innerHTML=(j.posts.some(p=>p.status==='preview')?'<button class="btn" id="apclear" style="height:44px;font-size:14px">Delete all previews</button>':'')+(days.length?days.map(g=>`<details class="apday" data-d="${g.d}"${open.has(g.d)?' open':''}><summary><b>${esc(dayName(g.d))}</b><span class="mut">${g.posts.map(p=>esc(SKIND[p.kind]||p.kind)+(p.status==='posted'?' ✓':p.status==='preview'?' (preview)':'')).join(' · ')}</span></summary><div class="apbody">${g.posts.map(card).join('')}</div></details>`).join(''):'<span class="note">Nothing in the last 10 days. Posts show up here as they come due.</span>')+'<span class="note">Posts and their images are kept for 10 days.</span>';
     const cl=document.getElementById('apclear');if(cl)cl.onclick=async()=>{if(!await confirmBox({title:'Delete all previews?',body:'Previews were never posted. Anything already posted stays.',yes:'Delete previews',no:'Keep them'}))return;await api({action:'clear'});draw(await api())};
     document.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{b.disabled=true;await api({action:'delete',id:b.dataset.del});draw(await api())});
     document.querySelectorAll('[data-pub]').forEach(b=>b.onclick=async()=>{
@@ -1418,8 +1432,9 @@ async function wireAutopost(){
   document.getElementById('aplive').onclick=async()=>{if(!J||J.error)return;const on=!J.live;
     if(on&&!await confirmBox({title:'Start posting for real?',body:'From the next scheduled time, posts go to Instagram and the Facebook Page automatically.',yes:'Turn it on',no:'Keep practicing'}))return;
     await api({action:'live',on});draw(await api())};
-  document.querySelectorAll('#apkinds [data-k]').forEach(b=>b.onclick=async()=>{const o=document.getElementById('apout');o.textContent='Making it…';b.disabled=true;
-    const r=await api({action:'preview',kind:b.dataset.k});b.disabled=false;o.textContent=r.error||'';draw(await api())});
+  document.getElementById('apmake').onclick=async e=>{const b=e.currentTarget,o=document.getElementById('apout');o.textContent='Making it…';b.disabled=true;
+    const r=await api({action:'preview',kind:document.getElementById('apkind').value});b.disabled=false;o.textContent=r.error||'Made it. It’s under today.';
+    await draw(await api());const t=document.querySelector('#aplist details');if(t)t.open=true};
 }
 async function roundImage(q,a,btn){
   btn.disabled=true;
@@ -1734,11 +1749,11 @@ loadData().then(()=>{
     S={r:puzzleFor(TODAY),answers:l2.answers,score:l2.score,pauses:MAX_PAUSES};
     return finish('paused');
   }
-  const code=new URLSearchParams(location.search).get('c');
+  const code=new URLSearchParams(location.search).get('c'),toMenu=new URLSearchParams(location.search).has('menu');   // ?menu comes from the admin page's Menu button
   signInReturn().then(handled=>{
     if(handled)return;
-    if(code)history.replaceState(null,'',location.pathname);
-    const open=()=>code?showChallenge(code):showStart();
+    if(code||toMenu)history.replaceState(null,'',location.pathname);
+    const open=()=>code?showChallenge(code):toMenu?showMenu():showStart();
     if(isNew()){showStart();welcome(open)}else open();
     // pull scores from your other devices, then refresh the home screen if it's showing
     if(SESSION)syncNow().then(changed=>{testerCheck();bragCheck();if(changed&&!S&&document.querySelector('.home'))redrawQuietly(showStart)});
