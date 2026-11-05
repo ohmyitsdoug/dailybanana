@@ -1410,6 +1410,7 @@ function refill(key){
   if((key.startsWith('ch:')||key==='host')&&SHOWN&&SHOWN.r.quick&&document.getElementById('chalbox'))chalBox(SHOWN.res);
   if(key.startsWith('ch:')&&document.getElementById('opench'))openChallenges();
   if(key.startsWith('ch:')&&document.getElementById('hist'))renderHistory();
+  if(key.startsWith('ch:')&&document.querySelector(`[data-chpage="${key.slice(3)}"]`))redrawQuietly(()=>showChallenge(key.slice(3)));   // the fresh copy replaces the saved one on screen
 }
 // this weekend's themed challenge (or last weekend's, once it closes)
 const weekendNow=()=>API?cached('wk',5*60e3,()=>fetch('/weekend?json=1').then(r=>r.ok?r.json():null)).then(w=>{if(w&&w.open&&w.closes<=Date.now()){w.open=false;CACHE.delete('wk')}return w}).catch(()=>null):Promise.resolve(null);
@@ -1517,6 +1518,14 @@ async function openChallenges(){
   b.querySelectorAll('[data-ch]').forEach(x=>x.onclick=()=>showChallenge(x.dataset.ch));
 }
 const ownChal=code=>quickList().some(q=>q.own&&q.chal&&q.chal.code===code);
+// challenges you made that have finished: check their final boards for Bragging rights (once a day), even if you never reopen them
+function bragCheck(){
+  // NCZMRR ran its full 24 hours on Nov 4 with its maker on top, before the board could tell which row was theirs
+  if(ownChal('NCZMRR')&&earnBadge('beat24')){pushSync();toast('New badge · Bragging rights')}
+  if(store.get('bragchk','')===todayISO())return;store.set('bragchk',todayISO());
+  const codes=[...new Set(quickList().filter(q=>q.own&&q.chal&&q.at>Date.now()-30*864e5).map(q=>q.chal.code))];
+  codes.forEach(code=>getChal(code).then(c=>{if(c&&!c.open)board(c)}).catch(()=>{}));
+}
 const ordinal=n=>n+(n%100>=11&&n%100<=13?'th':['th','st','nd','rd'][n%10]||'th');
 // the page a challenge link opens
 async function showChallenge(code){
@@ -1657,10 +1666,10 @@ loadData().then(()=>{
     const open=()=>code?showChallenge(code):showStart();
     if(isNew()){showStart();welcome(open)}else open();
     // pull scores from your other devices, then refresh the home screen if it's showing
-    if(SESSION)syncNow().then(changed=>{testerCheck();if(changed&&!S&&document.querySelector('.home'))redrawQuietly(showStart)});
+    if(SESSION)syncNow().then(changed=>{testerCheck();bragCheck();if(changed&&!S&&document.querySelector('.home'))redrawQuietly(showStart)});
   });
   log('visit',{device:DEVICE,src:SRC});
-  testerCheck();backfillGuesses();
+  testerCheck();bragCheck();backfillGuesses();
 }).catch(e=>{
   console.error(e);
   app.innerHTML='<div style="padding:40px 0">Could not load the game data.<div class="note">Check that the data folder is published next to this page.</div></div>';
