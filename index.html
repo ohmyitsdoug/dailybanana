@@ -408,7 +408,7 @@ const RELEASES=[
       'Challenge links ending after 24 hours now close properly and award the Bragging Rights Medal.']},
     {t:'Updates',notes:[
       'Answers under 100 show to one decimal. Bigger answers show whole numbers.',
-      'Guess an answer exactly to earn a golden banana 🌟, plus a new badge.',
+      'Guess an answer exactly to earn a 💯, plus a new Golden banana badge.',
       '150 more everyday things to measure.',
       'Weekend challenges: a new themed challenge every Saturday, open all weekend.',
       'The Menu screen now counts down to the next weekend challenge.']}]},
@@ -561,7 +561,7 @@ function judge(guess,q){
   const p=Math.round(MAX_PTS*Math.min(guess,t)/Math.max(guess,t));
   return{guess,p,off:guess/t};
 }
-const mark=p=>p>=100?'🌟':p>=90?'🍌':p>=70?'🟫':p>=40?'🟨':'⬜';   // darker the closer you get, then the banana, then the golden banana (exact)
+const mark=p=>p>=100?'💯':p>=90?'🍌':p>=70?'🟫':p>=40?'🟨':'⬜';   // darker the closer you get, then the banana, then 💯 for exact (drawn in the app as a golden banana)
 // small tip under the bananas box
 function banTip(el){
   const old=document.getElementById('banpop');if(old){old.remove();el.setAttribute('aria-expanded','false');return}
@@ -577,7 +577,7 @@ function banTip(el){
 function toast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.className='toast';t.setAttribute('role','status');document.body.appendChild(t)}
   t.textContent=msg;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2200)}
 const markA=a=>!a||a.guess==null?'❌':mark(a.p||0);   // ❌ = no guess (time ran out)
-const LEGEND='⬜ under 40 · 🟨 40+ · 🟫 70+ · 🍌 90+ · 🌟 exact · ❌ no guess';
+const LEGEND='⬜ under 40 · 🟨 40+ · 🟫 70+ · 🍌 90+ · 💯 exact · ❌ no guess';
 function offLabel(a){
   if(!a||a.guess==null)return'Out of time.';
   if(a.p>=MAX_PTS)return'Spot on! A golden banana.';
