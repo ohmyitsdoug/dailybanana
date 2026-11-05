@@ -1412,8 +1412,10 @@ function refill(key){
   if(key.startsWith('ch:')&&document.getElementById('hist'))renderHistory();
 }
 // this weekend's themed challenge (or last weekend's, once it closes)
-const weekendNow=()=>API?cached('wk',5*60e3,()=>fetch('/weekend?json=1').then(r=>r.ok?r.json():null)).catch(()=>null):Promise.resolve(null);
-const getChal=code=>cached('ch:'+code,30e3,()=>fetch(`${CH}?code=${encodeURIComponent(code)}&device=${encodeURIComponent(DEVICE)}`,{headers:authHdr()}).then(r=>r.ok?r.json():null));
+const weekendNow=()=>API?cached('wk',5*60e3,()=>fetch('/weekend?json=1').then(r=>r.ok?r.json():null)).then(w=>{if(w&&w.open&&w.closes<=Date.now()){w.open=false;CACHE.delete('wk')}return w}).catch(()=>null):Promise.resolve(null);
+const getChal0=code=>cached('ch:'+code,30e3,()=>fetch(`${CH}?code=${encodeURIComponent(code)}&device=${encodeURIComponent(DEVICE)}`,{headers:authHdr()}).then(r=>r.ok?r.json():null));
+// a saved copy can say "open" after its time is up: past the closing time it's closed, and it's fetched again
+const getChal=code=>getChal0(code).then(c=>{if(c&&c.open&&c.closes<=Date.now()){c.open=false;stale('ch:'+code)}return c});
 const getStats=n=>API?cached('st:'+n,60e3,()=>fetch(`${API}/stats?n=${n}`).then(x=>x.ok?x.json():null)):Promise.resolve(null);
 const getFacts=()=>cached('facts',864e5,()=>fetch('data/facts.json').then(x=>x.json()));
 function preload(){   // today's ranking, your open challenges, the fun facts: fetched ahead so screens open filled in
@@ -1519,9 +1521,11 @@ async function showChallenge(code){
   app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:14px"><div class="note" style="padding:30px 0">Loading the challenge…</div></div>`;wireNav();
   const c=await getChal(code);
   if(!c){alertBox('That challenge link didn\'t work. Check the code, or ask for a new link.');return}
+  // still on this page when it closes: show the final board (and award Bragging rights) without a reload
+  if(c.open&&c.closes-Date.now()<864e5)setTimeout(()=>{if(document.querySelector(`[data-chpage="${code}"]`)){stale('ch:'+code);showChallenge(code)}},c.closes-Date.now()+1500);
   const me=c.entries.find(e=>e.you);
   const played=me||quickList().some(q=>q.chal&&q.chal.code===c.code);
-  app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:14px">
+  app.innerHTML=`${nav()}<div class="narrow" data-chpage="${esc(c.code)}" style="display:flex;flex-direction:column;gap:14px">
     <div class="head in" style="--d:1"><h2>${(c.mine||ownChal(c.code))?'Your challenge':chalName(c)}</h2><button class="sq" id="back">Home</button></div>
     <div class="in" style="--d:1;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="codechip" id="cpcode" aria-label="Copy challenge code ${esc(c.code)}">${esc(c.code)} ${ICON.copy}</button><span class="note">${status(c)} · 6 rounds, the same for everyone · ${c.entries.length} played</span></div>
     <div class="in" style="--d:2">${board(c)}</div>
