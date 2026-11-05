@@ -18,7 +18,10 @@ export const config = { path: ['/discord', '/discord/*'] };
 const reply = (o) => json({ type: 4, data: { allowed_mentions: { parse: [] }, ...o } });
 const CONNECT = `${SITE}/discord/connect`;
 const botLink = () => `https://discord.com/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&scope=bot+applications.commands&permissions=536870912`;   // Manage Webhooks, so /setup can make the channel's webhook
-const postsLink = () => `https://discord.com/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&scope=webhook.incoming+applications.commands&response_type=code&redirect_uri=${encodeURIComponent(CONNECT)}`;
+// kinds rides along in `state` so the connect page saves only what was asked for (no state = both, for the public link)
+const postsLink = (kinds) => `https://discord.com/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&scope=webhook.incoming+applications.commands&response_type=code&redirect_uri=${encodeURIComponent(CONNECT)}${kinds ? '&state=' + kinds.join('.') : ''}`;
+const KINDS = ['daily', 'weekend'];
+const say = (k, where = 'This channel') => where + ' will get ' + [k.includes('daily') && 'yesterday’s results and today’s daily every morning (about 7am Eastern)', k.includes('weekend') && 'the weekend challenge when it opens on Saturday, a last call on Sunday evening and the results on Monday morning'].filter(Boolean).join(', plus ') + '. Use /banana-stop to turn it off.';
 
 function verified(req, body) {
   const key = process.env.DISCORD_PUBLIC_KEY, sig = req.headers.get('x-signature-ed25519'), ts = req.headers.get('x-signature-timestamp');
@@ -69,8 +72,13 @@ export default async (req) => {
       body: new URLSearchParams({ grant_type: 'authorization_code', code, redirect_uri: CONNECT, client_id: process.env.DISCORD_CLIENT_ID, client_secret: process.env.DISCORD_CLIENT_SECRET }) }).then((r) => r.json()).catch(() => ({}));
     const w = t.webhook;
     if (!w || !w.url) return page('Not connected', 'Discord didn’t give us a channel to post in. Try the link again and pick a channel.');
-    await store.setJSON(`discord/hooks/${w.id}`, { url: w.url, guild: w.guild_id, channel: w.channel_id, at: Date.now() });
-    return page('You’re all set! 🍌', 'Daily Banana will post in that channel every morning (yesterday’s results and today’s daily), plus the weekend challenge when it opens on Saturday, a Sunday evening reminder and Monday’s results. To stop, type /banana-stop in that channel.');
+    const asked = (url.searchParams.get('state') || '').split('.').filter((k) => KINDS.includes(k));
+    const kinds = asked.length ? [...new Set(asked)] : KINDS;
+    // one webhook per channel: fold an existing one in (keeping what it already had) and drop it
+    const mine = (await getAll(store, 'discord/hooks/')).filter((h) => h.channel === w.channel_id && h.key !== `discord/hooks/${w.id}`);
+    for (const h of mine) { if (Array.isArray(h.kinds)) kinds.push(...h.kinds.filter((k) => !kinds.includes(k))); await fetch(h.url, { method: 'DELETE' }).catch(() => {}); await store.delete(h.key); }
+    await store.setJSON(`discord/hooks/${w.id}`, { url: w.url, guild: w.guild_id, channel: w.channel_id, at: Date.now(), kinds });
+    return page('You’re all set! 🍌', say(kinds, 'That channel').replace('Use /banana-stop to turn it off.', 'To stop, type /banana-stop in that channel.'));
   }
   // the weekend challenge results image (once it has closed)
   const wm = url.pathname.match(/^\/discord\/weekend\/([A-Z0-9]{4,8})\.jpg$/);
@@ -114,7 +122,6 @@ export default async (req) => {
   if (AUTO[name]) {
     const ch = i.channel_id || (i.channel && i.channel.id), guild = i.guild_id, want = AUTO[name];
     if (!guild || !ch) return quiet(`Run /${name} in a server channel.`);
-    const say = (k) => 'All set! 🍌 This channel will get ' + [k.includes('daily') && 'yesterday’s results and today’s daily every morning (about 7am Eastern)', k.includes('weekend') && 'the weekend challenge when it opens on Saturday, a last call on Sunday evening and the results on Monday morning'].filter(Boolean).join(', plus ') + '. Use /banana-stop to turn it off.';
     const all = await getAll(store, 'discord/hooks/'), mine = all.filter((h) => h.channel === ch);
     console.log(JSON.stringify({ cmd: name, ch, hooks: all.length, here: mine.map((h) => ({ key: h.key, kinds: h.kinds || null })) }));
     const have = mine[0];
@@ -123,14 +130,14 @@ export default async (req) => {
       // a channel set up before the daily/weekend split has no list: it becomes exactly what was just asked for
       const { key, ...hk } = have, kinds = Array.isArray(hk.kinds) ? [...new Set([...hk.kinds, ...want])] : want;
       await store.setJSON(key, { ...hk, kinds });
-      return quiet(say(kinds));
+      return quiet('All set! 🍌 ' + say(kinds));
     }
     const tok = process.env.DISCORD_BOT_TOKEN;
     const r = tok ? await fetch(`https://discord.com/api/v10/channels/${ch}/webhooks`, { method: 'POST', headers: { authorization: 'Bot ' + tok, 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Daily Banana' }) }).catch(() => null) : null;
     const w = r && r.ok ? await r.json().catch(() => null) : null;
-    if (!w || !w.token) return quiet(`I couldn't set up this channel myself. Use this link and pick this channel instead: ${postsLink()}`);
+    if (!w || !w.token) return quiet(`I couldn't set up this channel myself. Use this link and pick this channel instead: ${postsLink(want)}`);
     await store.setJSON(`discord/hooks/${w.id}`, { url: `https://discord.com/api/webhooks/${w.id}/${w.token}`, guild, channel: ch, at: Date.now(), kinds: want });
-    return quiet(say(want));
+    return quiet('All set! 🍌 ' + say(want));
   }
   if (name === 'banana-stop') {
     const ch = i.channel_id || (i.channel && i.channel.id);
