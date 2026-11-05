@@ -157,3 +157,104 @@ vending machine
 milk crate
 birthday candle
 ornament
+# v1.1: 100 more standard-size counting units
+hockey puck
+AAA battery
+D battery
+index card
+postage stamp
+CD
+vinyl record
+golf tee
+volleyball
+rugby ball
+dart
+ping pong paddle
+ping pong table
+pool table
+poker chip
+half dollar
+tealight
+bottle cap
+wine cork
+staple
+marble
+thumbtack
+USB stick
+light switch plate
+tennis ball can
+gallon of water
+soup can
+sugar packet
+tea bag
+stick of gum
+chess pawn
+LEGO minifigure
+king bed
+twin bed
+mattress
+closet door
+kitchen counter
+ceiling
+picnic table
+saltine cracker
+graham cracker
+hot dog bun
+frisbee
+dartboard
+three-ring binder
+manila folder
+clipboard
+pint glass
+sheet of plywood
+garage door
+bowling lane
+soccer goal
+football goalpost
+hockey rink
+home plate
+baseball base
+golf hole cup
+school bus seat
+manhole cover
+sidewalk square
+crosswalk stripe
+traffic barrel
+bike wheel
+sim card
+Jenga block
+checkers piece
+playing card deck
+ball pit ball
+pickleball
+racquetball
+dodgeball
+kickball
+tennis net
+croquet mallet
+baseball glove
+9-volt battery
+yogurt cup
+coffee can
+ketchup packet
+cotton swab
+binder clip
+pushpin
+bath towel
+hand towel
+teaspoon
+butter knife
+baking sheet
+muffin tin
+ice cube tray
+lunch tray
+locker
+newspaper
+magazine
+comic book
+greeting card
+postcard
+big envelope
+SD card
+shot glass
+C battery

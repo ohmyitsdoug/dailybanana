@@ -1281,3 +1281,6 @@ trivet | trivets | a | across | 18 |
 lazy Susan | lazy Susans | a | across | 45 |
 laundry pod | laundry pods | a | long | 4.5 |
 dryer sheet | dryer sheets | a | long | 23 |
+SD card | SD cards | an | long | 3.2 |
+shot glass | shot glasses | a | tall | 6 |
+C battery | C batteries | a | long | 5 |
