@@ -1405,6 +1405,28 @@ async function drawCover(){
   ban(X+tile/2,Y+tile/2,116,0,1);x.fillStyle=INK;x.textBaseline='middle';x.fillText(T,X+tile+gap,H/2+4);
   return cv;
 }
+// the automatic posting schedule, as plain text (Eastern time; matches PLAN in netlify/lib/social.mjs)
+const SCHED=[
+  ['Every day',['8:15am · Yesterday’s results: Instagram story'],'Threads and Bluesky skip it (no stories).'],
+  ['Monday',['12:15pm · Last week’s carousel: Instagram, Facebook, Threads, Bluesky (Bluesky: 4 images, the rest as replies)','Also an Instagram story of the cover']],
+  ['Tuesday',['12:15pm · Fun fact: Instagram, Facebook, Threads, Bluesky','Also an Instagram story']],
+  ['Wednesday',['7:15pm · Guess this: Instagram, Facebook, Threads, Bluesky','Also an Instagram story']],
+  ['Thursday',['9:15am · The answer: Instagram story, and a regular post on Threads and Bluesky','12:15pm · Banana for scale: Instagram, Facebook, Threads, Bluesky','Also an Instagram story']],
+  ['Friday',['12:15pm · Week in review (a fun fact until 500+ dailies a week): Instagram, Facebook, Threads, Bluesky','Also an Instagram story']],
+  ['Saturday',['10:15am · Weekend challenge: Instagram, Facebook, Threads, Bluesky','Also an Instagram story']],
+  ['Sunday',['11:15am · Closest guess: Instagram, Facebook, Threads, Bluesky','Also an Instagram story','7:15pm · Last call for the weekend challenge: Instagram story']],
+  ['Milestones',['12:15pm or 7:15pm only, never within 2 hours of another post, at most one a day: Instagram, Facebook, Threads, Bluesky']],
+  ['Discord',['Servers that opted in: daily results and today’s daily around 7:15am; weekend open Saturday 12:15am, last call Sunday 7:15pm, results Monday 7:15am']],
+];
+function showSchedule(){
+  const back=document.activeElement,w=document.createElement('div');w.className='welcome';w.setAttribute('role','dialog');w.setAttribute('aria-modal','true');w.setAttribute('aria-labelledby','pst');
+  w.innerHTML=`<div class="box" tabindex="-1"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 id="pst" style="font-size:28px">Post schedule</h2><button class="sq" id="psx">Close</button></div>
+    <p class="mut" style="margin:0">Eastern time. Nothing is published while Post for real is off.</p>
+    ${SCHED.map(([d,ls,n])=>`<div class="rel"><div class="relh"><b>${esc(d)}</b></div><ul>${ls.map(l=>`<li>${esc(l)}</li>`).join('')}</ul>${n?`<p class="mut" style="margin:4px 0 0">${esc(n)}</p>`:''}</div>`).join('')}</div>`;
+  document.body.appendChild(w);w.querySelector('.box').focus();
+  const end=()=>{w.remove();removeEventListener('keydown',key);if(back&&back.focus)back.focus()},key=e=>{if(e.key==='Escape')end()};
+  addEventListener('keydown',key);w.onclick=e=>{if(e.target===w)end()};document.getElementById('psx').onclick=end;
+}
 async function showSocial(pick){
   if(!(SESSION&&SESSION.user.admin))return showStart();
   const cur=pick||socialPick();
@@ -1412,6 +1434,7 @@ async function showSocial(pick){
     <div class="head"><h2>Social posts</h2><button class="sq" id="back">Back</button></div>
     <div class="eyebrow">Auto-posting</div>
     <button class="lrow" id="aplive" style="border:2px solid var(--ink)"><span><b>Post for real</b><br><span class="mut" id="aplivesub">Loading…</span></span><span class="toggle" id="apltog" aria-hidden="true"></span></button>
+    <button class="lrow" id="apsched" style="border:2px solid var(--ink)"><span><b>Post schedule</b><br><span class="mut">What goes out each day, on each platform</span></span><span aria-hidden="true">›</span></button>
     <div style="display:flex;gap:8px;align-items:stretch">
       <select id="apkind" class="apsel" aria-label="Post type to preview">${Object.entries(SKIND).filter(([k])=>k!=='fri_fact').map(([k,l])=>`<option value="${k}">${esc(l)}</option>`).join('')}</select>
       <button class="sq icon" id="apmake" aria-label="Make a preview of this post" title="Make a preview (never posted on its own)" style="height:auto;min-height:44px;width:44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
@@ -1467,6 +1490,7 @@ async function wireAutopost(){
       b.disabled=true;b.textContent='Posting…';const r=await api({action:'publish',id:b.dataset.pub});if(r.error)toast(r.error);draw(await api())});
     J=j};
   let J=null;draw(await api());
+  document.getElementById('apsched').onclick=showSchedule;
   document.getElementById('aplive').onclick=async()=>{if(!J||J.error)return;const on=!J.live;
     if(on&&!await confirmBox({title:'Start posting for real?',body:'From the next scheduled time, posts go to Instagram and the Facebook Page automatically.',yes:'Turn it on',no:'Keep practicing'}))return;
     await api({action:'live',on});draw(await api())};
