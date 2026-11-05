@@ -9,7 +9,7 @@ import { userFor, isAdminUser } from '../lib/auth.mjs';
 import { build, save, recent, publish, config, imgUrl, etParts, PLAN, KEEP_DAYS, destinations } from '../lib/social.mjs';
 
 const KINDS = ['results_story', 'mon', 'tue', 'wed', 'thu_story', 'thu', 'fri', 'sat', 'sun_story', 'sun', 'milestone'];
-const view = (r) => ({ ...r, images: r.images.map(imgUrl), story: r.story.map(imgUrl) });
+const view = (r) => ({ ...r, images: r.images.map(imgUrl), story: r.story.map(imgUrl), others: (r.others || []).map(imgUrl) });
 
 export default async (req) => {
   const store = db();

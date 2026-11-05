@@ -133,7 +133,7 @@ export async function build(kind, store, { date = etParts().date, preview = fals
     const p = 40 + Math.floor(Math.random() * 61), guess = Math.random() < 0.5 ? q.ans * p / 100 : q.ans * 100 / p;
     if (!preview) { u.pairs.push(q.A.name + '>' + q.B.name); await remember(store, u); }
     const img = P.guessPost(q, { guess, p });
-    return { kind, ...withTags('wed', `${P.question(q)} Drop your guess 👇 Answer in tomorrow’s stories.\nPlay 6 like this a day at dailybanana.io`), images: [img], story: [P.storyOf(img, true)], extra: { q: { a: q.A.name, b: q.B.name } } };
+    return { kind, ...withTags('wed', `${P.question(q)} Drop your guess 👇 Answer in tomorrow’s stories.\nPlay 6 like this a day at dailybanana.io`), othersText: `${P.question(q)} Drop your guess 👇 Answer tomorrow.\nPlay 6 like this a day at dailybanana.io\n\n#dailybanana`, images: [img], story: [P.storyOf(img, true)], extra: { q: { a: q.A.name, b: q.B.name } } };
   }
   if (kind === 'thu_story') {
     // the answer to yesterday's "guess this"
@@ -141,7 +141,10 @@ export async function build(kind, store, { date = etParts().date, preview = fals
     if (!w) return null;
     const by = Object.fromEntries(items.map((i) => [i.name, i])), A = by[w.extra.q.a], B = by[w.extra.q.b];
     if (!A || !B) return null;
-    return { kind, caption: '', fb: '', images: [], story: [P.answerStory({ A, B, ans: B.cm / A.cm })] };
+    // Threads and Bluesky have no stories, so there it's a regular post (their second post on Thursdays)
+    const q = { A, B, ans: B.cm / A.cm }, ans = P.shownAns(q.ans);
+    return { kind, caption: '', fb: '', images: [], story: [P.answerStory(q)], others: [P.answerPost(q)],
+      othersText: `Yesterday we asked: ${P.question(q)} The answer: about ${P.fmt(ans)} ${ans === 1 ? A.name : A.plural}. How close were you? 🍌\nPlay today’s at dailybanana.io\n\n#dailybanana` };
   }
   if (kind === 'results_story') {
     // yesterday's results (the last daily that has finished everywhere), the same card Discord posts
@@ -301,8 +304,8 @@ export async function markDone(store, m) {
 const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 export async function save(store, post, { slot = null, date, status }) {
   const id = rid(), put = async (c) => { const k = rid(); await store.set(`social/img/${k}`, c.jpeg(90)); return k; };
-  const rec = { id, at: Date.now(), kind: post.kind, slot, date, caption: post.caption, fb: post.fb, carousel: !!post.carousel, extra: post.extra || null, status,
-    images: await Promise.all(post.images.map(put)), story: await Promise.all((post.story || []).map(put)), results: [] };
+  const rec = { id, at: Date.now(), kind: post.kind, slot, date, caption: post.caption, fb: post.fb, othersText: post.othersText || null, carousel: !!post.carousel, extra: post.extra || null, status,
+    images: await Promise.all(post.images.map(put)), story: await Promise.all((post.story || []).map(put)), others: await Promise.all((post.others || []).map(put)), results: [] };
   await store.setJSON(`social/posts/${id}`, rec);
   return rec;
 }
@@ -350,8 +353,10 @@ export async function publish(store, rec) {
     return (await graph(`${page}/feed`, { message: rec.fb, ...media, access_token: tok })).id;
   });
   // Threads and Bluesky get the feed post only (neither has stories), with the Facebook caption (#dailybanana only)
-  if (urls.length && threadsToken()) await step('threads', () => threadsPost(urls, rec.fb));
-  if (urls.length && bskyLogin()) await step('bluesky', () => bskyPost(store, rec));
+  // (a story-only slot can carry its own feed image for them in rec.others; rec.othersText is their caption when it differs)
+  const oImgs = rec.others && rec.others.length ? rec.others : rec.images, oText = rec.othersText || rec.fb;
+  if (oImgs.length && threadsToken()) await step('threads', () => threadsPost(oImgs.map(imgUrl), oText));
+  if (oImgs.length && bskyLogin()) await step('bluesky', () => bskyPost(store, oImgs, oText));
   rec.results = out; rec.status = out.every((x) => x.ok) ? 'posted' : out.some((x) => x.ok) ? 'partly posted' : 'failed';
   rec.postedAt = Date.now();
   await store.setJSON(`social/posts/${rec.id}`, rec);
@@ -410,10 +415,10 @@ export function facets(text) {
   for (const m of text.matchAll(/\bdailybanana\.io(\/[^\s]*)?/g)) out.push({ index: { byteStart: at(m.index), byteEnd: at(m.index + m[0].length) }, features: [{ $type: 'app.bsky.richtext.facet#link', uri: 'https://' + m[0] }] });
   return out;
 }
-async function bskyPost(store, rec) {
+async function bskyPost(store, images, caption) {
   const s = await bs('com.atproto.server.createSession', bskyLogin());
   const blobs = [];
-  for (const k of rec.images) {
+  for (const k of images) {
     const jpg = await store.get(`social/img/${k}`, { type: 'arrayBuffer' });
     if (!jpg) throw new Error('image missing');
     if (jpg.byteLength > 1e6) throw new Error('image is over Bluesky’s 1 MB limit');
@@ -424,7 +429,7 @@ async function bskyPost(store, rec) {
     $type: 'app.bsky.feed.post', text, facets: facets(text), createdAt: new Date().toISOString(), langs: ['en'],
     embed: { $type: 'app.bsky.embed.images', images: imgs.map((b) => ({ alt, image: b, aspectRatio: { width: 1080, height: 1350 } })) }, ...(reply ? { reply } : {}) } }, s.accessJwt);
   // up to 4 images a post: a longer carousel continues as replies underneath
-  const text = trimTo(rec.fb, 300), first = await post(text, blobs.slice(0, 4));
+  const text = trimTo(caption, 300), first = await post(text, blobs.slice(0, 4));
   const root = { uri: first.uri, cid: first.cid }; let parent = root;
   for (let i = 4; i < blobs.length; i += 4) { const r = await post('', blobs.slice(i, i + 4), { root, parent }); parent = { uri: r.uri, cid: r.cid }; }
   return first.uri;
@@ -437,7 +442,7 @@ export const destinations = () => ({ threads: !!threadsToken(), bluesky: !!bskyL
 export const KEEP_DAYS = 10;
 export async function cleanup(store, t = Date.now()) {
   const old = (await getAll(store, 'social/posts/')).filter((r) => r.at && r.at < t - KEEP_DAYS * 864e5);
-  for (const r of old) { await Promise.all([...(r.images || []), ...(r.story || [])].map((k) => store.delete(`social/img/${k}`).catch(() => {}))); await store.delete(r.key).catch(() => {}); }
+  for (const r of old) { await Promise.all([...(r.images || []), ...(r.story || []), ...(r.others || [])].map((k) => store.delete(`social/img/${k}`).catch(() => {}))); await store.delete(r.key).catch(() => {}); }
   return old.length;
 }
 export async function config(store) { return (await store.get('social/config', { type: 'json' }).catch(() => null)) || { live: false }; }

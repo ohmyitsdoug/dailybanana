@@ -189,6 +189,16 @@ export function milestonePost(number, label, sub) {
 export function storyOf(img, dark) {
   const c = new Canvas(1080, 1920); c.fillStyle = dark ? TH.dark.bg : TH.light.bg; c.fillRect(0, 0, 1080, 1920); c.put(img, 0, 285); return c;
 }
+// the same lines as a 1080x1350 feed post (story = this, centred on a tall background)
+function cardPost(t, chip, lines, foot) {
+  const P = poster(t, chip, foot), x = P.c, T = TH[t]; P.bar(); P.ban(860, 960 - 285, 200, -14, 0.35);
+  let y = 315; for (const [w, px, col, text] of lines) {
+    x.font = `${w} ${px}px SG`; x.fillStyle = T[col];
+    let ls = [], ln = ''; for (const wd of text.split(' ')) { const tt = ln ? ln + ' ' + wd : wd; if (x.measureText(tt).width > R - L && ln) { ls.push(ln); ln = wd; } else ln = tt; } ls.push(ln);
+    for (const s of ls) { y += px * 1.15; x.fillText(s, L, y); } y += px * 0.5;
+  }
+  return P.c;
+}
 function storyCard(t, chip, lines, foot) {
   const c = new Canvas(1080, 1920), x = c, T = TH[t];
   x.fillStyle = T.bg; x.fillRect(0, 0, 1080, 1920);
@@ -201,6 +211,8 @@ function storyCard(t, chip, lines, foot) {
   return c;
 }
 // THU morning · answer to Wednesday's question
+const answerLines = (q, ans) => [[500, 40, 'mut', 'Yesterday we asked:'], [700, 60, 'ink', question(q)], [500, 40, 'mut', 'The answer: about'], [700, 120, 'acc', fmt(ans)], [700, 60, 'ink', `${unitWord(q, ans)}.`], [500, 38, 'mut', 'How close were you?']];
+export function answerPost(q) { return cardPost('dark', 'The answer', answerLines(q, shownAns(q.ans)), ['Play free', 'dailybanana.io']); }
 export function answerStory(q) {
   const ans = shownAns(q.ans);
   return storyCard('dark', 'The answer', [[500, 40, 'mut', 'Yesterday we asked:'], [700, 60, 'ink', question(q)], [500, 40, 'mut', 'The answer: about'], [700, 120, 'acc', fmt(ans)], [700, 60, 'ink', `${unitWord(q, ans)}.`], [500, 38, 'mut', 'How close were you?']], ['Play free', 'dailybanana.io']);
