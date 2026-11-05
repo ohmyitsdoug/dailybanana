@@ -8,7 +8,7 @@
 // (from the Discord developer portal) plus the existing DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET.
 // Images: /discord/yesterday/N.jpg (drawn once, then kept in blobs at discord/img/N).
 import { createPublicKey, verify } from 'node:crypto';
-import { db, json } from '../lib/db.mjs';
+import { db, json, getAll } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
 import { data, fonts, SITE } from '../lib/social.mjs';
 import { resultsCard } from '../lib/posts.mjs';
@@ -17,6 +17,7 @@ import { publishedAt, results, todayDaily, lastFinished, dailyEmbed, yesterdayEm
 export const config = { path: ['/discord', '/discord/*'] };
 const reply = (o) => json({ type: 4, data: { allowed_mentions: { parse: [] }, ...o } });
 const CONNECT = `${SITE}/discord/connect`;
+const botLink = () => `https://discord.com/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&scope=bot+applications.commands&permissions=536870912`;   // Manage Webhooks, so /setup can make the channel's webhook
 const postsLink = () => `https://discord.com/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&scope=webhook.incoming+applications.commands&response_type=code&redirect_uri=${encodeURIComponent(CONNECT)}`;
 
 function verified(req, body) {
@@ -32,6 +33,9 @@ const COMMANDS = [
   { name: 'daily', description: 'Today’s Daily Banana', type: 1 },
   { name: 'yesterday', description: 'Results and answers from the last finished daily', type: 1 },
   { name: 'weekend', description: 'This weekend’s themed challenge', type: 1 },
+  // server admins only (Manage Webhooks)
+  { name: 'setup', description: 'Post the daily, yesterday’s results and the weekend challenge in this channel automatically', type: 1, default_member_permissions: '536870912', dm_permission: false },
+  { name: 'stop', description: 'Stop the automatic Daily Banana posts in this channel', type: 1, default_member_permissions: '536870912', dm_permission: false },
 ];
 async function setup() {
   const id = process.env.DISCORD_CLIENT_ID, sec = process.env.DISCORD_CLIENT_SECRET;
@@ -40,7 +44,7 @@ async function setup() {
   if (!t.access_token) return { ok: false, error: 'Discord did not give a token: ' + (t.error_description || t.error || 'unknown') };
   const r = await fetch(`https://discord.com/api/v10/applications/${id}/commands`, { method: 'PUT', headers: { authorization: 'Bearer ' + t.access_token, 'content-type': 'application/json' }, body: JSON.stringify(COMMANDS) });
   const j = await r.json().catch(() => ({}));
-  return r.ok ? { ok: true, commands: j.map((c) => '/' + c.name), install: `https://discord.com/oauth2/authorize?client_id=${id}&scope=applications.commands`, posts: postsLink(), redirect: CONNECT, endpoint: `${SITE}/discord` } : { ok: false, error: (j && j.message) || `Discord answered ${r.status}` };
+  return r.ok ? { ok: true, commands: j.map((c) => '/' + c.name), install: `https://discord.com/oauth2/authorize?client_id=${id}&scope=applications.commands`, posts: postsLink(), bot: botLink(), botToken: !!process.env.DISCORD_BOT_TOKEN, redirect: CONNECT, endpoint: `${SITE}/discord` } : { ok: false, error: (j && j.message) || `Discord answered ${r.status}` };
 }
 
 export default async (req) => {
@@ -89,6 +93,25 @@ export default async (req) => {
     if (w && w.open) return reply({ embeds: [weekendEmbed(w)], components: button('Play the weekend challenge', `${SITE}/c/${w.code}`) });
     if (w && w.next) return reply({ content: `The next weekend challenge opens <t:${Math.floor(w.next.opens / 1000)}:R> (<t:${Math.floor(w.next.opens / 1000)}:F>).` });
     return reply({ content: 'No weekend challenge right now.' });
+  }
+  const quiet = (content) => reply({ content, flags: 64 });   // only the person who ran it sees it
+  if (name === 'setup') {
+    const ch = i.channel_id || (i.channel && i.channel.id), guild = i.guild_id;
+    if (!guild || !ch) return quiet('Run /setup in a server channel.');
+    const have = (await getAll(store, 'discord/hooks/')).find((h) => h.channel === ch);
+    if (have) return quiet('This channel already gets the Daily Banana posts. 🍌 Use /stop to turn them off.');
+    const tok = process.env.DISCORD_BOT_TOKEN;
+    const r = tok ? await fetch(`https://discord.com/api/v10/channels/${ch}/webhooks`, { method: 'POST', headers: { authorization: 'Bot ' + tok, 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Daily Banana' }) }).catch(() => null) : null;
+    const w = r && r.ok ? await r.json().catch(() => null) : null;
+    if (!w || !w.token) return quiet(`I couldn't set up this channel myself. Use this link and pick this channel instead: ${postsLink()}`);
+    await store.setJSON(`discord/hooks/${w.id}`, { url: `https://discord.com/api/webhooks/${w.id}/${w.token}`, guild, channel: ch, at: Date.now() });
+    return quiet('All set! 🍌 This channel will get yesterday’s results and today’s daily every morning (about 7am Eastern) and the weekend challenge every Saturday. Use /stop to turn it off.');
+  }
+  if (name === 'stop') {
+    const ch = i.channel_id || (i.channel && i.channel.id);
+    const hooks = (await getAll(store, 'discord/hooks/')).filter((h) => h.channel === ch);
+    for (const h of hooks) { await fetch(h.url, { method: 'DELETE' }).catch(() => {}); await store.delete(h.key); }
+    return quiet(hooks.length ? 'Done. This channel won’t get the automatic posts anymore.' : 'This channel wasn’t getting the automatic posts.');
   }
   return reply({ content: 'Unknown command.' });
 };
