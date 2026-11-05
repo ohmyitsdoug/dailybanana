@@ -1076,7 +1076,7 @@ function showResults(r,res){
   const shareTxt=`${title} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n${marks}\n${location.host||'dailybanana.io'}`;
   const SHARE=`<div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(title)} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n<span class="emo">${marks}</span>\n${esc(location.host||'dailybanana.io')}</div>
     <div class="legend-row in" style="--d:4">${LEGEND.split(' · ').map(x=>{const [e,...t]=x.split(' ');return`<span><span class="emo">${e}</span> ${t.join(' ')}</span>`}).join('')}</div>
-    <div class="cprow in" style="--d:5"><button class="btn main" id="cp"><span id="cpl">Copy results</span>${ICON.copy}</button>${r.quick?'':`<button class="btn sharebtn" id="dl" aria-label="Share your results as an image">${ICON.share}</button>`}</div>`;
+    <div class="cprow in" style="--d:5"><button class="btn main" id="cp"><span id="cpl">Copy results</span>${ICON.copy}</button><button class="btn sharebtn" id="dl" aria-label="Share your results as an image">${ICON.share}</button></div>`;
   const PLAYBTN=`<button class="btn in" style="--d:6;width:100%" id="again">Play again</button>`;
   const PLAY=`<div class="fact in" style="--d:7" id="fact" hidden><span class="eyebrow">Fun fact</span><p id="factt"></p></div>
     ${kofiBtn(7)}
@@ -1266,13 +1266,14 @@ async function shareImage(r,res,btn){
     font(700,46);x.fillStyle=INK;x.textBaseline='middle';x.fillText('dailybanana.io',L+104,128);
     const TAG='Guess ridiculous measurements for everyday items.';   // for people who've never seen the game
     const fit=(w,max,min=24)=>{let t=max;font(w,t);while(x.measureText(TAG).width>R-L&&t>min){t--;font(w,t)}};
-    const chip=`Daily #${pad3(r.n)} · ${fmtDate(r.date)}`;font(700,36);const cw=x.measureText(chip).width+48;
+    const chip=r.quick?(res.chal?(res.chal.weekend?'Weekend challenge':'Challenge'):'Quick play'):`Daily #${pad3(r.n)} · ${fmtDate(r.date)}`;font(700,36);const cw=x.measureText(chip).width+48;
     box(R-cw-6,92,cw,68,ACC);x.fillStyle=INK;x.fillText(chip,R-cw-6+24,128);
     x.textBaseline='alphabetic';
     fit(500,38);x.fillStyle=INK;x.fillText(TAG,L,250);   // one line under the logo, shrinks to fit
     font(700,230);x.fillStyle=INK;try{x.letterSpacing='-6px'}catch(_){}x.fillText(fmt(res.total),L-6,505);const sw=x.measureText(fmt(res.total)).width;try{x.letterSpacing='0px'}catch(_){}
     font(700,72);x.fillStyle=MUT;x.fillText(`/ ${ROUNDS*MAX_PTS}`,L+sw+12,505);
-    font(700,52);x.fillStyle=INK;x.fillText(await rankText(r,res),L,610);
+    const line=r.quick?(res.chal?(res.chal.weekend?`Weekend challenge · ${res.chal.weekend.theme||''}`:res.own?'My challenge':`Challenge from ${res.chal.host}`):'Quick play · 6 random questions'):await rankText(r,res);
+    font(700,52);x.fillStyle=INK;while(x.measureText(line).width>R-L&&parseInt(x.font)>30)font(700,parseInt(x.font)-2);x.fillText(line,L,610);
     const g=20,sq=(R-L-g*(ROUNDS-1))/ROUNDS,sy=680;
     for(let i=0;i<ROUNDS;i++){const a=ans[i]||{},p=a.p||0,X=L+i*(sq+g),miss=a.guess==null||p<40,bull=!miss&&p>=90;
       const fill=bull?CARD:miss?CARD:p>=70?'#8A5A2B':ACC,col=p>=70&&!bull?'#FFF3C9':miss?MUT:INK;
@@ -1283,7 +1284,8 @@ async function shareImage(r,res,btn){
       x.textAlign='left'}
     x.fillStyle=INK;x.fillRect(L,878,R-L,4);
     // three stats spread evenly across the width
-    const today=ans.filter(a=>(a&&a.p||0)>=90).length,stats=[[fmt(today),'bananas today',true],[fmt(dailyBananas()),'bananas all time'],[fmt(streak()),'day streak']];
+    const today=ans.filter(a=>(a&&a.p||0)>=90).length,qt=quickTotals();
+    const stats=r.quick?[[fmt(today),'bananas this game',true],[fmt(qt.g),'quick games'],[qt.g?fmt(Math.round(qt.t/qt.g)):'–','avg score']]:[[fmt(today),'bananas today',true],[fmt(dailyBananas()),'bananas all time'],[fmt(streak()),'day streak']];
     const ws=stats.map(([v,l,ic])=>{font(700,80);const vw=x.measureText(v).width+(ic?78:0);font(400,34);return Math.max(vw,x.measureText(l).width)});
     const gap=(R-L-ws.reduce((a,b)=>a+b,0))/(stats.length-1);let sx=L;
     stats.forEach(([v,l,ic],i)=>{let vx=sx;if(ic){ban(64,sx+32,972);vx+=78}font(700,80);x.fillStyle=INK;x.fillText(v,vx,1000);font(400,34);x.fillStyle=MUT;x.fillText(l,sx,1050);sx+=ws[i]+gap});
@@ -1292,11 +1294,40 @@ async function shareImage(r,res,btn){
     font(700,44);x.textBaseline='middle';x.fillStyle='#FFF0A0';x.fillText('Can you beat me?',L+44,1208);
     x.fillStyle=ACC;x.textAlign='right';x.fillText('dailybanana.io',R-44,1208);
     const blob=await new Promise(ok=>c.toBlob(ok,'image/png'));
-    const name=`daily-banana-${pad3(r.n)}.png`,file=new File([blob],name,{type:'image/png'});
+    const name=r.quick?'daily-banana-quick-play.png':`daily-banana-${pad3(r.n)}.png`,file=new File([blob],name,{type:'image/png'});
     log('share',{what:'image',device:DEVICE});
     if(navigator.canShare&&navigator.canShare({files:[file]})&&matchMedia('(pointer:coarse)').matches){
       try{await navigator.share({files:[file]})}catch(_){}
     }else{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Image saved')}
+  }catch(e){toast('Couldn\'t make the image')}
+  btn.disabled=false;
+}
+// a challenge as a 1080×1350 image to post or send: the score to beat, the code and the link
+async function chalImage(code,host,c,btn){
+  btn.disabled=true;
+  try{
+    const W=1080,H=1350,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
+    const INK='#3B2412',MUT='#6B4F30',CARD='#FFFAE0',ACC='#FFD43B',ACCSH='#B97E00',F='"Space Grotesk",system-ui,sans-serif';
+    await Promise.all(['500','700'].map(w=>document.fonts.load(`${w} 60px "Space Grotesk"`).catch(()=>{})));
+    const font=(w,px)=>{x.font=`${w} ${px}px ${F}`};
+    const ban=(px,cx,cy,rot=0,alpha=1)=>{const o=bananaSprite(BAN_C),hh=px*17/16;x.save();x.globalAlpha=alpha;x.imageSmoothingEnabled=!!rot;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.drawImage(o,-px/2,-hh/2,px,hh);x.restore()};
+    const box=(X,Y,w,h,fill,sh=6,shc=INK)=>{x.fillStyle=shc;x.fillRect(X+sh,Y+sh,w,h);x.fillStyle=fill;x.fillRect(X,Y,w,h);x.lineWidth=4;x.strokeStyle=INK;x.strokeRect(X+2,Y+2,w-4,h-4)};
+    const L=84,R=W-84,wk=c&&c.weekend,mine=c&&c.entries&&c.entries.find(e=>e.you)||(c&&c.entries&&c.entries.find(e=>e.creator));
+    x.fillStyle='#FFE36E';x.fillRect(0,0,W,H);ban(200,890,380,-14,.35);
+    box(L,84,84,84,CARD);ban(56,L+42,126);font(700,46);x.fillStyle=INK;x.textBaseline='middle';x.fillText('dailybanana.io',L+104,128);
+    const chip=wk?'Weekend challenge':'Challenge';font(700,36);const cw=x.measureText(chip).width+48;box(R-cw-6,92,cw,68,ACC);x.fillStyle=INK;x.fillText(chip,R-cw-6+24,128);x.textBaseline='alphabetic';
+    font(700,104);x.fillStyle=INK;(wk?['Join the', 'weekend', 'challenge!']:['I challenge','you!']).forEach((t,i)=>x.fillText(t,L,330+i*112));
+    const y0=wk?330+3*112:330+2*112;
+    if(mine&&!wk){font(500,40);x.fillStyle=MUT;x.fillText('Can you beat my score?',L,y0+20);font(700,180);x.fillStyle=INK;x.fillText(fmt(mine.score),L-6,y0+200);const w=x.measureText(fmt(mine.score)).width;font(700,60);x.fillStyle=MUT;x.fillText(`/ ${ROUNDS*MAX_PTS}`,L+w+12,y0+200)}
+    else{font(500,40);x.fillStyle=MUT;x.fillText(wk?`${wk.theme} · same 6 questions for everyone`:'Same 6 questions. One try each.',L,y0+20)}
+    box(L,880,R-L,230,CARD,8);font(500,34);x.fillStyle=MUT;x.fillText('Tap Join on dailybanana.io and enter',L+40,945);font(700,96);x.fillStyle=INK;x.fillText(code,L+40,1060);
+    x.fillStyle=ACCSH;x.fillRect(L+8,1156,R-L,118);x.fillStyle=INK;x.fillRect(L,1148,R-L,118);
+    font(700,40);x.textBaseline='middle';x.fillStyle='#FFF0A0';x.fillText(wk?'All weekend':'Open 24h',L+44,1208);
+    x.fillStyle=ACC;x.textAlign='right';let lf=40;const lk=`dailybanana.io/c/${code}`;while(x.measureText(lk).width>R-L-300&&lf>26){lf-=2;font(700,lf)}x.fillText(lk,R-44,1208);x.textAlign='left';
+    const blob=await new Promise(ok=>cv.toBlob(ok,'image/png')),name=`daily-banana-challenge-${code}.png`,file=new File([blob],name,{type:'image/png'});
+    log('share',{what:'challenge',device:DEVICE});
+    if(navigator.canShare&&navigator.canShare({files:[file]})&&matchMedia('(pointer:coarse)').matches){try{await navigator.share({files:[file]})}catch(_){}}
+    else{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast('Image saved')}
   }catch(e){toast('Couldn\'t make the image')}
   btn.disabled=false;
 }
@@ -1531,8 +1562,9 @@ function board(c){
   return`<div class="board">${c.entries.map((e,i)=>`<div class="${e.you?'you':''}"><span class="n num">${i+1}</span><span class="nm">${esc(e.name)}${e.you?' (you)':''}</span><span>${esc(e.marks||'')}</span><b class="num">${fmt(e.score)}</b></div>`).join('')}</div>`;
 }
 const status=c=>c.open?`Open · closes in ${leftLabel(c.closes-Date.now())}`:'Closed';
-function shareLinkRow(code){return`<div class="linkbox"><code id="lk">${esc(chalLink(code))}</code><button class="sq" id="cplk">Copy</button></div>`}
+function shareLinkRow(code){return`<div class="linkbox"><code id="lk">${esc(chalLink(code))}</code><button class="sq" id="cplk">Copy</button><button class="sq icon" id="chimg" aria-label="Share this challenge as an image">${ICON.share}</button></div>`}
 function wireLink(code,host){
+  const im=document.getElementById('chimg');if(im)im.onclick=async()=>{const c=await getChal(code);chalImage(code,host,c,im)};
   const b=document.getElementById('cplk');if(!b)return;
   b.onclick=async()=>{const url=chalLink(code),text=`Daily Banana challenge from ${host}: can you beat me? Same 6 questions, open for 24 hours.`;
     try{await navigator.clipboard.writeText(`${text} ${url}`);b.textContent='Copied!';toast('Challenge link copied');log('share',{what:'challenge',device:DEVICE})}catch(_){const rg=document.createRange();rg.selectNodeContents(document.getElementById('lk'));const s=getSelection();s.removeAllRanges();s.addRange(rg)}};
