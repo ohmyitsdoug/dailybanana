@@ -160,7 +160,7 @@ export async function build(kind, store, { date = etParts().date, preview = fals
     if (!wk) return null;
     const code = preview ? 'PREVIEW' : (await openWeekend(store, wk, items)).code;
     const img = P.weekendPost(wk, code);
-    return { kind, ...withTags('sat', `Join this weekend’s challenge! 🍌 Same 6 questions for everyone, open all weekend, one try.\nLink in bio, or tap “Join” and enter ${code}.\nPost your score in the comments 👇`), images: [img], story: [P.storyOf(img, false)], extra: { code, n: wk.n } };
+    return { kind, ...withTags('sat', `Join this weekend’s challenge: ${wk.theme}! 🍌 Same 6 questions for everyone, open all weekend, one try.\nLink in bio, or tap “Join” and enter ${code}.\nPost your score in the comments 👇`), images: [img], story: [P.storyOf(img, false)], extra: { code, n: wk.n } };
   }
   if (kind === 'sun_story') {
     const cur = await store.get('weekend/current', { type: 'json' }).catch(() => null), wks = await data('weekend');
