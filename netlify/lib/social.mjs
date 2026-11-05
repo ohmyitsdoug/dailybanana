@@ -76,7 +76,7 @@ export function randomPair(items, { lo = 6, hi = 250, unit = null, avoid = new S
   }
   return null;
 }
-const BUCKETS = [[2, 10], [6, 30], [20, 90], [60, 250], [150, 700], [400, 1500]];
+const BUCKETS = [[2, 25], [2, 25], [25, 250], [25, 250], [250, 2000], [250, 2000]];   // same as the game: 2 small, 2 medium, 2 large
 
 async function used(store) { return (await store.get('social/used', { type: 'json' }).catch(() => null)) || { facts: [], pairs: [] }; }
 async function remember(store, u) { u.facts = u.facts.slice(-80); u.pairs = u.pairs.slice(-300); await store.setJSON('social/used', u); }

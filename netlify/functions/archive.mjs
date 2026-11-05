@@ -3,7 +3,7 @@
 //   /archive/000    one daily: the six questions, answers, sizes, how players did and where they typically guessed
 // A daily is published once it's over in every time zone (noon UTC the day after its date), so nothing is spoiled.
 import { db, getAll } from '../lib/db.mjs';
-import { page, esc, fmt, nice, shownAns, SCORE_V2, len, fmtDate, shortDate, pad3, SITE_URL } from '../lib/page.mjs';
+import { page, esc, fmt, nice, shownAns, roundAns, SCORE_V2, SCORE_V3, len, fmtDate, shortDate, pad3, SITE_URL } from '../lib/page.mjs';
 
 export const config = { path: ['/archive', '/archive/*'] };
 
@@ -76,7 +76,7 @@ export default async (req) => {
   const anyTypical = qs.some((q) => q.typical);
   const prev = live.find((x) => x.n === n - 1), next = live.find((x) => x.n === n + 1);
 
-  const ansOf = (q) => (d.date >= SCORE_V2 ? shownAns(q.ans) : nice(q.ans));
+  const ansOf = (q) => (d.date >= SCORE_V3 ? roundAns(q.ans) : d.date >= SCORE_V2 ? shownAns(q.ans) : nice(q.ans));
   const body = `<div class="eyebrow" style="margin-top:22px">Daily #${pad3(n)} · ${esc(fmtDate(d.date))}</div>
     <h1>Daily Banana #${pad3(n)} answers</h1>
     <p class="lead">Six questions, one ridiculous unit each. Here are the answers, the real sizes behind them, and how ${ps.length ? `${fmt(ps.length)} player${ps.length === 1 ? '' : 's'}` : 'players'} did.</p>
