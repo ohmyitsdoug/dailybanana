@@ -115,9 +115,13 @@ export default async (req) => {
     const ch = i.channel_id || (i.channel && i.channel.id), guild = i.guild_id, want = AUTO[name];
     if (!guild || !ch) return quiet(`Run /${name} in a server channel.`);
     const say = (k) => 'All set! 🍌 This channel will get ' + [k.includes('daily') && 'yesterday’s results and today’s daily every morning (about 7am Eastern)', k.includes('weekend') && 'the weekend challenge when it opens on Saturday, a last call on Sunday evening and the results on Monday morning'].filter(Boolean).join(', plus ') + '. Use /banana-stop to turn it off.';
-    const have = (await getAll(store, 'discord/hooks/')).find((h) => h.channel === ch);
+    const all = await getAll(store, 'discord/hooks/'), mine = all.filter((h) => h.channel === ch);
+    console.log(JSON.stringify({ cmd: name, ch, hooks: all.length, here: mine.map((h) => ({ key: h.key, kinds: h.kinds || null })) }));
+    const have = mine[0];
+    for (const extra of mine.slice(1)) await store.delete(extra.key);   // one webhook per channel
     if (have) {
-      const { key, ...hk } = have, kinds = [...new Set([...(Array.isArray(hk.kinds) ? hk.kinds : ['daily', 'weekend']), ...want])];
+      // a channel set up before the daily/weekend split has no list: it becomes exactly what was just asked for
+      const { key, ...hk } = have, kinds = Array.isArray(hk.kinds) ? [...new Set([...hk.kinds, ...want])] : want;
       await store.setJSON(key, { ...hk, kinds });
       return quiet(say(kinds));
     }
@@ -131,6 +135,7 @@ export default async (req) => {
   if (name === 'banana-stop') {
     const ch = i.channel_id || (i.channel && i.channel.id);
     const hooks = (await getAll(store, 'discord/hooks/')).filter((h) => h.channel === ch);
+    console.log(JSON.stringify({ cmd: name, ch, removed: hooks.map((h) => h.key) }));
     for (const h of hooks) { await fetch(h.url, { method: 'DELETE' }).catch(() => {}); await store.delete(h.key); }
     return quiet(hooks.length ? 'Done. This channel won’t get the automatic posts anymore.' : 'This channel wasn’t getting the automatic posts.');
   }
