@@ -5,7 +5,7 @@
 import { db, json, day, getAll, getAllCached } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
 import { checkName, fallbackName } from '../lib/names.mjs';
-import { reviews, refreshDaily } from '../lib/review.mjs';
+import { reviews, refreshDaily, autoOut, isOut } from '../lib/review.mjs';
 import { shownAns, roundAns, nice, SCORE_V2, SCORE_V3 } from '../lib/page.mjs';
 
 // when each kind of data started being recorded
@@ -29,13 +29,11 @@ async function review(store, b) {
   return json({ ok: true, s: rv[key] ? rv[key].s : null });
 }
 
-// daily games that look too good: flagged for a look in Admin → Games to review
+// unusual games that aren't clear-cut: they wait in the admin's review inbox and keep counting unless the admin leaves them out
 const flagsFor = (g, usual, plays) => {
-  const f = [], exact = (g.points || []).filter((x) => x >= 100).length;
+  const f = [], pts = g.points || [];
   if (g.score >= 570) f.push(g.score >= 600 ? 'Perfect 600' : 'Near-perfect score');
-  if (exact >= 3) f.push(`${exact} exact answers`);
-  if (g.ms > 0 && g.ms < 45e3 && g.score >= 450) f.push(`Answered in ${Math.round(g.ms / 1000)}s total`);
-  if (usual && usual.n >= 2 && g.score - usual.avg >= 200) f.push(`${Math.round(g.score - usual.avg)} above their usual`);
+  if (pts.length === 6 && pts.every((x) => x >= 85)) f.push('85+ on every round');
   if (plays > 1) f.push(`Sent ${plays} times`);
   return f;
 };
@@ -108,7 +106,7 @@ export default async (req) => {
 
   // C. the daily
   const dR = dailies.filter((g) => inR(g.day, from, to));
-  const dS = dR.filter((g) => !(RV[g.key] && RV[g.key].s === 'out'));   // score numbers leave out games set aside in Games to review
+  const dS = dR.filter((g) => !isOut(g, RV));   // score numbers leave out games set aside in Games to review
   const sD = startsD.map((s) => ({ ...s, n: +s.key.split('/')[2], device: s.key.split('/')[3] })).filter((s) => inR(s.day, from, to));
   const startsTracked = to >= SINCE.starts;
   const startedKeys = new Set(sD.map((s) => `${s.device}|${s.n}`));
@@ -260,15 +258,16 @@ export default async (req) => {
   const toReview = [];
   for (const g of dR) {
     const others = (byDev.get(g.device) || []).filter((x) => x.key !== g.key), usual = others.length ? { n: others.length, avg: others.reduce((t, x) => t + (x.score || 0), 0) / others.length } : null;
-    const flags = flagsFor(g, usual, sent.get(`${g.device}|${g.n}`) || 1), r = RV[g.key];
+    const auto = autoOut(g), flags = auto ? [auto] : flagsFor(g, usual, sent.get(`${g.device}|${g.n}`) || 1), r = RV[g.key];
     if (!flags.length && !r) continue;
     const d = dailiesD && dailiesD.find((x) => x.n === g.n), v = lastV.get(g.device) || {};
     const answers = d && itemsD ? d.rounds.map((q) => { const ans = itemsD[q.b].cm / itemsD[q.a].cm; return d.date >= SCORE_V3 ? roundAns(ans) : d.date >= SCORE_V2 ? shownAns(ans) : nice(ans); }) : null;
     toReview.push({ key: g.key, n: g.n, day: g.day, score: g.score, points: g.points, guesses: g.guesses || [], answers, secs: g.ms ? Math.round(g.ms / 1000) : null, 
       h: g.h ?? null, first: seenFirst.get(g.device) || null, others: usual ? { n: usual.n, avg: Math.round(usual.avg) } : null,
-      cc: v.cc || null, tz: v.tz || null, device: g.device.slice(0, 6), flags, s: r ? r.s : null });
+      cc: v.cc || null, tz: v.tz || null, device: g.device.slice(0, 6), flags, auto: !!auto, s: r ? r.s : null,
+      box: r ? 'done' : auto ? 'auto' : 'inbox' });
   }
-  toReview.sort((a, b) => (a.s === 'ok') - (b.s === 'ok') || b.score - a.score);
+  toReview.sort((a, b) => b.day.localeCompare(a.day) || b.score - a.score);
 
   return json({ review: toReview, from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
 };

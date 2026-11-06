@@ -4,11 +4,20 @@
 export async function reviews(store) {
   return (await store.get('review', { type: 'json' }).catch(() => null)) || {};
 }
+// left out automatically, no review needed: 3 or more exact answers, or under 30 seconds of answering for all six rounds
+export const exactCount = (p) => (p.points || []).filter((x) => x >= 100).length;
+export function autoOut(p) {
+  if (exactCount(p) >= 3) return '3+ exact answers';
+  if (p.ms > 0 && p.ms < 30e3) return 'Under 30 seconds';
+  return null;
+}
+// out of the score numbers? The admin's own decision wins over the automatic rules ("ok" brings a game back)
+export const isOut = (p, rv) => (rv[p.key] ? rv[p.key].s === 'out' : !!autoOut(p));
 // the plays that count for one daily: each device's first finish, minus any left out
 export function countable(plays, rv) {
   const first = new Map();
   for (const p of [...plays].sort((a, b) => (a.key < b.key ? -1 : 1))) if (!first.has(p.device)) first.set(p.device, p);
-  return [...first.values()].filter((p) => !(rv[p.key] && rv[p.key].s === 'out'));
+  return [...first.values()].filter((p) => !isOut(p, rv));
 }
 // clear the saved numbers for a daily so the next view works them out again
 export async function refreshDaily(store, n) {

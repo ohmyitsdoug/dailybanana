@@ -25,8 +25,8 @@ a{color:var(--ink)}
 @media (max-width:440px){.logo .t{display:none}.top .wrapx{gap:10px}}
 .logo .m{display:inline-flex;width:30px;height:30px;border:2px solid var(--ink);box-shadow:2px 2px 0 var(--ink);align-items:center;justify-content:center;background:var(--card);flex:none}
 .chipa{flex:none}
-.rv{border:2px solid var(--ink);background:var(--card);padding:12px 14px;margin:0 0 12px}
-.rv.ok{opacity:.6}
+.rv{border:2px solid var(--ink);background:var(--bg);padding:12px 14px;margin:0 0 12px}
+details.rvb{margin:0 0 10px}
 .rv .h{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
 .rv .fl{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .rv .fl span{font-size:12px;font-weight:700;padding:2px 7px;border:2px solid var(--ink)}
@@ -140,7 +140,7 @@ async function fetchRange(from,to){const key=from+'_'+to;
   return d}
 // a change vs the previous period: arrow + number, never color alone
 const DEF={
-  'Games to review':'Daily games that look too good: a near-perfect score, 3+ exact answers, very fast answering, a score 200+ above that player\'s usual, the same game sent more than once. Leave out of stats removes the game from averages, rankings, the archive and posts. The player still keeps their result. Looks fine hides the flag.',
+  'Games to review':'Games with 3 or more exact answers, or under 30 seconds of answering in total, are left out of score stats automatically. Unusual games that aren\'t clear-cut (a near-perfect score, 85+ on every round, or the same game sent twice) wait in the Inbox and keep counting unless you leave them out. Left out means the game no longer counts toward averages, rankings, the archive or posts. The player keeps their own result.',
   'Daily active players':'Unique players (devices) who finished at least one game, daily or quick play, on the last day of the range. Compared with the day before.',
   'Weekly active players':'Unique players who finished at least one game in the 7 days ending on the last day of the range. Compared with the 7 days before that.',
   'Monthly active players':'Unique players who finished at least one game in the 30 days ending on the last day of the range. Compared with the 30 days before that.',
@@ -202,24 +202,27 @@ function miniTable(title,rows,label){
   return`<div class="table srcs"><div class="wrap"><table><thead><tr><th><button class="qi qb" data-def="${title}" aria-expanded="false" aria-label="What this means">?</button> ${title}</th><th>Visitors</th><th>Players</th></tr></thead>
     <tbody>${rows.length?rows.map(r=>`<tr><td>${esc(label(r.key))}</td><td>${n(r.visitors)}</td><td>${n(r.players)} <span class="mut">${pc(r.players,r.visitors)}</span></td></tr>`).join(''):'<tr><td class="mut">No data yet</td><td></td><td></td></tr>'}</tbody></table></div></div>`}
 function reviewHtml(d){const L=d.review||[];
-  const st=s=>s==='out'?'Left out of stats':s==='ok'?'Marked fine':'Not reviewed';
   const meta=r=>[r.secs!=null?`${r.secs}s answering`:null,r.h!=null?`finished ${((r.h+11)%12)+1}${r.h<12?'am':'pm'} their time`:null,
     [r.cc,r.tz].filter(Boolean).join(' · ')||null,r.first?`first seen ${fmtDay(r.first)}`:null,r.others?`usual daily ${r.others.avg} over ${r.others.n}`:'first daily',`device ${r.device}`].filter(Boolean).join(' · ');
-  return`<h2>Games to review <button class="qi qb" data-def="Games to review" aria-expanded="false" aria-label="What this means">?</button></h2>
-  ${L.length?'<p class="small mut" style="margin:-4px 0 12px">Review each flagged game. <b>Leave out of stats</b> if it looks like cheating: it stops counting toward averages, rankings, the archive and posts, but the player keeps their result. <b>Looks fine</b> if it\'s legit: it keeps counting and the card dims.</p>':''}
-  ${L.length?L.map(r=>`<div class="rv ${r.s==='ok'?'ok':''}">
-    <div class="h"><b>Daily #${String(r.n).padStart(3,'0')} · ${fmtDay(r.day)} · ${r.score}/600</b><span class="small mut">${st(r.s)}</span></div>
+  const card=r=>`<div class="rv">
+    <div class="h"><b>Daily #${String(r.n).padStart(3,'0')} · ${fmtDay(r.day)} · ${r.score}/600</b><span class="small mut">${r.s==='out'?'You left it out':r.s==='ok'?'You counted it':r.auto?'Left out automatically':'Waiting for you'}</span></div>
     <div class="fl">${r.flags.map(f=>`<span>${esc(f)}</span>`).join('')}</div>
     <div style="overflow-x:auto"><table><tr><th>Round</th>${r.points.map((_,i)=>`<td>${i+1}</td>`).join('')}</tr>
       <tr><th>Guess</th>${r.points.map((_,i)=>`<td>${r.guesses[i]==null?'–':n(r.guesses[i])}</td>`).join('')}</tr>
       ${r.answers?`<tr><th>Answer</th>${r.answers.map(a=>`<td>${n(a)}</td>`).join('')}</tr>`:''}
       <tr><th>Points</th>${r.points.map(x=>`<td>${x}</td>`).join('')}</tr></table></div>
     <div class="small mut" style="margin-bottom:10px">${esc(meta(r))}</div>
-    <div class="act" data-key="${esc(r.key)}">
-      <button data-s="out" class="${r.s==='out'?'on':''}">Leave out of stats</button>
-      <button data-s="ok" class="${r.s==='ok'?'on':''}">Looks fine</button>
-      ${r.s?'<button data-s="">Undo</button>':''}</div>
-  </div>`).join(''):'<p class="mut small">Nothing looks off in this range.</p>'}`}
+    <div class="act" data-key="${esc(r.key)}">${r.box==='inbox'?'<button data-s="out">Leave out of stats</button><button data-s="ok">Looks fine</button>'
+      :r.box==='auto'?'<button data-s="ok">Count it anyway</button>':'<button data-s="">Undo</button>'}</div>
+  </div>`;
+  const box=(id,title,items,empty)=>`<details class="table rvb" data-box="${id}" ${RVOPEN.has(id)?'open':''}><summary>${title} (${items.length})</summary><div style="padding:0 14px 4px">${items.length?items.map(card).join(''):`<p class="small mut">${empty}</p>`}</div></details>`;
+  const inbox=L.filter(r=>r.box==='inbox'),auto=L.filter(r=>r.box==='auto'),done=L.filter(r=>r.box==='done');
+  return`<h2>Games to review <button class="qi qb" data-def="Games to review" aria-expanded="false" aria-label="What this means">?</button></h2>
+  <p class="small mut" style="margin:-4px 0 12px">${auto.length} left out automatically · <b>${inbox.length} waiting for you</b> · ${done.length} you've reviewed</p>
+  ${box('inbox','Inbox',inbox,'Nothing waiting. Unusual games land here.')}
+  ${box('auto','Left out automatically',auto,'None in this range.')}
+  ${box('done','Reviewed',done,'Nothing yet.')}`}
+let RVOPEN=new Set();try{RVOPEN=new Set(JSON.parse(sessionStorage.getItem('db-rvopen')||'[]'))}catch(_){}
 function feedbackHtml(d){const F=d.feedback||[];
   return`<h2>Feedback</h2>${F.length?`<div class="table srcs"><div class="wrap"><table><thead><tr><th>Message</th><th>From</th><th>Day</th></tr></thead><tbody>${F.map(f=>`<tr><td style="white-space:pre-wrap;text-align:left;min-width:240px">${esc(f.message)}</td><td>${esc(f.name||'anonymous')}</td><td>${fmtDay(f.day)}</td></tr>`).join('')}</tbody></table></div></div>`:'<p class="mut small">No feedback yet. Players send it from Menu → Have feedback?</p>'}`}
 function ratingsHtml(d){const R=d.ratings;if(!R)return'';const max=Math.max(1,...R.dist);
@@ -333,6 +336,7 @@ function draw(d){
   if(cf)cf.onchange=ct.onchange=()=>{CUSTOM={from:cf.value,to:ct.value};if(CUSTOM.from&&CUSTOM.to)load()};
   // tap a number for what it means and how it's worked out
   m.querySelectorAll('[data-def]').forEach(el=>el.onclick=e=>{e.stopPropagation();showDef(el)});
+  m.querySelectorAll('details.rvb').forEach(x=>x.ontoggle=()=>{x.open?RVOPEN.add(x.dataset.box):RVOPEN.delete(x.dataset.box);try{sessionStorage.setItem('db-rvopen',JSON.stringify([...RVOPEN]))}catch(_){}});
   m.querySelectorAll('.rv .act button').forEach(b=>b.onclick=async()=>{
     const box=b.parentElement;box.querySelectorAll('button').forEach(x=>x.disabled=true);
     const r=await fetch(`${API}/admin`,{method:'POST',headers:{authorization:'Bearer '+TOKEN,'content-type':'application/json'},body:JSON.stringify({action:'review',key:box.dataset.key,s:b.dataset.s||null})}).catch(()=>null);

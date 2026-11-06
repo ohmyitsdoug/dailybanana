@@ -45,14 +45,15 @@ async function summarize(store, d, rounds) {
 }
 async function numbersFor(store, d) {
   const saved = await store.get(`archive/${d.n}`, { type: 'json' }).catch(() => null);
-  if (saved) return saved;
+  if (saved && saved.v >= 2) return saved;   // v2: worked out with the automatic cheat rules
   const sum = await summarize(store, d, d.rounds);
-  if (Date.now() >= publishedAt(d) + FREEZE_AFTER) { sum.frozen = true; await store.setJSON(`archive/${d.n}`, sum).catch(() => {}); }
+  if (Date.now() >= publishedAt(d) + FREEZE_AFTER) { sum.frozen = true; sum.v = 2; await store.setJSON(`archive/${d.n}`, sum).catch(() => {}); }
   return sum;
 }
 // the list page: players and average for every daily, kept in one saved index (archive/index)
 async function listNumbers(store, live) {
-  const idx = (await store.get('archive/index', { type: 'json' }).catch(() => null)) || {};
+  let idx = (await store.get('archive/index', { type: 'json' }).catch(() => null)) || {};
+  if (idx._v !== 2) idx = { _v: 2 };
   let changed = false;
   const out = await Promise.all(live.map(async (d) => {
     if (idx[d.n]) return { d, players: idx[d.n][0], avg: idx[d.n][1] };
