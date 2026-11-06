@@ -65,6 +65,9 @@ export default async (req) => {
 
   // most records never change once written, so they come from a cache and only new ones are read (see getAllCached);
   // the few that can change get read again: plays still missing guesses (a backfill can add them), brand-new devices' source, challenges, accounts
+  // Meta first, on its own: with hundreds of storage reads in flight the server's address lookups get too busy to reach Meta (EBUSY)
+  const metaP = Promise.resolve(metaAds(store, { fresh: url.searchParams.get('meta') === '1' }));
+  await metaP;
   const fresh = url.searchParams.get('fresh') === '1', yday = add(today, -1);
   const C = (p, recheck) => getAllCached(store, p, { recheck, fresh });
   const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users, seenAll, signins, kofi, timeRaw, ratingsRaw, feedbackRaw] = await Promise.all([
@@ -221,7 +224,7 @@ export default async (req) => {
   // until the admin saves their own list, start with the Dailydle listing (started the evening of Nov 5, runs 7 days)
   const adsList = (await store.get('ads', { type: 'json' }).catch(() => null)) || [{ name: 'Dailydle listing', match: 'dailydle', amount: 138.9, from: '2026-11-05', to: '2026-11-12' }];
   // Meta campaigns come in on their own (spend straight from Meta); which visitors they brought is matched by source text, "facebook" unless changed
-  const [meta, metaMatch] = await Promise.all([metaAds(store, { fresh: url.searchParams.get('meta') === '1' }), store.get('ads-meta', { type: 'json' }).catch(() => null)]);
+  const [meta, metaMatch] = await Promise.all([metaP, store.get('ads-meta', { type: 'json' }).catch(() => null)]);
   const metaRows = (meta.campaigns || []).map((c) => ({ meta: true, id: c.id, name: c.name, status: c.status, match: (metaMatch && metaMatch[c.id]) || 'facebook',
     amount: c.spend, from: c.from || today, to: c.to && c.to < today ? c.to : today, impressions: c.impressions, clicks: c.clicks }));
   const ads = [...metaRows, ...adsList].map((a) => {

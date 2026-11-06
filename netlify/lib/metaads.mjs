@@ -9,7 +9,7 @@ async function graph(path, token, tries = 2) {
   try {
     r = await fetch(`https://graph.facebook.com/${V}/${path}${path.includes('?') ? '&' : '?'}access_token=${encodeURIComponent(token)}`, { signal: AbortSignal.timeout(15e3) });
   } catch (e) {
-    if (tries > 1) return graph(path, token, tries - 1);   // one retry for a dropped connection
+    if (tries > 1) { await new Promise((ok) => setTimeout(ok, 800)); return graph(path, token, tries - 1); }   // one retry, after a moment
     const c = e.cause || {};   // "fetch failed" hides the real reason here
     throw new Error(`couldn't reach Meta: ${[c.code, c.message || e.message].filter(Boolean).join(' ')}`);
   }
@@ -27,10 +27,8 @@ export async function metaAds(store, { fresh = false } = {}) {
   const kept = await store.get('meta/ads', { type: 'json' }).catch(() => null);
   if (kept && !fresh && Date.now() - kept.at < KEEP) return kept;
   try {
-    const [camps, ins] = await Promise.all([
-      graph(`${act}/campaigns?fields=id,name,effective_status,start_time,stop_time&limit=100`, token),
-      graph(`${act}/insights?level=campaign&date_preset=maximum&fields=campaign_id,spend,impressions,clicks&limit=200`, token),
-    ]);
+    const camps = await graph(`${act}/campaigns?fields=id,name,effective_status,start_time,stop_time&limit=100`, token);
+    const ins = await graph(`${act}/insights?level=campaign&date_preset=maximum&fields=campaign_id,spend,impressions,clicks&limit=200`, token);
     const byId = new Map(ins.map((x) => [x.campaign_id, x]));
     const campaigns = camps.map((c) => {
       const i = byId.get(c.id) || {};
