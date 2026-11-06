@@ -6,7 +6,11 @@
 //   POST { action:'rename', name } + Authorization
 //   DELETE + Authorization                         delete the account and its saved data
 import { db, json } from '../lib/db.mjs';
-import { makeToken, userFor, publicUser, googleIdentity, discordIdentity, cleanName, newUid } from '../lib/auth.mjs';
+import { makeToken, userFor, publicUser, googleIdentity, discordIdentity, cleanName, newUid, isAdminUser } from '../lib/auth.mjs';
+import { checkName, fallbackName } from '../lib/names.mjs';
+const DAY = 864e5;
+// a new account's name: the sign-in name if it passes the rules, otherwise 'Player'
+const startName = (n) => { const r = checkName(cleanName(n)); return r.ok ? r.name : 'Player'; };
 
 const hasGames = (d) => !!d && (Object.keys(d.results || {}).length > 0 || (d.quick || []).length > 0);
 
@@ -30,9 +34,13 @@ export default async (req) => {
   if (b.action === 'rename') {
     const u = await userFor(req, store);
     if (!u) return json({ error: 'Not signed in.' }, 401);
-    const name = cleanName(b.name);
-    if (!name) return json({ error: 'Pick a name.' }, 400);
-    u.name = name; await store.setJSON(`users/${u.uid}`, u);
+    // name rules (lib/names.mjs), and one change per 24 hours after the first (the admin can change any time)
+    const admin = isAdminUser(u), r = checkName(b.name, { admin });
+    if (!r.ok) return json({ error: r.error }, 400);
+    if (r.name === u.name) return json({ user: publicUser(u) });
+    const wait = u.nameAt && !admin ? u.nameAt + DAY - Date.now() : 0;
+    if (wait > 0) { const h = Math.ceil(wait / 3600e3); return json({ error: `You can change your name again in ${h} hour${h === 1 ? '' : 's'}.` }, 429); }
+    u.name = r.name; u.nameAt = Date.now(); await store.setJSON(`users/${u.uid}`, u);
     return json({ user: publicUser(u) });
   }
 
@@ -61,11 +69,13 @@ export default async (req) => {
     user[provider] = ident.data;
   } else if (existing) {
     user = await store.get(`users/${existing}`, { type: 'json' }).catch(() => null);
-    if (!user) user = { uid: existing, name: cleanName(ident.name) || 'Player', created: Date.now() };
+    if (!user) user = { uid: existing, name: startName(ident.name), orig: cleanName(ident.name), created: Date.now() };
     user[provider] = ident.data;   // keep the email or username current
   } else {
-    user = { uid: newUid(), name: cleanName(ident.name) || 'Player', created: Date.now(), [provider]: ident.data };
+    user = { uid: newUid(), name: startName(ident.name), orig: cleanName(ident.name), created: Date.now(), [provider]: ident.data };
   }
+  if (!user.orig) user.orig = cleanName(ident.name);
+  if (!isAdminUser(user) && !checkName(user.name).ok && !/^Player$/.test(user.name)) user.name = fallbackName(user);
   await store.setJSON(`users/${user.uid}`, user);
   await store.set(idxKey, user.uid);
   return json({ token: await makeToken(user.uid, store), user: publicUser(user) });

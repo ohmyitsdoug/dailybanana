@@ -4,6 +4,7 @@
 // Metrics whose tracking started later report `null` plus a `since` date, never a fake zero.
 import { db, json, day, getAll, getAllCached } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
+import { checkName, fallbackName } from '../lib/names.mjs';
 
 // when each kind of data started being recorded
 const SINCE = { games: '2026-11-03', visits: '2026-11-03', shares: '2026-11-03', quick: '2026-11-03', starts: '2026-11-04', time: '2026-11-04', where: '2026-11-06' };
@@ -33,6 +34,14 @@ export default async (req) => {
     C('visits/'), C('shares/'), getAll(store, 'challenges/'), C('entries/'), getAll(store, 'users/'), C('seen/', (v) => !v.first || (v.first >= yday && !v.src)), C('signins/'), C('kofi/'),
     getAll(store, `time/`), getAll(store, 'ratings/'), getAll(store, 'feedback/'),
   ]);
+  // accounts whose name breaks the name rules go back to their original sign-in name (or 'Player')
+  let renamed = 0;
+  for (const u of users) {
+    if (!u.uid || !u.name || isAdminUser(u) || u.name === 'Player' || checkName(u.name).ok) continue;
+    const fixed = { ...u, name: fallbackName(u) }; delete fixed.key;
+    await store.setJSON(`users/${u.uid}`, fixed).catch(() => {}); u.name = fixed.name; renamed++;
+  }
+
   // one record per game, with its Eastern day
   const dailies = []; const seenDaily = new Set();
   for (const p of plays.sort((a, b) => (a.key < b.key ? -1 : 1))) {
@@ -215,5 +224,5 @@ export default async (req) => {
       bananas: g.reduce((t, x) => t + ban(x), 0), shares: shares.filter((s) => s.key.split('/')[1] === d).length });
     if (days.length > 400) break;
   }
-  return json({ from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
+  return json({ from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
 };

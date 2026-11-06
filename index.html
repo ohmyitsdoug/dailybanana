@@ -1264,7 +1264,7 @@ function acctHtml(){
   return`<details class="acctdd"><summary class="lrow"><span>Signed in as <b>${esc(u.name)}</b></span><span class="mut chev" aria-hidden="true">▾</span></summary>
     <div class="list" style="border-top:0">
       <form class="lrow" id="renamef" style="gap:8px"><label for="rn" class="mut" style="flex:none">Name</label>
-        <input id="rn" class="namein" style="height:40px" maxlength="16" value="${esc(u.name)}" autocomplete="nickname"><button class="sq">Save</button></form>
+        <input id="rn" class="namein" style="height:40px" maxlength="24" value="${esc(u.name)}" autocomplete="nickname"><button class="sq">Save</button></form>
       <div class="lrow"><span>Google</span>${u.google?'<span class="mut">Linked</span>':'<button class="sq" id="ggl">Link</button>'}</div>
       <div class="lrow"><span>Discord</span>${u.discord?'<span class="mut">Linked</span>':'<button class="sq" id="dsc">Link</button>'}</div>
       <button class="lrow" id="signout"><span>Sign out</span><span class="mut">→</span></button>

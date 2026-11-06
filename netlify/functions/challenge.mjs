@@ -17,7 +17,8 @@ const HOUR = 3600e3, OPEN_FOR = 24 * HOUR, MAKE_WITHIN = HOUR, ROUNDS = 6, MAX =
 const ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const newCode = () => Array.from({ length: 6 }, () => ABC[Math.floor(Math.random() * ABC.length)]).join('');
 const cleanCode = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
-const cleanName = (s) => String(s || '').replace(/[<>"&]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16) || 'Someone';
+import { boardName } from '../lib/names.mjs';
+const cleanName = (s) => boardName(String(s || '').replace(/[<>"&]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16));   // name rules: lib/names.mjs
 const cleanScore = (n) => Math.max(0, Math.min(MAX, Math.round(+n || 0)));
 const cleanMarks = (s) => [...String(s || '')].slice(0, ROUNDS).join('');
 const isOpen = (c, now = Date.now()) => c && !c.closed && c.closes > now;
