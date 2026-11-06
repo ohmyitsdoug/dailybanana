@@ -37,7 +37,6 @@ const flagsFor = (g, usual, plays) => {
   if (g.ms > 0 && g.ms < 45e3 && g.score >= 450) f.push(`Answered in ${Math.round(g.ms / 1000)}s total`);
   if (usual && usual.n >= 2 && g.score - usual.avg >= 200) f.push(`${Math.round(g.score - usual.avg)} above their usual`);
   if (plays > 1) f.push(`Sent ${plays} times`);
-  if (g.pz >= 2 && g.score >= 450) f.push(`Paused ${g.pz} times`);
   return f;
 };
 
@@ -265,7 +264,7 @@ export default async (req) => {
     if (!flags.length && !r) continue;
     const d = dailiesD && dailiesD.find((x) => x.n === g.n), v = lastV.get(g.device) || {};
     const answers = d && itemsD ? d.rounds.map((q) => { const ans = itemsD[q.b].cm / itemsD[q.a].cm; return d.date >= SCORE_V3 ? roundAns(ans) : d.date >= SCORE_V2 ? shownAns(ans) : nice(ans); }) : null;
-    toReview.push({ key: g.key, n: g.n, day: g.day, score: g.score, points: g.points, guesses: g.guesses || [], answers, secs: g.ms ? Math.round(g.ms / 1000) : null, pauses: g.pz ?? null,
+    toReview.push({ key: g.key, n: g.n, day: g.day, score: g.score, points: g.points, guesses: g.guesses || [], answers, secs: g.ms ? Math.round(g.ms / 1000) : null, 
       h: g.h ?? null, first: seenFirst.get(g.device) || null, others: usual ? { n: usual.n, avg: Math.round(usual.avg) } : null,
       cc: v.cc || null, tz: v.tz || null, device: g.device.slice(0, 6), flags, s: r ? r.s : null });
   }

@@ -484,7 +484,7 @@ document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.vb
 // v0.5 "Banana for Scale": 5 quick rounds a day. "How many bananas long is a school bus?"
 // Answer with a number. Points come from how far off you are, measured in multiples:
 //   within 10% = 100, sliding down to 0 at 10x too high or too low.
-const ROUNDS=6, ROUND_SECONDS=25, HEADSTART_MS=1000, MAX_PAUSES=2;
+const ROUNDS=6, ROUND_SECONDS=25, HEADSTART_MS=1000;
 const MAX_PTS=100;
 // answer ranges, one per round, small to huge (keep in sync with tools/make_scale.py)
 // two small, two medium and two large answers per game (from Nov 6), in any order; answers stay under ~2,000 so the two things stay comparable
@@ -881,7 +881,6 @@ function showStart(){
   clearInterval(tick);S=null;
   const res=saved(TODAY.n),live=liveSaved(TODAY.n);
   const p=puzzleFor(TODAY);
-  const pausesLeft=live?MAX_PAUSES-live.pauses:MAX_PAUSES;
   const play=res?`<span>See today's results</span><span aria-hidden="true">→</span>`
     :live?`<span>Resume the daily <small>· round ${Math.min(ROUNDS,live.answers.length+1)} of ${ROUNDS}</small></span><span aria-hidden="true">→</span>`
     :`<span>Play the daily</span><span aria-hidden="true">→</span>`;
@@ -901,7 +900,6 @@ function showStart(){
         <button class="btn main" id="daily">${play}</button>
         <div class="cta2"><button class="btn" id="quick">${quickLive()?'Resume quick play':'Quick play'}</button><button class="btn" id="joinch" aria-label="Join a challenge with a code">Join</button></div>
       </div>
-      ${live&&!res?`<div class="note in" style="--d:5">${pausesLeft>0?`${pausesLeft} pause${pausesLeft===1?'':'s'} left today.`:'No pauses left: pausing again ends your daily.'}</div>`:''}
     </div>
   </div>
   ${footer(6)}`;
@@ -936,7 +934,7 @@ function showHelp(){
     <h3>THE SIZES</h3>
     <p class="note">Every answer uses a typical size: an adult shoe is 28 cm, a banana 18 cm, a school bus 12.2 m. Landmarks use their official height. After each round you'll see both sizes.</p>
     <h3>PAUSING</h3>
-    <p>Tap pause to step away. You can pause a daily twice; pausing a third time ends it.</p>
+    <p>You can pause between rounds. Once a question is up, its clock keeps running, even if you leave the game.</p>
   </div>${footer(2)}`;
   wireNav();document.getElementById('back').onclick=showStart;window.scrollTo(0,0);
 }
@@ -1044,7 +1042,6 @@ function showQuestion(){
   app.innerHTML=`<div class="page play">
     <div class="main-col" style="display:flex;flex-direction:column;gap:10px">
       <div class="playtop in" style="--d:0">
-        <button class="sq icon" id="pause" aria-label="Pause">${ICON.pause}</button>
         <span class="timer num" id="t">0:${String(Math.ceil(S.left/1000)).padStart(2,'0')}</span>
         <div class="bar" id="bar"><div style="width:${100*S.left/(ROUND_SECONDS*1000)}%"></div></div>
         <span class="tag pts num">${S.i+1}/${ROUNDS} · ${fmt(S.score)}</span>
@@ -1066,7 +1063,6 @@ function showQuestion(){
   g.onfocus=()=>{if(!matchMedia('(min-width:1100px)').matches){window.scrollTo(0,0);setTimeout(()=>window.scrollTo(0,0),300)}};
   document.getElementById('f').onsubmit=e=>{e.preventDefault();if(!S)return;if(!S.clock)startClock();submit(g.value);if(S&&S.phase==='play'){g.value='';g.oninput();g.focus()}};
   document.getElementById('go').onpointerdown=e=>e.preventDefault();   // keep the keyboard open
-  document.getElementById('pause').onclick=pause;
   g.focus();
   const fb=document.getElementById('fb');
   if(!reduced()){fb.className='fb pop';fb.innerHTML=`<span class="count">Round ${S.i+1}</span>`}
@@ -1092,17 +1088,8 @@ function startClock(){
 }
 function pause(){
   if(!S)return;
-  const playing=S.phase==='play';
-  if(playing){S.left=S.clock?Math.max(0,S.end-Date.now()):S.left;clearInterval(tick)}
+  if(S.phase==='play')return;   // only between questions: once a question is up, its clock keeps running
   if(S.r.quick){S.clock=false;quickKeep();pushSync();S=null;showStart();return}
-  if(playing){
-    if(S.pauses>=MAX_PAUSES){
-      const b=document.getElementById('pause');
-      if(!b.dataset.armed){b.dataset.armed='1';S.end=Date.now()+S.left;say('Pausing again ends your daily. Tap pause once more to end it.');setTimeout(()=>{if(b)delete b.dataset.armed},4000);return}
-      return finish('paused');
-    }
-    S.pauses++;
-  }
   S.clock=false;S.live=false;saveLive();S=null;showStart();
 }
 function say(msg){
@@ -1177,7 +1164,7 @@ function finish(why){
     store.set('v07:'+r.n,res);
     res.badges=awardBadges(res,r);if(res.badges.length)store.set('v07:'+r.n,res);
     pushSync();stale('st:'+r.n);
-    log('play',{puzzle:r.n,points:R.answers.map(a=>a.p||0),guesses:R.answers.map(a=>a.guess==null?null:+a.guess),score:total,ms:R.answers.reduce((t,a)=>t+(a.t||0),0),pz:R.pauses||0,device:DEVICE,h:new Date().getHours(),tz:ENV.tz});
+    log('play',{puzzle:r.n,points:R.answers.map(a=>a.p||0),guesses:R.answers.map(a=>a.guess==null?null:+a.guess),score:total,ms:R.answers.reduce((t,a)=>t+(a.t||0),0),device:DEVICE,h:new Date().getHours(),tz:ENV.tz});
   }else{
     quickDrop();
     Object.assign(res,{id:'q'+Date.now().toString(36),at:Date.now(),rounds:toNames(r.rounds),chal:r.chal||null,own:false});
@@ -1950,11 +1937,6 @@ loadData().then(()=>{
   const live=liveSaved(TODAY.n);
   if(live&&!Array.isArray(live.answers))store.del('live:'+TODAY.n);   // an unfinished round from an older version
   else if(live&&live.running&&!live.end){live.running=false;live.pauses++;store.set('live:'+TODAY.n,live)}   // saved by an older version: counts as a pause
-  const l2=liveSaved(TODAY.n);
-  if(l2&&l2.pauses>MAX_PAUSES&&!saved(TODAY.n)){
-    S={r:puzzleFor(TODAY),answers:l2.answers,score:l2.score,pauses:MAX_PAUSES};
-    return finish('paused');
-  }
   const code=new URLSearchParams(location.search).get('c'),toMenu=new URLSearchParams(location.search).has('menu');   // ?menu comes from the admin page's Menu button
   signInReturn().then(handled=>{
     if(handled)return;

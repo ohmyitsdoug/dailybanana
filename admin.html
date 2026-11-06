@@ -140,7 +140,7 @@ async function fetchRange(from,to){const key=from+'_'+to;
   return d}
 // a change vs the previous period: arrow + number, never color alone
 const DEF={
-  'Games to review':'Daily games that look too good: a near-perfect score, 3+ exact answers, very fast answering, a score 200+ above that player\'s usual, the same game sent more than once, or lots of pauses on a high score. Leave out of stats removes the game from averages, rankings, the archive and posts. The player still keeps their result. Looks fine hides the flag.',
+  'Games to review':'Daily games that look too good: a near-perfect score, 3+ exact answers, very fast answering, a score 200+ above that player\'s usual, the same game sent more than once. Leave out of stats removes the game from averages, rankings, the archive and posts. The player still keeps their result. Looks fine hides the flag.',
   'Daily active players':'Unique players (devices) who finished at least one game, daily or quick play, on the last day of the range. Compared with the day before.',
   'Weekly active players':'Unique players who finished at least one game in the 7 days ending on the last day of the range. Compared with the 7 days before that.',
   'Monthly active players':'Unique players who finished at least one game in the 30 days ending on the last day of the range. Compared with the 30 days before that.',
@@ -203,7 +203,7 @@ function miniTable(title,rows,label){
     <tbody>${rows.length?rows.map(r=>`<tr><td>${esc(label(r.key))}</td><td>${n(r.visitors)}</td><td>${n(r.players)} <span class="mut">${pc(r.players,r.visitors)}</span></td></tr>`).join(''):'<tr><td class="mut">No data yet</td><td></td><td></td></tr>'}</tbody></table></div></div>`}
 function reviewHtml(d){const L=d.review||[];
   const st=s=>s==='out'?'Left out of stats':s==='ok'?'Marked fine':'Not reviewed';
-  const meta=r=>[r.secs!=null?`${r.secs}s answering`:null,r.pauses!=null?`${r.pauses} pause${r.pauses===1?'':'s'}`:null,r.h!=null?`finished ${((r.h+11)%12)+1}${r.h<12?'am':'pm'} their time`:null,
+  const meta=r=>[r.secs!=null?`${r.secs}s answering`:null,r.h!=null?`finished ${((r.h+11)%12)+1}${r.h<12?'am':'pm'} their time`:null,
     [r.cc,r.tz].filter(Boolean).join(' · ')||null,r.first?`first seen ${fmtDay(r.first)}`:null,r.others?`usual daily ${r.others.avg} over ${r.others.n}`:'first daily',`device ${r.device}`].filter(Boolean).join(' · ');
   return`<h2>Games to review <button class="qi qb" data-def="Games to review" aria-expanded="false" aria-label="What this means">?</button></h2>
   ${L.length?L.map(r=>`<div class="rv ${r.s==='ok'?'ok':''}">
