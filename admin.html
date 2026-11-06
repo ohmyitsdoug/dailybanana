@@ -206,6 +206,7 @@ function reviewHtml(d){const L=d.review||[];
   const meta=r=>[r.secs!=null?`${r.secs}s answering`:null,r.h!=null?`finished ${((r.h+11)%12)+1}${r.h<12?'am':'pm'} their time`:null,
     [r.cc,r.tz].filter(Boolean).join(' · ')||null,r.first?`first seen ${fmtDay(r.first)}`:null,r.others?`usual daily ${r.others.avg} over ${r.others.n}`:'first daily',`device ${r.device}`].filter(Boolean).join(' · ');
   return`<h2>Games to review <button class="qi qb" data-def="Games to review" aria-expanded="false" aria-label="What this means">?</button></h2>
+  ${L.length?'<p class="small mut" style="margin:-4px 0 12px">Review each flagged game. <b>Leave out of stats</b> if it looks like cheating: it stops counting toward averages, rankings, the archive and posts, but the player keeps their result. <b>Looks fine</b> if it\'s legit: it keeps counting and the card dims.</p>':''}
   ${L.length?L.map(r=>`<div class="rv ${r.s==='ok'?'ok':''}">
     <div class="h"><b>Daily #${String(r.n).padStart(3,'0')} · ${fmtDay(r.day)} · ${r.score}/600</b><span class="small mut">${st(r.s)}</span></div>
     <div class="fl">${r.flags.map(f=>`<span>${esc(f)}</span>`).join('')}</div>
