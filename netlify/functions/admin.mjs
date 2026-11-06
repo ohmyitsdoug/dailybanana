@@ -29,6 +29,16 @@ async function review(store, b) {
   return json({ ok: true, s: rv[key] ? rv[key].s : null });
 }
 
+// POST { action:'ads', ads:[{ name, match, amount, from, to }] }: the paid placements, to work out cost per visitor, player and returning player
+async function saveAds(store, b) {
+  const ads = (Array.isArray(b.ads) ? b.ads : []).slice(0, 50).map((a) => ({
+    name: String(a.name || '').slice(0, 60), match: String(a.match || '').toLowerCase().replace(/[^a-z0-9_.\- ·]/g, '').slice(0, 60),
+    amount: Math.round(Math.max(0, Math.min(1e6, +a.amount || 0)) * 100) / 100, from: isISO(a.from) ? a.from : null, to: isISO(a.to) ? a.to : null,
+  })).filter((a) => a.name && a.match && a.from && a.to && a.from <= a.to);
+  await store.setJSON('ads', ads);
+  return json({ ok: true, ads });
+}
+
 // unusual games that aren't clear-cut: they wait in the admin's review inbox and keep counting unless the admin leaves them out
 const flagsFor = (g, usual, plays) => {
   const f = [], pts = g.points || [];
@@ -41,7 +51,7 @@ const flagsFor = (g, usual, plays) => {
 export default async (req) => {
   if (!isAdminUser(await userFor(req))) return json({ error: 'not the admin account' }, 401);
   const store = db(), url = new URL(req.url), today = day();
-  if (req.method === 'POST') { let b = {}; try { b = await req.json(); } catch {} return b.action === 'review' ? review(store, b) : json({ error: 'unknown action' }, 400); }
+  if (req.method === 'POST') { let b = {}; try { b = await req.json(); } catch {} return b.action === 'review' ? review(store, b) : b.action === 'ads' ? saveAds(store, b) : json({ error: 'unknown action' }, 400); }
   let to = isISO(url.searchParams.get('to')) ? url.searchParams.get('to') : today;
   let from = isISO(url.searchParams.get('from')) ? url.searchParams.get('from') : add(to, -29);
   if (to > today) to = today;
@@ -202,6 +212,20 @@ export default async (req) => {
   }
   const sources = [...groups.values()].sort((a, b) => b.visitors - a.visitors);
 
+  // K. ad spend: new devices whose first visit came from a paid placement during its dates (its own dates, not the range picked above)
+  // until the admin saves their own list, start with the Dailydle listing (started the evening of Nov 5, runs 7 days)
+  const adsList = (await store.get('ads', { type: 'json' }).catch(() => null)) || [{ name: 'Dailydle listing', match: 'dailydle', amount: 138.9, from: '2026-11-05', to: '2026-11-12' }];
+  const ads = adsList.map((a) => {
+    const r = { ...a, running: today <= a.to, day: Math.min(span(a.from, a.to), Math.max(0, span(a.from, today))), days: span(a.from, a.to), visitors: 0, played: 0, daily: 0, came_back: 0, signed_in: 0 };
+    for (const sn of seenAll) {
+      const dev = sn.key.split('/')[1];
+      if (!sn.first || !inR(sn.first, a.from, a.to) || !label(sn.src).toLowerCase().includes(a.match)) continue;
+      r.visitors++; if (first.has(dev)) r.played++; if (dailyDevs.has(dev)) r.daily++; if (signedIn.has(dev)) r.signed_in++;
+      if ([...(visitDays.get(dev) || []), ...(active.get(dev) || [])].some((d) => d > sn.first)) r.came_back++;
+    }
+    return r;
+  });
+
   // H. where players are and how they play (from Nov 6): country from Netlify's edge, time zone and language from the browser,
   // local hour of each finished daily, and active time in the game per player per day
   const lastVisit = new Map();
@@ -279,5 +303,5 @@ export default async (req) => {
   }
   toReview.sort((a, b) => b.day.localeCompare(a.day) || b.score - a.score);
 
-  return json({ review: toReview, from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
+  return json({ ads, review: toReview, from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
 };

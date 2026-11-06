@@ -25,6 +25,8 @@ a{color:var(--ink)}
 @media (max-width:440px){.logo .t{display:none}.top .wrapx{gap:10px}}
 .logo .m{display:inline-flex;width:30px;height:30px;border:2px solid var(--ink);box-shadow:2px 2px 0 var(--ink);align-items:center;justify-content:center;background:var(--card);flex:none}
 .chipa{flex:none}
+.adin{width:100%;box-sizing:border-box;height:40px;border:2px solid var(--ink);background:var(--bg);color:var(--ink);font:inherit;padding:0 8px;margin-top:4px}
+.linkb{all:unset;cursor:pointer;text-decoration:underline;font-size:13px}
 .rv{border:2px solid var(--ink);background:var(--bg);padding:12px 14px;margin:0 0 12px}
 details.rvb{margin:0 0 10px}
 .rv .h{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
@@ -159,6 +161,7 @@ async function fetchRange(from,to){const key=from+'_'+to;
 const ago=t=>{const mi=Math.round((Date.now()-t)/60e3);return mi<1?'just now':mi<60?`${mi} min ago`:`${Math.round(mi/60)} h ago`};
 // a change vs the previous period: arrow + number, never color alone
 const DEF={
+  'Ad spend':'For each ad you add: the new devices whose first visit came from a source containing your text (see Where players come from) on the ad\'s days, and what each one cost: the amount divided by that count. Played = finished any game. Came back = visited or played again on a later day. A device counts once, for the source of its very first visit. These use the ad\'s own dates, not the range picked at the top.',
   'Games to review':'Games with 3 or more exact answers, or under 30 seconds of answering in total, are left out of score stats automatically. Unusual games that aren\'t clear-cut (a near-perfect score, 85+ on every round, or the same game sent twice) wait in the Inbox and keep counting unless you leave them out. Left out means the game no longer counts toward averages, rankings, the archive or posts. The player keeps their own result.',
   'Daily active players':'Unique players (devices) who finished at least one game, daily or quick play, on the last day of the range. Compared with the day before.',
   'Weekly active players':'Unique players who finished at least one game in the 7 days ending on the last day of the range. Compared with the 7 days before that.',
@@ -225,6 +228,24 @@ const mmss=v=>v==null?'–':`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}
 function miniTable(title,rows,label){
   return`<div class="table srcs"><div class="wrap"><table><thead><tr><th><button class="qi qb" data-def="${title}" aria-expanded="false" aria-label="What this means">?</button> ${title}</th><th>Visitors</th><th>Players</th></tr></thead>
     <tbody>${rows.length?rows.map(r=>`<tr><td>${esc(label(r.key))}</td><td>${n(r.visitors)}</td><td>${n(r.players)} <span class="mut">${pc(r.players,r.visitors)}</span></td></tr>`).join(''):'<tr><td class="mut">No data yet</td><td></td><td></td></tr>'}</tbody></table></div></div>`}
+function adsHtml(d){const A=d.ads||[],$=v=>v==null?'–':'$'+(v<10?v.toFixed(2):v<100?v.toFixed(2):Math.round(v).toLocaleString('en-US'));
+  const per=(a,k)=>a[k]?$(a.amount/a[k])+' each':'';
+  const srcs=[...new Set((d.sources||[]).map(x=>x.source).filter(x=>x!=='direct'&&x!=='before tracking'))];
+  return`<h2>Ad spend <button class="qi qb" data-def="Ad spend" aria-expanded="false" aria-label="What this means">?</button></h2>
+  ${A.length?`<div class="table srcs"><div class="wrap"><table><thead><tr><th>Ad</th><th>Spent</th><th>New visitors</th><th>Played</th><th>Finished a daily</th><th>Came back</th><th><span class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Remove</span></th></tr></thead><tbody>
+    ${A.map((a,i)=>`<tr><td style="text-align:left"><b>${esc(a.name)}</b><br><span class="mut small">${fmtDay(a.from)}–${fmtDay(a.to)}${a.running?' · running':''}<br>source has “${esc(a.match)}”</span></td><td>$${a.amount.toFixed(2)}</td>
+      <td>${n(a.visitors)}<br><span class="mut small">${per(a,'visitors')}</span></td><td>${n(a.played)}<br><span class="mut small">${per(a,'played')}</span></td>
+      <td>${n(a.daily)}<br><span class="mut small">${per(a,'daily')}</span></td><td>${n(a.came_back)}<br><span class="mut small">${per(a,'came_back')}</span></td>
+      <td><button class="linkb" data-adel="${i}" type="button">Remove</button></td></tr>`).join('')}</tbody></table></div></div>`:'<p class="mut small">No ads added yet.</p>'}
+  <details class="table" style="margin-top:10px" ${A.length?'':'open'}><summary>Add an ad</summary>
+    <form id="adform" style="display:grid;gap:10px;padding:0 14px 14px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-items:end">
+      <label class="small">Name<br><input name="name" required maxlength="60" placeholder="Dailydle listing" class="adin"></label>
+      <label class="small">Source contains<br><input name="match" required maxlength="60" list="adsrc" placeholder="dailydle" class="adin"><datalist id="adsrc">${srcs.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></label>
+      <label class="small">Amount ($)<br><input name="amount" required type="number" min="0" step="0.01" placeholder="138.90" class="adin"></label>
+      <label class="small">First day<br><input name="from" required type="date" class="adin"></label>
+      <label class="small">Last day<br><input name="to" required type="date" class="adin"></label>
+      <button class="sqa" type="submit" style="height:40px">Save</button>
+    </form></details>`}
 function reviewHtml(d){const L=d.review||[];
   const meta=r=>[r.secs!=null?`${r.secs}s answering`:null,r.h!=null?`finished ${((r.h+11)%12)+1}${r.h<12?'am':'pm'} their time`:null,
     [r.cc,r.tz].filter(Boolean).join(' · ')||null,r.first?`first seen ${fmtDay(r.first)}`:null,r.others?`usual daily ${r.others.avg} over ${r.others.n}`:'first daily',`device ${r.device}`].filter(Boolean).join(' · ');
@@ -340,6 +361,8 @@ function draw(d,at=Date.now()){
       <tbody>${d.sources.map(x=>`<tr><td>${esc(x.source)}</td><td>${n(x.visitors)}</td><td>${n(x.played)} <span class="mut">${pc(x.played,x.visitors)}</span></td><td>${n(x.daily)} <span class="mut">${pc(x.daily,x.visitors)}</span></td><td>${n(x.signed_in)}</td><td>${n(x.new_accounts)}</td><td>${n(x.came_back)} <span class="mut">${pc(x.came_back,x.visitors)}</span></td></tr>`).join('')}</tbody>
     </table></div></div>`:`<p class="mut small">No new visitors in this range yet. Sources are tracked from Nov 4.</p>`}
 
+    ${adsHtml(d)}
+
     ${whereHtml(d)}
     ${reviewHtml(d)}
     ${ratingsHtml(d)}
@@ -359,6 +382,10 @@ function draw(d,at=Date.now()){
   m.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{RANGE=b.dataset.r;try{localStorage.setItem('db-admin-range',RANGE)}catch(_){}
     if(RANGE==='custom'&&!CUSTOM.from){CUSTOM={from:d.from,to:d.to}}load()});
   document.getElementById('refresh').onclick=()=>load(true);
+  const saveAds=async ads=>{const r=await fetch(`${API}/admin`,{method:'POST',headers:{authorization:'Bearer '+TOKEN,'content-type':'application/json'},body:JSON.stringify({action:'ads',ads})}).catch(()=>null);if(r&&r.ok)load(true);return!!(r&&r.ok)};
+  const af=document.getElementById('adform');if(af)af.onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(af));f.match=f.match.toLowerCase();
+    const btn=af.querySelector('button');btn.disabled=true;btn.textContent='Saving…';if(!await saveAds([...(d.ads||[]).map(({name,match,amount,from,to})=>({name,match,amount,from,to})),f])){btn.disabled=false;btn.textContent='Save'}};
+  m.querySelectorAll('[data-adel]').forEach(b=>b.onclick=()=>saveAds((d.ads||[]).filter((_,i)=>i!==+b.dataset.adel).map(({name,match,amount,from,to})=>({name,match,amount,from,to}))));
   const cf=document.getElementById('cf'),ct=document.getElementById('ct');
   if(cf)cf.onchange=ct.onchange=()=>{CUSTOM={from:cf.value,to:ct.value};if(CUSTOM.from&&CUSTOM.to)load()};
   // tap a number for what it means and how it's worked out
