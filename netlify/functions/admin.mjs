@@ -112,7 +112,17 @@ export default async (req) => {
   const startedKeys = new Set(sD.map((s) => `${s.device}|${s.n}`));
   const completedAfterStart = dR.filter((g) => startedKeys.has(`${g.device}|${g.n}`)).length;
   const timed = dR.filter((g) => g.ms > 0);
+  // your own normal: the same numbers over the 30 days ending on the range's last day (the mark on each bar in Admin)
+  const normFrom = add(to, -29), dN = dailies.filter((g) => inR(g.day, normFrom, to)), dNs = dN.filter((g) => !isOut(g, RV));
+  const sN = startsD.map((x) => ({ n: +x.key.split('/')[2], device: x.key.split('/')[3], day: x.day })).filter((x) => inR(x.day, normFrom, to) && x.day >= SINCE.starts);
+  const sNk = new Set(sN.map((x) => `${x.device}|${x.n}`)), tN = dN.filter((g) => g.ms > 0);
+  const norm = {
+    rate: sN.length ? pct(dN.filter((g) => sNk.has(`${g.device}|${g.n}`)).length, sN.length) : null,
+    accuracy: dNs.length ? pct(dNs.reduce((t, g) => t + (g.score || 0), 0), dNs.length * 600) : null,
+    time: tN.length ? Math.round(tN.reduce((t, g) => t + g.ms, 0) / tN.length / 1000) : null,
+  };
   const daily = {
+    norm,
     starts: startsTracked ? sD.length : null,
     completions: dR.length,
     completions_tracked: dR.filter((g) => g.day >= SINCE.starts).length,   // same days as starts, so the two compare

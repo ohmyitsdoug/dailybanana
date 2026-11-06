@@ -61,6 +61,10 @@ button.card:hover .qi,button.card:focus-visible .qi,button.card[aria-expanded="t
 .card b{font-size:28px;line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
 .card.big b{font-size:36px}
 .card .s{font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+.card .meter{position:relative;display:block;height:8px;border:2px solid var(--ink);background:var(--bg);margin-top:8px}
+.card .meter .f{position:absolute;left:0;top:0;bottom:0;background:var(--ink)}
+.card .meter .k{position:absolute;top:-6px;bottom:-6px;width:2px;margin-left:-1px;background:var(--accsh)}
+.card .mk{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:var(--mut);margin-top:4px;font-variant-numeric:tabular-nums}
 .card .s.up{color:var(--ink);font-weight:700}
 .chart{border:2px solid var(--ink);background:var(--card);padding:14px 16px 10px;position:relative}
 .chart .bars{display:flex;align-items:flex-end;gap:2px;height:120px;margin-top:10px;border-bottom:2px solid var(--ink)}
@@ -161,12 +165,12 @@ const DEF={
   'Monthly active players':'Unique players who finished at least one game in the 30 days ending on the last day of the range. Compared with the 30 days before that.',
   'New players':'Players whose first finished game ever falls inside the range. Compared with the same number of days just before it. Visiting without playing doesn\'t count.',
   'Players per day':'Unique players who finished at least one game on each day of the range. Hover or tap a bar for the exact number.',
-  'D1 retention':'Of the new players in this range, the share who finished a game again exactly 1 day after their first game. Only counts players whose next day has already happened.',
-  'D7 retention':'Of the new players in this range, the share who finished a game again exactly 7 days after their first game. Only counts players at least 7 days in.',
-  'D30 retention':'Of the new players in this range, the share who finished a game again exactly 30 days after their first game. Only counts players at least 30 days in.',
+  'D1 retention':'Of the new players in this range, the share who finished a game again exactly 1 day after their first game. Only counts players whose next day has already happened. The bar marks published targets for mobile games (GameAnalytics 2026): 30% puts a game in the top 25%, 40% in the top 10%. They come from installed apps, so treat them as a rough yardstick.',
+  'D7 retention':'Of the new players in this range, the share who finished a game again exactly 7 days after their first game. Only counts players at least 7 days in. The bar marks published targets for mobile games (GameAnalytics 2026): 6% puts a game in the top 25%, 11% in the top 10%. The typical game is just under 4%.',
+  'D30 retention':'Of the new players in this range, the share who finished a game again exactly 30 days after their first game. Only counts players at least 30 days in. The bar marks a published target for mobile games (GameAnalytics 2026): 1.6% puts a game in the top 25%. The typical game is under 1%.',
   'Starts':'Players who started a daily in the range, counted once per player per daily. Tracked from Nov 4, so a range that includes Nov 3 will show more completions than starts: compare starts with the \u201csince Nov 4\u201d number under Completions. Players still on an older copy of the game (an app saved to the home screen that hasn\u2019t refreshed) don\u2019t send starts yet.',
   'Completions':'Dailies finished in the range, counted once per player per daily even if their score was sent twice.',
-  'Completion rate':'Of the dailies started in the range, the share that were finished. It only counts finishes that have a matching start, so it can be under 100% even when Completions equals Starts: a few finishes come from games started before start tracking or on an older copy of the game, and a few starts were never finished.',
+  'Completion rate':'Of the dailies started in the range, the share that were finished. It only counts finishes that have a matching start, so it can be under 100% even when Completions equals Starts: a few finishes come from games started before start tracking or on an older copy of the game, and a few starts were never finished. There\'s no published benchmark for daily web games, so the mark on the bar is your own average over the 30 days ending on the range\'s last day.',
   'Avg accuracy':'Average daily score as a percent of the 600 possible. Each round scores your accuracy: the smaller of guess and answer divided by the bigger.',
   'Avg time guessing':'Average time spent on the six rounds of a daily, from each question appearing to the guess (25 seconds max per round). Reading the reveals isn\'t counted. Tracked from Nov 4.',
   'Games started':'Quick play games started in the range, including challenge games. Tracked from Nov 4, so compare it with the \u201csince Nov 4\u201d number under Games finished. Players on an older copy of the game don\u2019t send starts yet.',
@@ -206,7 +210,12 @@ const DEF={
 };
 const pc=(a,b)=>b?`${Math.round(100*a/b)}%`:'';
 const ch=c=>c==null?'<span class="s up">new</span>':`<span class="s ${c>0?'up':''}">${c>0?'▲':c<0?'▼':'•'} ${Math.abs(c)}% vs previous</span>`;
-const card=(label,val,sub='',big=false)=>`<button class="card ${big?'big':''}" data-def="${esc(label)}" aria-expanded="false"><span class="l">${label} <span class="qi" aria-hidden="true">?</span></span><b>${val}</b>${sub?`<span class="s">${sub}</span>`:''}</button>`;
+const card=(label,val,sub='',big=false,extra='')=>`<button class="card ${big?'big':''}" data-def="${esc(label)}" aria-expanded="false"><span class="l">${label} <span class="qi" aria-hidden="true">?</span></span><b>${val}</b>${sub?`<span class="s">${sub}</span>`:''}${extra}</button>`;
+// a bar under a number, with marks for the targets (or your own 30-day normal). max = the bar's full width.
+const meter=(v,max,marks,caption)=>{const w=x=>Math.max(0,Math.min(100,100*x/max)).toFixed(1);
+  return`<span class="meter" aria-hidden="true">${v==null?'':`<span class="f" style="width:${w(v)}%"></span>`}${marks.map(x=>x==null?'':`<span class="k" style="left:${w(x)}%"></span>`).join('')}</span><span class="mk"><span>0</span><span>${caption}</span></span>`};
+// published targets: GameAnalytics 2026 benchmarks, all mobile games (good = top 25%, great = top 10%)
+const TARGET={d1:{good:30,great:40,max:50},d7:{good:6,great:11,max:15},d30:{good:1.6,great:null,max:4}};
 const since=(d,key)=>d.from<d.since[key]?`tracked from ${fmtDay(d.since[key])}`:'';
 
 // ---------- where players are, and how they play (tracked from Nov 6) ----------
@@ -272,7 +281,9 @@ function whereHtml(d){
 function draw(d,at=Date.now()){
   const H=d.health,R=d.retention,D=d.daily,Q=d.quick,B=d.bananas,T=d.traffic;
   const label=RANGE==='1'?'Today':RANGE==='all'?'All time':RANGE==='custom'?`${fmtDay(d.from)} – ${fmtDay(d.to)}`:`Last ${RANGE} days`;
-  const ret=(k,days)=>R[k].v==null?card(`D${days} retention`,'–',`needs ${days} day${days>1?'s':''} of data`):card(`D${days} retention`,p(R[k].v),`of ${n(R[k].n)} new player${R[k].n===1?'':'s'}`);
+  const ret=(k,days)=>{const T=TARGET[k],bar=meter(R[k].v,T.max,[T.good,T.great],`${T.good}% good${T.great?` · ${T.great}% great`:''}`);
+    return R[k].v==null?card(`D${days} retention`,'–',`needs ${days} day${days>1?'s':''} of data`,false,bar):card(`D${days} retention`,p(R[k].v),`of ${n(R[k].n)} new player${R[k].n===1?'':'s'}`,false,bar)};
+  const N=D.norm||{},mm=x=>x==null?'–':`${Math.floor(x/60)}:${String(x%60).padStart(2,'0')}`;
   const series=[...d.days].reverse().slice(-90),max=Math.max(1,...series.map(x=>x.players));
   m.innerHTML=`<div class="top"><div class="wrapx">${logo}<div style="flex:1"></div>
     <div class="navr"><a class="sqa icon" href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener" aria-label="Daily Banana on Instagram"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a><a class="sqa" href="./?menu">Menu</a></div></div></div>
@@ -298,8 +309,8 @@ function draw(d,at=Date.now()){
     <h2>The daily</h2>
     <div class="grid g5">
       ${card('Starts',n(D.starts),D.starts==null?'tracked from Nov 4':since(d,'starts'))}${card('Completions',n(D.completions),d.from<d.since.starts&&D.starts!=null?`${n(D.completions_tracked)} since Nov 4`:'')}
-      ${card('Completion rate',p(D.rate),D.rate==null?'needs start tracking':D.finished_starts!=null?`${n(D.finished_starts)} of ${n(D.starts)} starts finished`:'')}${card('Avg accuracy',p(D.accuracy),D.avg_score!=null?`avg ${n(D.avg_score)} / 600`:'')}
-      ${card('Avg time guessing',D.time==null?'–':`${Math.floor(D.time/60)}:${String(D.time%60).padStart(2,'0')}`,D.time==null?'tracked from Nov 4':'all 6 rounds')}
+      ${card('Completion rate',p(D.rate),D.rate==null?'needs start tracking':D.finished_starts!=null?`${n(D.finished_starts)} of ${n(D.starts)} starts finished`:'',false,meter(D.rate,100,[N.rate],N.rate==null?'':`mark = your 30-day avg ${N.rate}%`))}${card('Avg accuracy',p(D.accuracy),D.avg_score!=null?`avg ${n(D.avg_score)} / 600`:'',false,meter(D.accuracy,100,[N.accuracy],N.accuracy==null?'':`mark = your 30-day avg ${N.accuracy}%`))}
+      ${card('Avg time guessing',mm(D.time),D.time==null?'tracked from Nov 4':'all 6 rounds',false,meter(D.time,Math.max(150,(D.time||0)*1.2,(N.time||0)*1.2),[N.time],N.time==null?'':`mark = your 30-day avg ${mm(N.time)}`))}
     </div>
 
     <h2>Quick play</h2>
