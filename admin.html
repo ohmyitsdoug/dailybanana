@@ -81,7 +81,8 @@ button.card:hover .qi,button.card:focus-visible .qi,button.card[aria-expanded="t
 .qb{border:1.5px solid var(--mut);background:none;color:var(--mut);cursor:pointer;font-family:inherit;padding:0;vertical-align:3px}
 details.table{border:2px solid var(--ink);background:var(--card)}
 details.table summary{cursor:pointer;padding:10px 14px;font-weight:700}
-.wrap{overflow-x:auto}
+.wrap{overflow-x:auto;position:relative}
+.sr{position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
 th,td{text-align:right;padding:7px 10px;border-top:1px solid var(--line);white-space:nowrap}
 th{font-size:12px;color:var(--mut);font-weight:500;border-top:2px solid var(--ink)}
@@ -153,6 +154,9 @@ async function prefetch(){if(PRE)return;PRE=true;
   for(const R of ['1','7','30','all']){const {from,to}=rangeDates(R);if(fresh(cacheGet(from+'_'+to)))continue;await fetchRange(from,to)}
   PRE=false}
 let META_NOW=false;
+function adminToast(msg){let t=document.getElementById('atoast');if(!t){t=document.createElement('div');t.id='atoast';t.setAttribute('role','status');
+  t.style.cssText='position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;font-weight:700;font-size:14px;z-index:50;box-shadow:3px 3px 0 var(--accsh);max-width:calc(100vw - 32px)';document.body.appendChild(t)}
+  t.textContent=msg;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',2200)}
 async function fetchRange(from,to){const key=from+'_'+to,mq=META_NOW?'&meta=1':'';META_NOW=false;
   const r=await fetch(`${API}/admin?from=${from}&to=${to}${mq}`,{headers:{authorization:'Bearer '+TOKEN}}).catch(()=>null);
   if(!r)return null;if(r.status===401)return{unauth:true};
@@ -236,7 +240,7 @@ function adsHtml(d){const A=d.ads||[],MT=d.meta||{},$=v=>v==null?'–':'$'+(v<10
     :MT.error?`Meta ads: couldn’t update (${esc(MT.error)}). Showing the last numbers.`:`Meta ads: connected · spend from Meta, updated ${MT.at?ago(MT.at):'–'}`;
   return`<h2>Ad spend <button class="qi qb" data-def="Ad spend" aria-expanded="false" aria-label="What this means">?</button></h2>
   <p class="small mut" style="margin:-4px 0 10px">${metaLine}</p>
-  ${A.length?`<div class="table srcs"><div class="wrap"><table><thead><tr><th>Ad</th><th>Spent</th><th>New visitors</th><th>Played</th><th>Finished a daily</th><th>Came back</th><th><span class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Remove</span></th></tr></thead><tbody>
+  ${A.length?`<div class="table srcs"><div class="wrap"><table><thead><tr><th>Ad</th><th>Spent</th><th>New visitors</th><th>Played</th><th>Finished a daily</th><th>Came back</th><th><span class="sr">Remove</span></th></tr></thead><tbody>
     ${A.map((a,i)=>`<tr><td style="text-align:left"><b>${esc(a.name)}</b><br><span class="mut small">${a.meta?`Meta · ${a.running?'running':esc(String(a.status||'').toLowerCase())} · since ${fmtDay(a.from)}<br>${n(a.impressions)} impressions · ${n(a.clicks)} clicks`:`${fmtDay(a.from)}–${fmtDay(a.to)}${a.running?' · running':''}`}<br>source has ${a.meta?`<input class="adin mm" data-mid="${esc(a.id)}" value="${esc(a.match)}" aria-label="Source text for ${esc(a.name)}" style="width:140px;height:28px;margin:2px 0 0;display:inline-block">`:`“${esc(a.match)}”`}</span></td><td>$${a.amount.toFixed(2)}</td>
       <td>${n(a.visitors)}<br><span class="mut small">${per(a,'visitors')}</span></td><td>${n(a.played)}<br><span class="mut small">${per(a,'played')}</span></td>
       <td>${n(a.daily)}<br><span class="mut small">${per(a,'daily')}</span></td><td>${n(a.came_back)}<br><span class="mut small">${per(a,'came_back')}</span></td>
@@ -397,12 +401,17 @@ function draw(d,at=Date.now()){
   // tap a number for what it means and how it's worked out
   m.querySelectorAll('[data-def]').forEach(el=>el.onclick=e=>{e.stopPropagation();showDef(el)});
   m.querySelectorAll('details.rvb').forEach(x=>x.ontoggle=()=>{x.open?RVOPEN.add(x.dataset.box):RVOPEN.delete(x.dataset.box);try{sessionStorage.setItem('db-rvopen',JSON.stringify([...RVOPEN]))}catch(_){}});
-  m.querySelectorAll('.rv .act button').forEach(b=>b.onclick=async()=>{
-    const box=b.parentElement;box.querySelectorAll('button').forEach(x=>x.disabled=true);
-    const r=await fetch(`${API}/admin`,{method:'POST',headers:{authorization:'Bearer '+TOKEN,'content-type':'application/json'},body:JSON.stringify({action:'review',key:box.dataset.key,s:b.dataset.s||null})}).catch(()=>null);
-    if(!r||!r.ok){box.querySelectorAll('button').forEach(x=>x.disabled=false);box.insertAdjacentHTML('beforeend','<span class="small">Could not save that. Try again.</span>');return}
-    for(const [k,v] of ADM)ADM.set(k,{...v,at:0});try{Object.keys(localStorage).filter(k=>k.startsWith('db-adm:')).forEach(k=>{const v=JSON.parse(localStorage.getItem(k));v.at=0;localStorage.setItem(k,JSON.stringify(v))})}catch(_){}
-    load(true)});
+  // review buttons: the card moves right away and saves in the background (no waiting on a full reload)
+  m.querySelectorAll('.rv .act button').forEach(b=>b.onclick=()=>{
+    const key=b.parentElement.dataset.key,s=b.dataset.s||null;
+    const patch=v=>{const r=(v.d.review||[]).find(x=>x.key===key);if(r){r.s=s;r.box=s?'done':r.auto?'auto':'inbox'}};
+    const before=JSON.parse(JSON.stringify(d.review||[]));
+    for(const [k,v] of ADM){patch(v);try{localStorage.setItem('db-adm:'+k,JSON.stringify(v))}catch(_){}}
+    if(!ADM.size)patch({d});
+    draw(d,at);adminToast(s==='out'?'Saved: left out of stats':s==='ok'?'Saved: counted':'Saved: back in the inbox');
+    fetch(`${API}/admin`,{method:'POST',headers:{authorization:'Bearer '+TOKEN,'content-type':'application/json'},body:JSON.stringify({action:'review',key,s})})
+      .then(r=>{if(!r.ok)throw 0}).catch(()=>{d.review=before;for(const [k,v] of ADM){v.d.review=JSON.parse(JSON.stringify(before))}draw(d,at);adminToast('Couldn’t save that. Try again.')});
+  });
   // hover/focus readout on the bars
   const tip=document.getElementById('tip'),chart=document.getElementById('chart');
   chart.querySelectorAll('.bars span').forEach(s=>{

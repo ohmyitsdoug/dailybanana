@@ -6,7 +6,9 @@ export async function reviews(store) {
 }
 // left out automatically, no review needed: 3 or more exact answers, or under 30 seconds of answering for all six rounds
 export const exactCount = (p) => (p.points || []).filter((x) => x >= 100).length;
+export const SAFE_BELOW = 500;   // games under 500 points are accepted automatically: never flagged, never left out
 export function autoOut(p) {
+  if ((p.score || 0) < SAFE_BELOW) return null;
   if (exactCount(p) >= 3) return '3+ exact answers';
   if (p.ms > 0 && p.ms < 30e3) return 'Under 30 seconds';
   return null;

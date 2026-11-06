@@ -25,7 +25,7 @@ export async function metaAds(store, { fresh = false } = {}) {
   const raw = String(process.env.META_AD_ACCOUNT_ID || '');
   const act = 'act_' + ((raw.match(/act[_=]?(\d{6,})/) || raw.match(/(\d{6,})/) || [])[1] || '607646691723139');
   const kept = await store.get('meta/ads', { type: 'json' }).catch(() => null);
-  if (kept && !fresh && Date.now() - kept.at < KEEP) return kept;
+  if (kept && !fresh && Date.now() - kept.at < (kept.error ? 15 * 60e3 : KEEP)) return kept;   // a failure is remembered for 15 minutes, so it can't slow every view
   try {
     const camps = await graph(`${act}/campaigns?fields=id,name,effective_status,start_time,stop_time&limit=100`, token);
     const ins = await graph(`${act}/insights?level=campaign&date_preset=maximum&fields=campaign_id,spend,impressions,clicks&limit=200`, token);
@@ -41,6 +41,8 @@ export async function metaAds(store, { fresh = false } = {}) {
   } catch (e) {
     console.error(`meta ads: ${e.message}`);
     // keep showing the last good numbers, with the error
-    return kept ? { ...kept, error: e.message } : { connected: true, at: Date.now(), campaigns: [], error: e.message };
+    const out = kept ? { ...kept, at: Date.now(), error: e.message } : { connected: true, at: Date.now(), campaigns: [], error: e.message };
+    await store.setJSON('meta/ads', out).catch(() => {});
+    return out;
   }
 }

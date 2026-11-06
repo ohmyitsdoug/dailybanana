@@ -5,7 +5,7 @@
 import { db, json, day, getAll, getAllCached } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
 import { checkName, fallbackName } from '../lib/names.mjs';
-import { reviews, refreshDaily, autoOut, isOut } from '../lib/review.mjs';
+import { reviews, refreshDaily, autoOut, isOut, SAFE_BELOW } from '../lib/review.mjs';
 import { metaAds } from '../lib/metaads.mjs';
 import { shownAns, roundAns, nice, SCORE_V2, SCORE_V3 } from '../lib/page.mjs';
 
@@ -47,6 +47,7 @@ async function saveAds(store, b) {
 // unusual games that aren't clear-cut: they wait in the admin's review inbox and keep counting unless the admin leaves them out
 const flagsFor = (g, usual, plays) => {
   const f = [], pts = g.points || [];
+  if ((g.score || 0) < SAFE_BELOW) return f;   // under 500: accepted automatically
   if (g.score >= 570) f.push(g.score >= 600 ? 'Perfect 600' : 'Near-perfect score');
   if (pts.length === 6 && pts.every((x) => x >= 85)) f.push('85+ on every round');
   if (plays > 1) f.push(`Sent ${plays} times`);
