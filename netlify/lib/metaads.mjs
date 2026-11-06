@@ -4,17 +4,26 @@
 const V = 'v21.0', KEEP = 3 * 3600e3;
 const ET = (t) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(t));
 
-async function graph(path, token) {
-  const r = await fetch(`https://graph.facebook.com/${V}/${path}${path.includes('?') ? '&' : '?'}access_token=${encodeURIComponent(token)}`);
+async function graph(path, token, tries = 2) {
+  let r;
+  try {
+    r = await fetch(`https://graph.facebook.com/${V}/${path}${path.includes('?') ? '&' : '?'}access_token=${encodeURIComponent(token)}`, { signal: AbortSignal.timeout(15e3) });
+  } catch (e) {
+    if (tries > 1) return graph(path, token, tries - 1);   // one retry for a dropped connection
+    const c = e.cause || {};   // "fetch failed" hides the real reason here
+    throw new Error(`couldn't reach Meta: ${[c.code, c.message || e.message].filter(Boolean).join(' ')}`);
+  }
   const j = await r.json().catch(() => ({}));
   if (!r.ok || j.error) throw new Error((j.error && j.error.message) || `Meta answered ${r.status}`);
   return j.data || [];
 }
 
 export async function metaAds(store, { fresh = false } = {}) {
-  const token = process.env.META_ADS_TOKEN;
+  const token = String(process.env.META_ADS_TOKEN || '').trim().replace(/^Bearer\s+/i, '');
   if (!token) return { connected: false };
-  const act = String(process.env.META_AD_ACCOUNT_ID || 'act_607646691723139').replace(/^(\d)/, 'act_$1');
+  // just the account number, even if a full Ads Manager link or "act_…" was pasted
+  const raw = String(process.env.META_AD_ACCOUNT_ID || '');
+  const act = 'act_' + ((raw.match(/act[_=]?(\d{6,})/) || raw.match(/(\d{6,})/) || [])[1] || '607646691723139');
   const kept = await store.get('meta/ads', { type: 'json' }).catch(() => null);
   if (kept && !fresh && Date.now() - kept.at < KEEP) return kept;
   try {
@@ -32,6 +41,7 @@ export async function metaAds(store, { fresh = false } = {}) {
     await store.setJSON('meta/ads', out).catch(() => {});
     return out;
   } catch (e) {
+    console.error(`meta ads: ${e.message}`);
     // keep showing the last good numbers, with the error
     return kept ? { ...kept, error: e.message } : { connected: true, at: Date.now(), campaigns: [], error: e.message };
   }
