@@ -28,11 +28,53 @@ async function playsFor(store, n) {
   for (const p of plays) if (!first.has(p.device)) first.set(p.device, p);
   return [...first.values()];
 }
-const html = (s, status = 200) => new Response(s, { status, headers: {
+
+// A daily's numbers never change once it's over, so they're worked out once and saved (archive/{n}).
+// Until an hour after a daily is published (so last-second games still count) they're worked out live.
+const FREEZE_AFTER = 3600e3;
+async function summarize(store, d, rounds) {
+  const ps = await playsFor(store, d.n), scores = ps.map((p) => p.score || 0);
+  return {
+    n: d.n, players: ps.length,
+    avg: avg(scores), median: median(scores), best: scores.length ? Math.max(...scores) : null,
+    bananas: ps.length ? avg(ps.map((p) => p.points.filter((x) => x >= 90).length)) : null,
+    rounds: rounds.map((_, i) => {
+      const pts = ps.map((p) => p.points[i]), gs = ps.map((p) => (p.guesses || [])[i]).filter((g) => g > 0);
+      return { avgPts: avg(pts), close: pts.length ? Math.round((100 * pts.filter((x) => x >= 90).length) / pts.length) : null, typical: gs.length >= 3 ? median(gs) : null };
+    }),
+    buckets: [0, 100, 200, 300, 400, 500].map((lo) => scores.filter((s) => s >= lo && (lo === 500 ? s <= 600 : s < lo + 100)).length),
+  };
+}
+const FROZEN = new Map();   // kept in memory while the function is warm
+async function numbersFor(store, d) {
+  if (FROZEN.has(d.n)) return FROZEN.get(d.n);
+  const saved = await store.get(`archive/${d.n}`, { type: 'json' }).catch(() => null);
+  if (saved) { FROZEN.set(d.n, saved); return saved; }
+  const sum = await summarize(store, d, d.rounds);
+  if (Date.now() >= publishedAt(d) + FREEZE_AFTER) { sum.frozen = true; await store.setJSON(`archive/${d.n}`, sum).catch(() => {}); FROZEN.set(d.n, sum); }
+  return sum;
+}
+// the list page: players and average for every daily, kept in one saved index (archive/index)
+async function listNumbers(store, live) {
+  const idx = (await store.get('archive/index', { type: 'json' }).catch(() => null)) || {};
+  let changed = false;
+  const out = await Promise.all(live.map(async (d) => {
+    if (idx[d.n]) return { d, players: idx[d.n][0], avg: idx[d.n][1] };
+    const sum = await numbersFor(store, d);
+    if (sum.frozen) { idx[d.n] = [sum.players, sum.avg]; changed = true; }
+    return { d, players: sum.players, avg: sum.avg };
+  }));
+  if (changed) await store.setJSON('archive/index', idx).catch(() => {});
+  return out;
+}
+// frozen pages never change, so Netlify's edge keeps them like static files (until the next deploy)
+const html = (s, status = 200, { forever = false, until = 1800 } = {}) => new Response(s, { status, headers: {
   'content-type': 'text/html; charset=utf-8',
-  'cache-control': 'public, max-age=300',
-  'netlify-cdn-cache-control': 'public, s-maxage=1800, stale-while-revalidate=86400',
+  'cache-control': forever ? 'public, max-age=86400' : 'public, max-age=300',
+  'netlify-cdn-cache-control': forever ? 'public, durable, s-maxage=31536000, immutable' : `public, durable, s-maxage=${Math.max(60, Math.round(until))}, stale-while-revalidate=600`,
 } });
+// seconds until the next daily is published (12:00 UTC) plus the freeze hour, so the list page refreshes right then
+const untilNextFreeze = () => { const t = new Date(); t.setUTCHours(13, 0, 30, 0); if (t <= Date.now()) t.setUTCDate(t.getUTCDate() + 1); return (t - Date.now()) / 1000; };
 
 export default async (req) => {
   const url = new URL(req.url), store = db();
@@ -42,7 +84,7 @@ export default async (req) => {
   const m = url.pathname.replace(/\/+$/, '').match(/^\/archive\/(\d{1,4})$/);
 
   if (!m) {   // the landing page
-    const sums = await Promise.all(live.map(async (d) => { const ps = await playsFor(store, d.n); return { d, players: ps.length, avg: avg(ps.map((p) => p.score || 0)) }; }));
+    const sums = await listNumbers(store, live);
     const body = `<h1>Daily archive</h1>
       <p class="lead">Every Daily Banana, with the answers and how players did. A daily shows up here once it's over everywhere in the world.</p>
       <a class="cta" href="/">Play today's daily <span aria-hidden="true">→</span></a>
@@ -53,7 +95,7 @@ export default async (req) => {
       path: '/archive', body,
       jsonld: [{ '@context': 'https://schema.org', '@type': 'CollectionPage', name: 'Daily Banana archive', url: SITE_URL + '/archive',
         hasPart: live.slice(0, 50).map((d) => ({ '@type': 'WebPage', name: `Daily Banana #${pad3(d.n)}`, url: `${SITE_URL}/archive/${pad3(d.n)}`, datePublished: new Date(publishedAt(d)).toISOString() })) }],
-    }));
+    }), 200, { until: untilNextFreeze() });
   }
 
   const n = +m[1], d = dailies.find((x) => x.n === n);
@@ -61,18 +103,15 @@ export default async (req) => {
     return html(page({ title: 'Not posted yet · Daily Banana', description: 'This daily is still being played.', path: url.pathname,
       body: `<h1>Not posted yet</h1><p class="lead">This daily is still being played somewhere in the world, so its answers stay hidden for now.</p><a class="cta" href="/">Play today's daily <span aria-hidden="true">→</span></a>` }), 404);
   }
-  const ps = await playsFor(store, n);
-  const scores = ps.map((p) => p.score || 0);
+  const S = await numbersFor(store, d), players = S.players;
   const qs = d.rounds.map((r, i) => {
-    const A = items[r.a], B = items[r.b], ans = B.cm / A.cm;
-    const pts = ps.map((p) => p.points[i]);
-    const gs = ps.map((p) => (p.guesses || [])[i]).filter((g) => g > 0);
-    return { A, B, ans, avgPts: avg(pts), close: pts.length ? Math.round((100 * pts.filter((x) => x >= 90).length) / pts.length) : null, typical: gs.length >= 3 ? median(gs) : null, guessN: gs.length };
+    const A = items[r.a], B = items[r.b];
+    return { A, B, ans: B.cm / A.cm, ...S.rounds[i] };
   });
-  const bananas = ps.length ? avg(ps.map((p) => p.points.filter((x) => x >= 90).length)) : null;
-  const hardest = ps.length ? qs.reduce((h, q, i) => (q.avgPts < qs[h].avgPts ? i : h), 0) : null;
-  const easiest = ps.length ? qs.reduce((h, q, i) => (q.avgPts > qs[h].avgPts ? i : h), 0) : null;
-  const buckets = [0, 100, 200, 300, 400, 500].map((lo) => ({ lo, c: scores.filter((s) => s >= lo && (lo === 500 ? s <= 600 : s < lo + 100)).length }));
+  const bananas = S.bananas;
+  const hardest = players ? qs.reduce((h, q, i) => (q.avgPts < qs[h].avgPts ? i : h), 0) : null;
+  const easiest = players ? qs.reduce((h, q, i) => (q.avgPts > qs[h].avgPts ? i : h), 0) : null;
+  const buckets = [0, 100, 200, 300, 400, 500].map((lo, i) => ({ lo, c: S.buckets[i] }));
   const maxB = Math.max(1, ...buckets.map((b) => b.c));
   const anyTypical = qs.some((q) => q.typical);
   const prev = live.find((x) => x.n === n - 1), next = live.find((x) => x.n === n + 1);
@@ -80,12 +119,12 @@ export default async (req) => {
   const ansOf = (q) => (d.date >= SCORE_V3 ? roundAns(q.ans) : d.date >= SCORE_V2 ? shownAns(q.ans) : nice(q.ans));
   const body = `<div class="eyebrow" style="margin-top:22px">Daily #${pad3(n)} · ${esc(fmtDate(d.date))}</div>
     <h1>Daily Banana #${pad3(n)} answers</h1>
-    <p class="lead">Six questions, one ridiculous unit each. Here are the answers, the real sizes behind them, and how ${ps.length ? `${fmt(ps.length)} player${ps.length === 1 ? '' : 's'}` : 'players'} did.</p>
+    <p class="lead">Six questions, one ridiculous unit each. Here are the answers, the real sizes behind them, and how ${players ? `${fmt(players)} player${players === 1 ? '' : 's'}` : 'players'} did.</p>
     <div class="stats">
-      <div class="stat big"><b>${scores.length ? fmt(Math.round(avg(scores))) : '–'}</b><span>average score (of 600)</span></div>
-      <div class="stat"><b>${fmt(ps.length)}</b><span>players</span></div>
-      <div class="stat"><b>${scores.length ? fmt(Math.round(median(scores))) : '–'}</b><span>median score</span></div>
-      <div class="stat"><b>${scores.length ? fmt(Math.max(...scores)) : '–'}</b><span>best score</span></div>
+      <div class="stat big"><b>${players ? fmt(Math.round(S.avg)) : '–'}</b><span>average score (of 600)</span></div>
+      <div class="stat"><b>${fmt(players)}</b><span>players</span></div>
+      <div class="stat"><b>${players ? fmt(Math.round(S.median)) : '–'}</b><span>median score</span></div>
+      <div class="stat"><b>${players ? fmt(S.best) : '–'}</b><span>best score</span></div>
       <div class="stat"><b>${bananas != null ? (Math.round(bananas * 10) / 10) : '–'}</b><span>avg 🍌 rounds (90+)</span></div>
     </div>
     ${hardest != null ? `<p>The toughest round was <b>#${hardest + 1}</b> (${esc(qs[hardest].B.name)}), averaging ${Math.round(qs[hardest].avgPts)} points. The easiest was <b>#${easiest + 1}</b> (${esc(qs[easiest].B.name)}) at ${Math.round(qs[easiest].avgPts)}.</p>` : ''}
@@ -98,7 +137,7 @@ export default async (req) => {
       ${q.typical ? `<span class="mini"><span class="c"></span><span class="avg" style="left:${posOf(q.typical, q.ans).toFixed(1)}%"></span></span><div class="ends"><span>too low</span><span>typical guess: ${fmt(nice(q.typical))}</span><span>too high</span></div>` : ''}
       ${q.avgPts != null ? `<p class="small mut" style="margin:8px 0 0">Average ${Math.round(q.avgPts)} points · ${q.close}% of players were within 10%</p>` : ''}
     </section>`).join('')}
-    ${ps.length ? `<h2>Score spread</h2><div class="bars">${buckets.map((b) => `<div class="bar"><span>${b.lo}–${b.lo === 500 ? 600 : b.lo + 99}</span><span class="t"><div style="width:${((100 * b.c) / maxB).toFixed(1)}%"></div></span><span>${b.c}</span></div>`).join('')}</div>` : ''}
+    ${players ? `<h2>Score spread</h2><div class="bars">${buckets.map((b) => `<div class="bar"><span>${b.lo}–${b.lo === 500 ? 600 : b.lo + 99}</span><span class="t"><div style="width:${((100 * b.c) / maxB).toFixed(1)}%"></div></span><span>${b.c}</span></div>`).join('')}</div>` : ''}
     <p class="small mut">Points are how accurate a guess was, as a percent: half the answer or twice the answer both score 50. Sizes are typical averages from publicly available sources, rounded.</p>
     <a class="cta" href="/">Play today's daily <span aria-hidden="true">→</span></a>
     <p class="small">${prev ? `<a href="/archive/${pad3(prev.n)}">← Daily #${pad3(prev.n)}</a> · ` : ''}<a href="/archive">All dailies</a>${next ? ` · <a href="/archive/${pad3(next.n)}">Daily #${pad3(next.n)} →</a>` : ''}</p>`;
@@ -106,12 +145,12 @@ export default async (req) => {
   const qa = qs.map((q) => ({ '@type': 'Question', name: question(q.A, q.B), acceptedAnswer: { '@type': 'Answer', text: `About ${fmt(ansOf(q))} ${q.A.plural}: ${the(q.B)} is about ${len(q.B.cm)} ${q.B.dim} and ${the(q.A)} is about ${len(q.A.cm)}.` } }));
   return html(page({
     title: `Daily Banana #${pad3(n)} answers · ${shortDate(d.date)}`,
-    description: `Answers for Daily Banana #${pad3(n)} (${shortDate(d.date)}): ${qs.slice(0, 2).map((q) => question(q.A, q.B)).join(' ')} Plus the average score${ps.length ? ` (${fmt(Math.round(avg(scores)))}/600)` : ''} and where players guessed.`,
+    description: `Answers for Daily Banana #${pad3(n)} (${shortDate(d.date)}): ${qs.slice(0, 2).map((q) => question(q.A, q.B)).join(' ')} Plus the average score${players ? ` (${fmt(Math.round(S.avg))}/600)` : ''} and where players guessed.`,
     path: `/archive/${pad3(n)}`, body,
     jsonld: [
-      { '@context': 'https://schema.org', '@type': 'Article', headline: `Daily Banana #${pad3(n)} answers`, datePublished: new Date(publishedAt(d)).toISOString(), dateModified: new Date().toISOString(),
+      { '@context': 'https://schema.org', '@type': 'Article', headline: `Daily Banana #${pad3(n)} answers`, datePublished: new Date(publishedAt(d)).toISOString(), dateModified: new Date(S.frozen ? publishedAt(d) + FREEZE_AFTER : Date.now()).toISOString(),
         author: { '@type': 'Organization', name: 'Smidgen Games LLC' }, publisher: { '@type': 'Organization', name: 'Smidgen Games LLC', url: 'https://playsmidgen.com' }, mainEntityOfPage: `${SITE_URL}/archive/${pad3(n)}`, image: `${SITE_URL}/og.png` },
       { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: qa },
     ],
-  }));
+  }), 200, { forever: !!S.frozen });
 };
