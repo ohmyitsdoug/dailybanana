@@ -1125,8 +1125,8 @@ function showResults(r,res){
   tick=setInterval(()=>{const cd=document.getElementById('cd');if(cd)cd.textContent=untilMidnight();else clearInterval(tick)},1000);
   document.getElementById('again').onclick=()=>quick();
   SHOWN={r,res};if(r.quick)chalBox(res);else showRank(r,res);
-  // keep the daily rank current while the results stay open: re-check the scores every 2 minutes (a change redraws the rank)
-  if(!r.quick){const rk=setInterval(()=>{if(!document.getElementById('rank')||SHOWN.r!==r)return clearInterval(rk);getStats(r.n)},120e3)}
+  // keep the daily rank current while the results stay open: re-check the scores every 30 minutes (a change redraws the rank)
+  if(!r.quick){const rk=setInterval(()=>{if(!document.getElementById('rank')||SHOWN.r!==r)return clearInterval(rk);getStats(r.n)},30*60e3)}
 
   showFact(r);
   const dl=document.getElementById('dl');if(dl)dl.onclick=()=>shareImage(r,res,dl);
