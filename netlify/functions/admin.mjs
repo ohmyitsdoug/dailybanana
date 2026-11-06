@@ -6,6 +6,7 @@ import { db, json, day, getAll, getAllCached } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
 import { checkName, fallbackName } from '../lib/names.mjs';
 import { reviews, refreshDaily, autoOut, isOut } from '../lib/review.mjs';
+import { metaAds } from '../lib/metaads.mjs';
 import { shownAns, roundAns, nice, SCORE_V2, SCORE_V3 } from '../lib/page.mjs';
 
 // when each kind of data started being recorded
@@ -31,6 +32,10 @@ async function review(store, b) {
 
 // POST { action:'ads', ads:[{ name, match, amount, from, to }] }: the paid placements, to work out cost per visitor, player and returning player
 async function saveAds(store, b) {
+  if (b.meta && typeof b.meta === 'object') {   // { campaign id: text to match } for Meta campaigns
+    const mm = {}; for (const [k, v] of Object.entries(b.meta).slice(0, 100)) if (/^\d+$/.test(k)) mm[k] = String(v || '').toLowerCase().replace(/[^a-z0-9_.\- ·]/g, '').slice(0, 60);
+    await store.setJSON('ads-meta', mm); return json({ ok: true });
+  }
   const ads = (Array.isArray(b.ads) ? b.ads : []).slice(0, 50).map((a) => ({
     name: String(a.name || '').slice(0, 60), match: String(a.match || '').toLowerCase().replace(/[^a-z0-9_.\- ·]/g, '').slice(0, 60),
     amount: Math.round(Math.max(0, Math.min(1e6, +a.amount || 0)) * 100) / 100, from: isISO(a.from) ? a.from : null, to: isISO(a.to) ? a.to : null,
@@ -215,8 +220,12 @@ export default async (req) => {
   // K. ad spend: new devices whose first visit came from a paid placement during its dates (its own dates, not the range picked above)
   // until the admin saves their own list, start with the Dailydle listing (started the evening of Nov 5, runs 7 days)
   const adsList = (await store.get('ads', { type: 'json' }).catch(() => null)) || [{ name: 'Dailydle listing', match: 'dailydle', amount: 138.9, from: '2026-11-05', to: '2026-11-12' }];
-  const ads = adsList.map((a) => {
-    const r = { ...a, running: today <= a.to, day: Math.min(span(a.from, a.to), Math.max(0, span(a.from, today))), days: span(a.from, a.to), visitors: 0, played: 0, daily: 0, came_back: 0, signed_in: 0 };
+  // Meta campaigns come in on their own (spend straight from Meta); which visitors they brought is matched by source text, "facebook" unless changed
+  const [meta, metaMatch] = await Promise.all([metaAds(store, { fresh: url.searchParams.get('meta') === '1' }), store.get('ads-meta', { type: 'json' }).catch(() => null)]);
+  const metaRows = (meta.campaigns || []).map((c) => ({ meta: true, id: c.id, name: c.name, status: c.status, match: (metaMatch && metaMatch[c.id]) || 'facebook',
+    amount: c.spend, from: c.from || today, to: c.to && c.to < today ? c.to : today, impressions: c.impressions, clicks: c.clicks }));
+  const ads = [...metaRows, ...adsList].map((a) => {
+    const r = { ...a, running: a.meta ? a.status === 'ACTIVE' : today <= a.to, day: Math.min(span(a.from, a.to), Math.max(0, span(a.from, today))), days: span(a.from, a.to), visitors: 0, played: 0, daily: 0, came_back: 0, signed_in: 0 };
     for (const sn of seenAll) {
       const dev = sn.key.split('/')[1];
       if (!sn.first || !inR(sn.first, a.from, a.to) || !label(sn.src).toLowerCase().includes(a.match)) continue;
@@ -303,5 +312,5 @@ export default async (req) => {
   }
   toReview.sort((a, b) => b.day.localeCompare(a.day) || b.score - a.score);
 
-  return json({ ads, review: toReview, from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
+  return json({ ads, meta: { connected: !!meta.connected, at: meta.at || null, error: meta.error || null }, review: toReview, from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
 };

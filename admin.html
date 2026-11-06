@@ -152,8 +152,9 @@ function setBusy(on){const b=document.getElementById('refresh');if(b){b.disabled
 async function prefetch(){if(PRE)return;PRE=true;
   for(const R of ['1','7','30','all']){const {from,to}=rangeDates(R);if(fresh(cacheGet(from+'_'+to)))continue;await fetchRange(from,to)}
   PRE=false}
-async function fetchRange(from,to){const key=from+'_'+to;
-  const r=await fetch(`${API}/admin?from=${from}&to=${to}`,{headers:{authorization:'Bearer '+TOKEN}}).catch(()=>null);
+let META_NOW=false;
+async function fetchRange(from,to){const key=from+'_'+to,mq=META_NOW?'&meta=1':'';META_NOW=false;
+  const r=await fetch(`${API}/admin?from=${from}&to=${to}${mq}`,{headers:{authorization:'Bearer '+TOKEN}}).catch(()=>null);
   if(!r)return null;if(r.status===401)return{unauth:true};
   const d=await r.json().catch(()=>null);
   if(d&&d.health)cachePut(key,d);
@@ -161,7 +162,7 @@ async function fetchRange(from,to){const key=from+'_'+to;
 const ago=t=>{const mi=Math.round((Date.now()-t)/60e3);return mi<1?'just now':mi<60?`${mi} min ago`:`${Math.round(mi/60)} h ago`};
 // a change vs the previous period: arrow + number, never color alone
 const DEF={
-  'Ad spend':'For each ad you add: the new devices whose first visit came from a source containing your text (see Where players come from) on the ad\'s days, and what each one cost: the amount divided by that count. Played = finished any game. Came back = visited or played again on a later day. A device counts once, for the source of its very first visit. These use the ad\'s own dates, not the range picked at the top.',
+  'Ad spend':'For each ad you add: the new devices whose first visit came from a source containing your text (see Where players come from) on the ad\'s days, and what each one cost: the amount divided by that count. Played = finished any game. Came back = visited or played again on a later day. A device counts once, for the source of its very first visit. These use the ad\'s own dates, not the range picked at the top. Meta campaigns appear on their own with their spend from Meta (updated every 3 hours, or when you tap Refresh). Their visitors are matched by the source text in the box, \u201cfacebook\u201d to start, which also catches untagged Facebook and Instagram ad clicks. Change it to match the campaign tag in your ad\'s link.',
   'Games to review':'Games with 3 or more exact answers, or under 30 seconds of answering in total, are left out of score stats automatically. Unusual games that aren\'t clear-cut (a near-perfect score, 85+ on every round, or the same game sent twice) wait in the Inbox and keep counting unless you leave them out. Left out means the game no longer counts toward averages, rankings, the archive or posts. The player keeps their own result.',
   'Daily active players':'Unique players (devices) who finished at least one game, daily or quick play, on the last day of the range. Compared with the day before.',
   'Weekly active players':'Unique players who finished at least one game in the 7 days ending on the last day of the range. Compared with the 7 days before that.',
@@ -228,15 +229,18 @@ const mmss=v=>v==null?'–':`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}
 function miniTable(title,rows,label){
   return`<div class="table srcs"><div class="wrap"><table><thead><tr><th><button class="qi qb" data-def="${title}" aria-expanded="false" aria-label="What this means">?</button> ${title}</th><th>Visitors</th><th>Players</th></tr></thead>
     <tbody>${rows.length?rows.map(r=>`<tr><td>${esc(label(r.key))}</td><td>${n(r.visitors)}</td><td>${n(r.players)} <span class="mut">${pc(r.players,r.visitors)}</span></td></tr>`).join(''):'<tr><td class="mut">No data yet</td><td></td><td></td></tr>'}</tbody></table></div></div>`}
-function adsHtml(d){const A=d.ads||[],$=v=>v==null?'–':'$'+(v<10?v.toFixed(2):v<100?v.toFixed(2):Math.round(v).toLocaleString('en-US'));
+function adsHtml(d){const A=d.ads||[],MT=d.meta||{},$=v=>v==null?'–':'$'+(v<10?v.toFixed(2):v<100?v.toFixed(2):Math.round(v).toLocaleString('en-US'));
   const per=(a,k)=>a[k]?$(a.amount/a[k])+' each':'';
   const srcs=[...new Set((d.sources||[]).map(x=>x.source).filter(x=>x!=='direct'&&x!=='before tracking'))];
+  const metaLine=!MT.connected?'Meta ads: not connected. Add META_ADS_TOKEN in Netlify to pull spend automatically.'
+    :MT.error?`Meta ads: couldn’t update (${esc(MT.error)}). Showing the last numbers.`:`Meta ads: connected · spend from Meta, updated ${MT.at?ago(MT.at):'–'}`;
   return`<h2>Ad spend <button class="qi qb" data-def="Ad spend" aria-expanded="false" aria-label="What this means">?</button></h2>
+  <p class="small mut" style="margin:-4px 0 10px">${metaLine}</p>
   ${A.length?`<div class="table srcs"><div class="wrap"><table><thead><tr><th>Ad</th><th>Spent</th><th>New visitors</th><th>Played</th><th>Finished a daily</th><th>Came back</th><th><span class="sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Remove</span></th></tr></thead><tbody>
-    ${A.map((a,i)=>`<tr><td style="text-align:left"><b>${esc(a.name)}</b><br><span class="mut small">${fmtDay(a.from)}–${fmtDay(a.to)}${a.running?' · running':''}<br>source has “${esc(a.match)}”</span></td><td>$${a.amount.toFixed(2)}</td>
+    ${A.map((a,i)=>`<tr><td style="text-align:left"><b>${esc(a.name)}</b><br><span class="mut small">${a.meta?`Meta · ${a.running?'running':esc(String(a.status||'').toLowerCase())} · since ${fmtDay(a.from)}<br>${n(a.impressions)} impressions · ${n(a.clicks)} clicks`:`${fmtDay(a.from)}–${fmtDay(a.to)}${a.running?' · running':''}`}<br>source has ${a.meta?`<input class="adin mm" data-mid="${esc(a.id)}" value="${esc(a.match)}" aria-label="Source text for ${esc(a.name)}" style="width:140px;height:28px;margin:2px 0 0;display:inline-block">`:`“${esc(a.match)}”`}</span></td><td>$${a.amount.toFixed(2)}</td>
       <td>${n(a.visitors)}<br><span class="mut small">${per(a,'visitors')}</span></td><td>${n(a.played)}<br><span class="mut small">${per(a,'played')}</span></td>
       <td>${n(a.daily)}<br><span class="mut small">${per(a,'daily')}</span></td><td>${n(a.came_back)}<br><span class="mut small">${per(a,'came_back')}</span></td>
-      <td><button class="linkb" data-adel="${i}" type="button">Remove</button></td></tr>`).join('')}</tbody></table></div></div>`:'<p class="mut small">No ads added yet.</p>'}
+      <td>${a.meta?'':`<button class="linkb" data-adel="${i}" type="button">Remove</button>`}</td></tr>`).join('')}</tbody></table></div></div>`:'<p class="mut small">No ads added yet.</p>'}
   <details class="table" style="margin-top:10px" ${A.length?'':'open'}><summary>Add an ad</summary>
     <form id="adform" style="display:grid;gap:10px;padding:0 14px 14px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-items:end">
       <label class="small">Name<br><input name="name" required maxlength="60" placeholder="Dailydle listing" class="adin"></label>
@@ -381,11 +385,13 @@ function draw(d,at=Date.now()){
   </main>`;
   m.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{RANGE=b.dataset.r;try{localStorage.setItem('db-admin-range',RANGE)}catch(_){}
     if(RANGE==='custom'&&!CUSTOM.from){CUSTOM={from:d.from,to:d.to}}load()});
-  document.getElementById('refresh').onclick=()=>load(true);
+  document.getElementById('refresh').onclick=()=>{META_NOW=true;load(true)};
   const saveAds=async ads=>{const r=await fetch(`${API}/admin`,{method:'POST',headers:{authorization:'Bearer '+TOKEN,'content-type':'application/json'},body:JSON.stringify({action:'ads',ads})}).catch(()=>null);if(r&&r.ok)load(true);return!!(r&&r.ok)};
   const af=document.getElementById('adform');if(af)af.onsubmit=async e=>{e.preventDefault();const f=Object.fromEntries(new FormData(af));f.match=f.match.toLowerCase();
-    const btn=af.querySelector('button');btn.disabled=true;btn.textContent='Saving…';if(!await saveAds([...(d.ads||[]).map(({name,match,amount,from,to})=>({name,match,amount,from,to})),f])){btn.disabled=false;btn.textContent='Save'}};
-  m.querySelectorAll('[data-adel]').forEach(b=>b.onclick=()=>saveAds((d.ads||[]).filter((_,i)=>i!==+b.dataset.adel).map(({name,match,amount,from,to})=>({name,match,amount,from,to}))));
+    const btn=af.querySelector('button');btn.disabled=true;btn.textContent='Saving…';if(!await saveAds([...(d.ads||[]).filter(a=>!a.meta).map(({name,match,amount,from,to})=>({name,match,amount,from,to})),f])){btn.disabled=false;btn.textContent='Save'}};
+  m.querySelectorAll('.mm').forEach(inp=>inp.onchange=async()=>{const meta={};m.querySelectorAll('.mm').forEach(x=>meta[x.dataset.mid]=x.value);
+    await fetch(`${API}/admin`,{method:'POST',headers:{authorization:'Bearer '+TOKEN,'content-type':'application/json'},body:JSON.stringify({action:'ads',meta})}).catch(()=>null);load(true)});
+  m.querySelectorAll('[data-adel]').forEach(b=>b.onclick=()=>saveAds((d.ads||[]).filter((a,i)=>i!==+b.dataset.adel&&!a.meta).map(({name,match,amount,from,to})=>({name,match,amount,from,to}))));
   const cf=document.getElementById('cf'),ct=document.getElementById('ct');
   if(cf)cf.onchange=ct.onchange=()=>{CUSTOM={from:cf.value,to:ct.value};if(CUSTOM.from&&CUSTOM.to)load()};
   // tap a number for what it means and how it's worked out
