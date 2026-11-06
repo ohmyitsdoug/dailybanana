@@ -95,6 +95,25 @@ export default async (req, context) => {
     await store.setJSON(k, r);
     return new Response('ok');
   }
+  if (b.kind === 'feedback') {
+    // Menu → Have feedback?: shown in the admin dashboard. At most 5 a day per device.
+    const message = String(b.message || '').replace(/\r/g, '').trim().slice(0, 2000);
+    if (!message) return new Response('skip', { status: 400 });
+    const mine = (await store.list({ prefix: `feedback/${today}/` }).catch(() => ({ blobs: [] }))).blobs.filter((x) => x.key.endsWith(`-${device}`));
+    if (mine.length >= 5) return new Response('too many', { status: 429 });
+    const name = String(b.name || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 60);
+    await store.setJSON(`feedback/${today}/${Date.now()}-${device}`, { name, message, at: Date.now(), ...(b.uid ? { uid: String(b.uid).slice(0, 40) } : {}) });
+    return new Response('ok');
+  }
+  if (b.kind === 'rating') {
+    // one rating per device (a later one replaces it); skipped = they tapped Not now
+    if (b.skipped) { if (!(await store.get(`ratings/${device}`).catch(() => null))) await store.setJSON(`ratings/${device}`, { skipped: true, day: today }); return new Response('ok'); }
+    const stars = Math.round(+b.stars);
+    if (!(stars >= 1 && stars <= 5)) return new Response('skip');
+    const comment = String(b.comment || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 500);
+    await store.setJSON(`ratings/${device}`, { stars, ...(comment ? { comment } : {}), day: today, at: Date.now() });
+    return new Response('ok');
+  }
   if (b.kind === 'install') {
     // someone answered the browser's "Install app" prompt from the Menu
     await store.setJSON(`installs/${today}/${device}`, { outcome: b.outcome === 'accepted' ? 'accepted' : 'dismissed' });

@@ -99,6 +99,14 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .fine{font-size:13px;color:var(--mut)}
 .foot{font-size:12px;color:var(--mut);text-align:center}
 .kofiw{text-align:center}
+.rate-b{display:flex;justify-content:space-between;gap:6px}
+.rate-b button{flex:1;aspect-ratio:1;max-width:60px;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;border:2px solid var(--ink);background:var(--card);color:var(--ink);cursor:pointer;padding:0;font:inherit;font-weight:700;font-size:13px;line-height:1;font-variant-numeric:tabular-nums}
+.rate-b button.on{color:#3B2412}
+.rate-b button svg{filter:grayscale(1);opacity:.35;transition:transform .1s}
+.rate-b button.on svg{filter:none;opacity:1}
+.rate-b button.on{background:var(--acc)}
+.rate-b button:focus-visible{outline:3px solid var(--accsh);outline-offset:2px}
+.rate-c{width:100%;font:inherit;font-size:15px;padding:8px 10px;border:2px solid var(--ink);background:var(--card);color:var(--ink);resize:vertical;min-height:64px}
 .kofi{display:inline-flex;align-items:center;gap:6px;margin:4px 0;padding:8px 14px;border:2px solid var(--ink);background:var(--card);color:var(--ink);font-weight:700;font-size:14px;text-decoration:none;box-shadow:3px 3px 0 var(--accsh)}
 .kofi:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--accsh)}
 .dellink{display:block;margin:28px auto 0;background:none;border:0;color:var(--mut);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:6px}
@@ -779,6 +787,59 @@ const nav=(right='')=>`<header class="nav in" style="--d:0">
   <div class="r">${right}<a class="sq icon" id="ig" href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener" aria-label="Daily Banana on Instagram"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a><button class="sq" id="menu">Menu</button></div>
 </header>`;
 const KOFI='https://ko-fi.com/dougpuccetti';
+// ---------- rating: after a player's 3rd finished daily (1-5 bananas, optional comment) ----------
+// "Not now" asks again after 7 more finished dailies; a second "Not now" means never again
+// ---------- feedback form (Menu → Have feedback?): goes to the admin dashboard ----------
+function showFeedback(){
+  const back=document.activeElement,w=document.createElement('div');w.className='welcome';w.setAttribute('role','dialog');w.setAttribute('aria-modal','true');w.setAttribute('aria-labelledby','fbt');
+  const nm=SESSION&&SESSION.user&&SESSION.user.name||'';
+  w.innerHTML=`<form class="box" tabindex="-1" id="fbf"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 id="fbt" style="font-size:28px">Have feedback?</h2><button class="sq" type="button" id="fbx">Close</button></div>
+    <p class="mut" style="margin:0">Ideas, a size that looks wrong, a bug, or just hello. I read every message.</p>
+    <label style="display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:14px">Name (optional)<input class="rate-c" id="fbn" maxlength="60" autocomplete="name" style="min-height:0" value="${esc(nm)}"></label>
+    <label style="display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:14px">Message<textarea class="rate-c" id="fbm" maxlength="2000" rows="5" required></textarea></label>
+    <button class="btn main" type="submit" id="fbs"><span>Send</span><span aria-hidden="true">→</span></button>
+    <span class="note" id="fbe" role="status"></span></form>`;
+  document.body.appendChild(w);
+  const end=()=>{w.remove();removeEventListener('keydown',key);if(back&&back.focus)back.focus()},key=e=>{if(e.key==='Escape')end()};
+  addEventListener('keydown',key);w.onclick=e=>{if(e.target===w)end()};w.querySelector('#fbx').onclick=end;w.querySelector('#fbm').focus();
+  w.querySelector('#fbf').onsubmit=async e=>{e.preventDefault();const msg=w.querySelector('#fbm').value.trim(),btn=w.querySelector('#fbs'),err=w.querySelector('#fbe');
+    if(!msg){err.textContent='Write a message first.';return}
+    btn.disabled=true;
+    const ok=API?await fetch(`${API}/log`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind:'feedback',device:DEVICE,name:w.querySelector('#fbn').value.trim().slice(0,60),message:msg.slice(0,2000),uid:SESSION&&SESSION.user&&SESSION.user.uid||null})}).then(r=>r.ok).catch(()=>false):false;
+    if(!ok){btn.disabled=false;err.textContent='Couldn\u2019t send that just now. Please try again, or email contact@dailybanana.io.';return}
+    w.querySelector('.box').innerHTML=`<h2 style="font-size:28px">Thanks! 🍌</h2><p style="margin:0">Your message is on its way.</p><button class="btn" type="button" id="fbd">Close</button>`;
+    const d=w.querySelector('#fbd');d.onclick=end;d.focus()};
+}
+function rateDue(){const v=store.get('rate',null),n=playedDailies().length;
+  if(!v)return n>=3;if(v.stars)return false;const skips=v.skips||(v.skipped?1:0);
+  return skips===1&&n>=(v.at||3)+7}
+function askRating(){
+  const back=document.activeElement,w=document.createElement('div');w.className='welcome';w.setAttribute('role','dialog');w.setAttribute('aria-modal','true');w.setAttribute('aria-labelledby','rtt');
+  let stars=0;
+  const end=()=>{w.remove();removeEventListener('keydown',key);if(back&&back.focus)back.focus()},key=e=>{if(e.key==='Escape')skip()};
+  const skip=()=>{const v=store.get('rate',null)||{},skips=(v.skips||(v.skipped?1:0))+1;store.set('rate',{skips,at:playedDailies().length,when:Date.now()});log('rating',{device:DEVICE,skipped:true});end()};
+  w.innerHTML=`<div class="box" tabindex="-1">
+    <h2 id="rtt" style="font-size:28px">Enjoying Daily Banana?</h2>
+    <p class="mut" style="margin:0">Support a small creator. Tap a banana to rate the game.</p>
+    <div class="rate-b" role="radiogroup" aria-label="Rating, 1 to 5 bananas">${[1,2,3,4,5].map(n=>`<button type="button" role="radio" aria-checked="false" aria-label="${n} banana${n>1?'s':''}" data-n="${n}">${BANANA(28)}<b>${n}</b></button>`).join('')}</div>
+    <textarea class="rate-c" id="rtc" maxlength="500" placeholder="Anything you'd like to tell me? (optional)" aria-label="Comment (optional)"></textarea>
+    <button class="btn main" id="rts" disabled><span>Send rating</span><span aria-hidden="true">→</span></button>
+    <button class="dellink" id="rtx" style="margin:0 auto">Not now</button></div>`;
+  document.body.appendChild(w);w.querySelector('.box').focus();addEventListener('keydown',key);
+  const bs=[...w.querySelectorAll('.rate-b button')],send=w.querySelector('#rts');
+  const set=n=>{stars=n;bs.forEach(b=>{const on=+b.dataset.n<=n;b.classList.toggle('on',on);b.setAttribute('aria-checked',String(+b.dataset.n===n))});send.disabled=false};
+  bs.forEach(b=>b.onclick=()=>set(+b.dataset.n));
+  w.querySelector('#rtx').onclick=skip;
+  send.onclick=()=>{if(!stars)return;const comment=w.querySelector('#rtc').value.trim().slice(0,500);
+    store.set('rate',{stars,at:Date.now()});log('rating',{device:DEVICE,stars,comment});
+    const box=w.querySelector('.box');
+    box.innerHTML=`<h2 style="font-size:28px">Thank you! 🍌</h2>
+      ${stars>=4?`<p style="margin:0">Daily Banana is made by one designer. If you'd like to help keep it free and accessible to everyone, you can buy me a banana.</p>
+      <a class="btn main kofi-big kofi" href="${KOFI}" target="_blank" rel="noopener"><span>🍌 Buy me a banana</span><span aria-hidden="true">→</span></a>`:`<p style="margin:0">Your rating helps make the game better.</p>`}
+      <button class="${stars>=4?'dellink':'btn'}" id="rtd" style="${stars>=4?'margin:0 auto':''}">${stars>=4?'Maybe later':'Close'}</button>`;
+    box.querySelector('#rtd').onclick=end;box.querySelector('#rtd').focus()};
+  w.onclick=e=>{if(e.target===w)skip()};
+}
 const kofiBtn=(d)=>`<div class="kofiw in" style="--d:${d}"><a class="kofi" href="${KOFI}" target="_blank" rel="noopener">🍌 Buy me a banana</a></div>`;
 document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.kofi'))log('kofi',{device:DEVICE})});
 const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}"><div class="ftxt">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · <button class="vbtn" aria-label="Version ${version()}, see what's new">v${version()}</button><br><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></div></div>`;
@@ -917,6 +978,7 @@ function showMenu(jump){USE.other=1;
       <button class="lrow" id="opt-motion"><span>Animations</span><span class="toggle ${SET.motion?'on':''}" aria-hidden="true"></span></button>
       <button class="lrow" id="opt-bgb" aria-pressed="${SET.bgb}"><span>Background bananas</span><span class="toggle ${SET.bgb?'on':''}" aria-hidden="true"></span></button>
       ${SESSION&&SESSION.user.admin?'<a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">→</span></a><button class="lrow" id="opt-social"><span>Social post image</span><span class="mut">→</span></button>':''}
+      <button class="lrow" id="opt-feedback"><span>Have feedback?</span><span class="mut">→</span></button>
     </div>
     <a class="btn social in" style="--d:7" href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span>Follow us on Instagram</span></a>
     ${kofiBtn(7)}
@@ -927,6 +989,7 @@ function showMenu(jump){USE.other=1;
   document.getElementById('opt-help').onclick=showHelp;
   const ib=document.getElementById('opt-install');if(ib)ib.onclick=async()=>{const p=INSTALL;if(!p)return;INSTALL=null;ib.remove();try{await p.prompt();const c=await p.userChoice;log('install',{device:DEVICE,outcome:c&&c.outcome})}catch(_){}};
   const so=document.getElementById('opt-social');if(so)so.onclick=()=>showSocial();
+  document.getElementById('opt-feedback').onclick=showFeedback;
   wireAcct();openChallenges();
   weekendMenu();
   if(jump==='badges')setTimeout(()=>{const el=document.getElementById('badges');if(el)window.scrollTo(0,el.getBoundingClientRect().top+scrollY-12)},50);
@@ -1171,6 +1234,7 @@ function showResults(r,res){
   app.querySelectorAll('[data-flip]').forEach(row=>{const flip=()=>{const [t,c]=row.querySelectorAll('.t'),on=c.hidden;c.hidden=!on;t.hidden=on;row.setAttribute('aria-expanded',String(on))};
     row.onclick=e=>{if(e.target.closest('a,button'))return;flip()};row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip()}}});
   SHOWN={r,res};if(r.quick)chalBox(res);else showRank(r,res);
+  if(!r.quick&&rateDue())setTimeout(()=>{if(SHOWN&&SHOWN.r===r&&document.getElementById('rank')&&!document.querySelector('.welcome'))askRating()},1500);
   // keep the daily rank current while the results stay open: re-check the scores every 30 minutes (a change redraws the rank)
   if(!r.quick){const rk=setInterval(()=>{if(!document.getElementById('rank')||SHOWN.r!==r)return clearInterval(rk);getStats(r.n)},30*60e3)}
 

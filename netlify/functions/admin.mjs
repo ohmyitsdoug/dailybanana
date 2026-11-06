@@ -28,10 +28,10 @@ export default async (req) => {
   // the few that can change get read again: plays still missing guesses (a backfill can add them), brand-new devices' source, challenges, accounts
   const fresh = url.searchParams.get('fresh') === '1', yday = add(today, -1);
   const C = (p, recheck) => getAllCached(store, p, { recheck, fresh });
-  const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users, seenAll, signins, kofi, timeRaw] = await Promise.all([
+  const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users, seenAll, signins, kofi, timeRaw, ratingsRaw, feedbackRaw] = await Promise.all([
     C('plays/', (v) => !Array.isArray(v.guesses) || !v.guesses.length), C('quick/'), C('starts/daily/'), C('starts/quick/'),
     C('visits/'), C('shares/'), getAll(store, 'challenges/'), C('entries/'), getAll(store, 'users/'), C('seen/', (v) => !v.first || (v.first >= yday && !v.src)), C('signins/'), C('kofi/'),
-    getAll(store, `time/`),
+    getAll(store, `time/`), getAll(store, 'ratings/'), getAll(store, 'feedback/'),
   ]);
   // one record per game, with its Eastern day
   const dailies = []; const seenDaily = new Set();
@@ -191,6 +191,16 @@ export default async (req) => {
     } : null,
   };
 
+  // I. ratings (all time; asked once after a player's 3rd daily)
+  const rated = ratingsRaw.filter((x) => x.stars >= 1);
+  const ratings = {
+    count: rated.length,
+    avg: rated.length ? Math.round((10 * rated.reduce((t, x) => t + x.stars, 0)) / rated.length) / 10 : null,
+    dist: [1, 2, 3, 4, 5].map((n) => rated.filter((x) => x.stars === n).length),
+    skipped: ratingsRaw.filter((x) => x.skipped && !x.stars).length,
+    comments: rated.filter((x) => x.comment).sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 20).map((x) => ({ stars: x.stars, comment: x.comment, day: x.day })),
+  };
+
   // per-day series for the chart and the breakdown table (newest first)
   const days = [];
   for (let d = to; d >= from; d = add(d, -1)) {
@@ -201,5 +211,5 @@ export default async (req) => {
       bananas: g.reduce((t, x) => t + ban(x), 0), shares: shares.filter((s) => s.key.split('/')[1] === d).length });
     if (days.length > 400) break;
   }
-  return json({ from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, days });
+  return json({ from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
 };

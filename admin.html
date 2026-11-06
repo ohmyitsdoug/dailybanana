@@ -167,6 +167,9 @@ const DEF={
   'Daily and more':'Share of player-days where the player did the daily and also looked around: quick play, the Menu (stats, badges, history) or a challenge.',
   'Came back the same day':'Share of player-days with two or more separate visits (the game was opened again later that day).',
   'Visits per day':'Average number of separate visits per player per day.',
+  'Average rating':'The average of every rating players have given, 1 to 5 bananas. Players are asked once, after their 3rd finished daily.',
+  'Ratings':'How many players have rated the game.',
+  'Said not now':'Players who closed the rating popup without rating. They are not asked again.',
   'Installed app':'Visitors in the range who opened Daily Banana as an installed app rather than in a browser tab.',
   'When people play the daily':'Dailies finished in each hour of the day, in each player\u2019s own local time. Tracked from Nov 6.',
   'Countries':'Each visitor\u2019s country, from Netlify\u2019s servers (no IP address or location is saved). Players = visitors who finished a game in the range. Tracked from Nov 6.',
@@ -186,6 +189,15 @@ const mmss=v=>v==null?'–':`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}
 function miniTable(title,rows,label){
   return`<div class="table srcs"><div class="wrap"><table><thead><tr><th><button class="qi qb" data-def="${title}" aria-expanded="false" aria-label="What this means">?</button> ${title}</th><th>Visitors</th><th>Players</th></tr></thead>
     <tbody>${rows.length?rows.map(r=>`<tr><td>${esc(label(r.key))}</td><td>${n(r.visitors)}</td><td>${n(r.players)} <span class="mut">${pc(r.players,r.visitors)}</span></td></tr>`).join(''):'<tr><td class="mut">No data yet</td><td></td><td></td></tr>'}</tbody></table></div></div>`}
+function feedbackHtml(d){const F=d.feedback||[];
+  return`<h2>Feedback</h2>${F.length?`<div class="table srcs"><div class="wrap"><table><thead><tr><th>Message</th><th>From</th><th>Day</th></tr></thead><tbody>${F.map(f=>`<tr><td style="white-space:pre-wrap;text-align:left;min-width:240px">${esc(f.message)}</td><td>${esc(f.name||'anonymous')}</td><td>${fmtDay(f.day)}</td></tr>`).join('')}</tbody></table></div></div>`:'<p class="mut small">No feedback yet. Players send it from Menu → Have feedback?</p>'}`}
+function ratingsHtml(d){const R=d.ratings;if(!R)return'';const max=Math.max(1,...R.dist);
+  return`<h2>Ratings</h2>
+    <div class="grid">${card('Average rating',R.avg==null?'–':`${R.avg} / 5`,'bananas, all time')}${card('Ratings',n(R.count),'all time')}${card('Said not now',n(R.skipped))}</div>
+    <div class="table srcs"><div class="wrap"><table><thead><tr><th>Bananas</th><th>Ratings</th><th style="width:55%"></th></tr></thead><tbody>
+      ${[5,4,3,2,1].map(k=>`<tr><td>${'🍌'.repeat(k)}</td><td>${n(R.dist[k-1])}</td><td style="text-align:left"><span style="display:inline-block;height:10px;background:var(--bar);width:${Math.round(100*R.dist[k-1]/max)}%"></span></td></tr>`).join('')}
+    </tbody></table></div></div>
+    ${R.comments.length?`<div class="table srcs"><div class="wrap"><table><thead><tr><th>Latest comments</th><th>Bananas</th><th>Day</th></tr></thead><tbody>${R.comments.map(c=>`<tr><td style="white-space:normal;text-align:left">${esc(c.comment)}</td><td>${c.stars}</td><td>${fmtDay(c.day)}</td></tr>`).join('')}</tbody></table></div></div>`:''}`}
 function whereHtml(d){
   const W=d.where;if(!W)return'';
   const T=W.time,max=Math.max(1,...W.hours),hl=h=>h===0?'12a':h<12?`${h}a`:h===12?'12p':`${h-12}p`;
@@ -268,6 +280,8 @@ function draw(d){
     </table></div></div>`:`<p class="mut small">No new visitors in this range yet. Sources are tracked from Nov 4.</p>`}
 
     ${whereHtml(d)}
+    ${ratingsHtml(d)}
+    ${feedbackHtml(d)}
 
     <details class="table"><summary>Day by day</summary><div class="wrap"><table>
       <thead><tr><th>Day</th><th>Players</th><th>New</th><th>Dailies</th><th>Quick</th><th>Visitors</th><th>Returning</th><th>🍌</th><th>Shares</th></tr></thead>
