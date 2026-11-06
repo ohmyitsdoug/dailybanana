@@ -225,7 +225,7 @@ export function sundayNightPacific(satIso) {
 }
 // a hint for each unit: two familiar things just smaller and just bigger (never something with a known exact length)
 const NO_HINT = new Set(['ruler', 'yardstick', 'sheet of paper', 'dollar bill', 'credit card', 'index card', 'business card', 'playing card', 'tape measure',
-  'crosswalk stripe', 'tennis net', 'hockey rink', 'sidewalk square', 'bowling lane', 'football goalpost', 'golf hole cup', 'manhole cover', 'school bus seat', 'ceiling', 'light switch plate', 'traffic barrel', 'parking space', 'football field', 'tennis court', 'basketball court', 'Olympic swimming pool']);   // known exact lengths, or odd to picture
+  'crosswalk stripe', 'tennis net', 'hockey rink', 'sidewalk square', 'bowling lane', 'football goalpost', 'golf hole cup', 'manhole cover', 'school bus seat', 'ceiling', 'light switch plate', 'traffic barrel', 'parking space', 'American football field', 'tennis court', 'basketball court', 'Olympic swimming pool']);   // known exact lengths, or odd to picture
 export function hintFor(unit, items) {
   const pool = items.filter((i) => i.unit && !NO_HINT.has(i.name) && i.name !== unit.name && !NEVER.test(i.name));
   const lo = pool.filter((i) => i.cm < unit.cm * 0.85).sort((a, b) => b.cm - a.cm)[0], hi = pool.filter((i) => i.cm > unit.cm * 1.15).sort((a, b) => a.cm - b.cm)[0];

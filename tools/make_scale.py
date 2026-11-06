@@ -37,35 +37,48 @@ BUCKETS = [(2, 25), (2, 25), (25, 250), (25, 250), (250, 2000), (250, 2000)]  # 
 pairs = {k: [] for k in range(len(BUCKETS))}
 for a in units:
     for b in items:
-        if a['id'] == b['id']: continue
+        if a['id'] == b['id'] or b['dim'] == 'deep': continue   # no "deep" questions (nobody can picture the bottom of the Mariana Trench)
         r = b['cm'] / a['cm']
         for k, (lo, hi) in enumerate(BUCKETS):
             if lo <= r <= hi: pairs[k].append((a['id'], b['id']))
-FROZEN = 2   # dailies #000..FROZEN stay as they are (#002 is already being played where it is Nov 5)
+FROZEN = 4   # dailies #000..FROZEN stay as they are (#004 is Nov 7; the wide/big-vs-big update starts with #005, Nov 8)
+RENAMES = {'football field': 'American football field'}   # old name -> new, so frozen dailies keep pointing at the same item
 old = {}
 try: old = {d['n']: d for d in json.load(open(os.path.join(HERE, '..', 'data', 'dailies.json')))}
 except Exception: pass
 spec = lambda p: bool(items[p[0]].get('x') or items[p[1]].get('x'))
+big = lambda p: items[p[0]]['cm'] >= 3000 and items[p[1]]['cm'] >= 3000   # both sides huge
+# a big-vs-big round compares like with like: towers in towers, lengths in lengths
+big_ok = lambda p: big(p) and (items[p[0]]['dim'] == 'tall') == (items[p[1]]['dim'] == 'tall')
+from collections import Counter
 random.seed(5)
 last, out, used_pairs = {}, [], set()
 for d in range(days):
     if d <= FROZEN and d in old:
         byname = {i['name']: i['id'] for i in items}
-        old[d] = {**old[d], 'rounds': [{'a': byname[OLD_NAMES[r['a']]], 'b': byname[OLD_NAMES[r['b']]]} for r in old[d]['rounds']]}
+        nm = lambda i: byname[RENAMES.get(OLD_NAMES[i], OLD_NAMES[i])]
+        old[d] = {**old[d], 'rounds': [{'a': nm(r['a']), 'b': nm(r['b'])} for r in old[d]['rounds']]}
         out.append(old[d])
         for r in old[d]['rounds']: used_pairs.add((r['a'], r['b'])); last[r['b']] = d
         continue
-    today, rounds = set(), []
+    today, rounds, dims = set(), [], Counter()
     want = set(random.sample(range(len(BUCKETS)), random.choice((1, 1, 2))))   # which rounds get the one or two specific items
+    # about 3 days in 5, one small or medium round is big vs big: two huge, famous things ("How many Titanics long is the Golden Gate Bridge?")
+    bigk = random.choice((0, 1, 2, 3)) if random.random() < 0.6 else None
+    if bigk is not None: want.add(bigk)
     for k in range(len(BUCKETS)):
         core_b = random.random() < 2 / 3   # most everyday rounds measure a core item too
         for gap in (10, 5, 2, 0):
             c = [p for p in pairs[k] if p not in used_pairs and not ({p[0], p[1]} & today) and d - last.get(p[1], -99) >= gap]
-            c2 = [p for p in c if spec(p) == (k in want) and (k in want or not core_b or items[p[1]].get('core'))]
+            if k == bigk: c2 = [p for p in c if big_ok(p)]
+            else: c2 = [p for p in c if not big(p) and spec(p) == (k in want) and (k in want or not core_b or items[p[1]].get('core'))]
+            # mix of measuring words: at most 3 of any one (long, tall, wide, across) in a day
+            c3 = [p for p in c2 if dims[items[p[1]]['dim']] < 3]
+            if c3: c = c3; break
             if c2: c = c2; break
             if c and gap == 0: break
         p = random.choice(c)
-        rounds.append({'a': p[0], 'b': p[1]}); used_pairs.add(p); today |= {p[0], p[1]}; last[p[1]] = d
+        rounds.append({'a': p[0], 'b': p[1]}); used_pairs.add(p); today |= {p[0], p[1]}; last[p[1]] = d; dims[items[p[1]]['dim']] += 1
     random.shuffle(rounds)   # one answer from each size range, in a random order
     out.append({'n': d, 'date': (start + datetime.timedelta(days=d)).isoformat(), 'rounds': rounds})
 json.dump(out, open(os.path.join(HERE, '..', 'data', 'dailies.json'), 'w'), separators=(',', ':'))

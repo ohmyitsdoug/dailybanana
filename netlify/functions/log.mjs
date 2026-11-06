@@ -76,6 +76,11 @@ export default async (req) => {
     await store.setJSON(`shares/${today}/${id()}`, { what: b.what === 'challenge' ? 'challenge' : 'results', device });
     return new Response('ok');
   }
+  if (b.kind === 'install') {
+    // someone answered the browser's "Install app" prompt from the Menu
+    await store.setJSON(`installs/${today}/${device}`, { outcome: b.outcome === 'accepted' ? 'accepted' : 'dismissed' });
+    return new Response('ok');
+  }
   if (b.kind === 'kofi') {
     await store.setJSON(`kofi/${today}/${device}`, { at: Date.now() });
     return new Response('ok');

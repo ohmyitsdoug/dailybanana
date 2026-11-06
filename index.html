@@ -413,6 +413,11 @@ const CFG=Object.assign({api:'/.netlify/functions'},window.MATRYO_CONFIG||{});
 const API=CFG.api;   // Netlify server functions: logging, shared stats, words added after launch
 // release notes, newest first; a release shows (and becomes the version number) from its date
 const RELEASES=[
+  {v:'1.2',from:'2026-11-08',date:'Nov 8, 2026',groups:[
+    {t:'Updates',notes:[
+      'New “wide” questions, like how many dimes wide a garage door is.',
+      'Big vs. big: some days compare two huge things, like how many American football fields long the Golden Gate Bridge is.',
+      'Each daily now mixes long, tall, wide and across questions.']}]},
   {v:'1.1',from:'2026-11-05',date:'Nov 5, 2026',groups:[
     {t:'Bug Fixes',notes:[
       'Exact answer match now scores 100.',
@@ -424,6 +429,7 @@ const RELEASES=[
       'Almost 200 new everyday things to measure, and 100 more to measure them with.',
       'Weekend challenges: a new themed challenge every Saturday, open all weekend.',
       'The Menu screen now counts down to the next weekend challenge.',
+      'Install Daily Banana as an app from the Menu (Chrome on computers and Android phones).',
       'Your daily rank now only compares you with real players. Finish before 10 people have played and you’re an early bird: check back later to see where you landed.']}]},
   {v:'1.0',from:'2026-11-04',date:'Nov 4, 2026',groups:[{notes:[
     'Join a challenge with a code, right from the home screen.',
@@ -535,6 +541,11 @@ const SRC=(()=>{let s=store.get('src',null);if(s)return s;
   const cr=(q.get('ref')||'').replace(/^@/,'').replace(/-/g,'_').toLowerCase().replace(/[^a-z0-9_.\-]/g,'').slice(0,40);
   s=cr?{s:'creator',m:'social',c:cr}:t('utm_source')?{s:t('utm_source'),m:t('utm_medium'),c:t('utm_campaign')}:q.get('fbclid')?{s:'facebook',m:'untagged',c:''}:ref?{s:ref,m:'referral',c:''}:{s:'direct',m:'',c:''};
   store.set('src',s);return s})();
+// installable app (Chrome on Windows/Mac/Android): the browser offers it once the service worker is running
+let INSTALL=null;
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();INSTALL=e});
+addEventListener('appinstalled',()=>{INSTALL=null});
+if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
 const DEVICE=(()=>{let d=store.get('device',null);if(!d){d=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());store.set('device',d)}return d})();
 // each player gets the next daily at their own midnight (like Wordle)
 const todayISO=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
@@ -634,7 +645,7 @@ function randomRounds(){
   const out=BUCKETS.map(([lo,hi],bi)=>{
     const coreB=!want.has(bi)&&Math.random()<2/3;   // most everyday rounds measure a well-known thing too
     for(let t=0;t<20000;t++){const a=pick(units),b=coreB&&t<10000?pick(core):pick(ITEMS),r=b.cm/a.cm,sp=!!(a.x||b.x);
-      if(a.id!==b.id&&!used.has(a.id)&&!used.has(b.id)&&r>=lo&&r<=hi&&(t>15000||(!avoid.has(k(a.id,b.id))&&sp===want.has(bi)))){used.add(a.id);used.add(b.id);return{a:a.id,b:b.id}}}
+      if(a.id!==b.id&&b.dim!=='deep'&&!used.has(a.id)&&!used.has(b.id)&&r>=lo&&r<=hi&&(t>15000||(!avoid.has(k(a.id,b.id))&&sp===want.has(bi)))){used.add(a.id);used.add(b.id);return{a:a.id,b:b.id}}}
     return{a:units[0].id,b:ITEMS[ITEMS.length-1].id}});
   store.set('seen',[...out.map(x=>k(x.a,x.b)),...store.get('seen',[])].slice(0,300));
   for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}   // any order, not small to big
@@ -860,6 +871,7 @@ function showMenu(jump){
     <div class="eyebrow in" style="--d:6">Settings</div>
     <div class="list in" style="--d:6">
       <button class="lrow" id="opt-help"><span>How to play</span><span class="mut">→</span></button>
+      ${INSTALL?'<button class="lrow" id="opt-install"><span>Install the app</span><span class="mut">On this computer or phone</span></button>':''}
       <a class="lrow" href="/archive" target="_blank" rel="noopener"><span>Archive</span><span class="mut" aria-label="opens in a new tab"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg></span></a>
       <button class="lrow" id="opt-theme"><span>Dark mode</span><span class="toggle ${document.documentElement.dataset.theme==='dark'?'on':''}" aria-hidden="true"></span></button>
       <button class="lrow" id="opt-motion"><span>Animations</span><span class="toggle ${SET.motion?'on':''}" aria-hidden="true"></span></button>
@@ -873,6 +885,7 @@ function showMenu(jump){
   wireNav();
   renderHistory();
   document.getElementById('opt-help').onclick=showHelp;
+  const ib=document.getElementById('opt-install');if(ib)ib.onclick=async()=>{const p=INSTALL;if(!p)return;INSTALL=null;ib.remove();try{await p.prompt();const c=await p.userChoice;log('install',{device:DEVICE,outcome:c&&c.outcome})}catch(_){}};
   const so=document.getElementById('opt-social');if(so)so.onclick=()=>showSocial();
   wireAcct();openChallenges();
   weekendMenu();
@@ -1112,6 +1125,8 @@ function showResults(r,res){
   tick=setInterval(()=>{const cd=document.getElementById('cd');if(cd)cd.textContent=untilMidnight();else clearInterval(tick)},1000);
   document.getElementById('again').onclick=()=>quick();
   SHOWN={r,res};if(r.quick)chalBox(res);else showRank(r,res);
+  // keep the daily rank current while the results stay open: re-check the scores every 2 minutes (a change redraws the rank)
+  if(!r.quick){const rk=setInterval(()=>{if(!document.getElementById('rank')||SHOWN.r!==r)return clearInterval(rk);getStats(r.n)},120e3)}
 
   showFact(r);
   const dl=document.getElementById('dl');if(dl)dl.onclick=()=>shareImage(r,res,dl);

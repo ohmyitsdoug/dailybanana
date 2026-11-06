@@ -147,7 +147,7 @@ car tire
 license plate
 tennis court
 basketball court
-football field
+American football field
 Olympic swimming pool
 jumbo jet
 blue whale
@@ -258,3 +258,9 @@ big envelope
 SD card
 shot glass
 C battery
+# big units, for big-vs-big questions (Nov 2026)
+soccer field
+Titanic
+Eiffel Tower
+Empire State Building
+Statue of Liberty
