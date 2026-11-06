@@ -116,6 +116,10 @@ export default async (req) => {
     players: [...perPlayer.values()].filter((x) => x > 0).length,
     per_player: perPlayer.size ? Math.round((10 * totalB) / perPlayer.size) / 10 : null,
     rate: rounds ? pct(totalB, rounds) : null,
+    // golden bananas: rounds guessed exactly (100), dailies and quick play
+    golden: gR.reduce((t, g) => t + (g.points || []).filter((x) => x >= 100).length, 0),
+    golden_daily: dR.reduce((t, g) => t + (g.points || []).filter((x) => x >= 100).length, 0),
+    golden_players: new Set(gR.filter((g) => (g.points || []).some((x) => x >= 100)).map((g) => g.device)).size,
   };
 
   // F. traffic & sharing (the numbers the dashboard already had)

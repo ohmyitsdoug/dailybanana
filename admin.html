@@ -153,6 +153,8 @@ const DEF={
   'Bananas earned':'Rounds scored 90 or more (within about 10% of the answer), across dailies and quick play in the range.',
   'Players with a banana':'Players who earned at least one banana in the range.',
   'Avg bananas per player':'Bananas earned in the range ÷ players who finished a game in the range.',
+  'Golden bananas':'Rounds guessed exactly (scored 100), in dailies and quick play in the range. The daily ones are what earn the Golden banana badge.',
+  'Players with a golden banana':'Players who guessed at least one round exactly in the range.',
   'Banana rate':'Bananas earned ÷ all rounds played in the range.',
   'Unique visitors':'Devices that opened the game in the range, whether or not they played.',
   'Returning visitors':'Visitors in the range whose first visit was on an earlier day.',
@@ -261,9 +263,10 @@ function draw(d){
     </div>
 
     <h2>Bananas</h2>
-    <div class="grid">
+    <div class="grid g6">
       ${card('Bananas earned',n(B.total),'rounds scored 90+')}${card('Players with a banana',n(B.players))}
       ${card('Avg bananas per player',B.per_player??'–')}${card('Banana rate',p(B.rate),'of all rounds played')}
+      ${card('Golden bananas',n(B.golden),B.golden_daily!=null?`${n(B.golden_daily)} in dailies`:'')}${card('Players with a golden banana',n(B.golden_players))}
     </div>
 
     <h2>Traffic &amp; sharing</h2>
