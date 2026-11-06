@@ -287,6 +287,8 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 
 .tip{position:absolute;z-index:30;max-width:260px;display:flex;gap:8px;align-items:flex-start;background:var(--ink);color:var(--bg);padding:10px 12px;font-size:14px;line-height:1.4;box-shadow:4px 4px 0 var(--accsh)}
 .tip svg{flex:none;margin-top:1px}
+.infob{all:unset;box-sizing:border-box;cursor:pointer;width:18px;height:18px;border-radius:50%;border:2px solid currentColor;display:inline-grid;place-items:center;font:700 11px/1 Georgia,serif;font-style:italic;text-transform:none;letter-spacing:0}
+.infob:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 button.stat{font:inherit;color:inherit;background:var(--bg);text-align:left;cursor:pointer}
 .chal{border:2px solid var(--ink);box-shadow:4px 4px 0 var(--accsh);background:var(--card);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 .chal h3{margin:0;font-size:18px}
@@ -644,10 +646,12 @@ function judge(guess,q){
 }
 const mark=p=>p>=100?'💯':p>=90?'🍌':p>=70?'🟫':p>=40?'🟨':'⬜';   // darker the closer you get, then the banana, then 💯 for exact (drawn in the app as a golden banana)
 // small tip under the bananas box
-function banTip(el){
-  const old=document.getElementById('banpop');if(old){old.remove();el.setAttribute('aria-expanded','false');return}
-  const t=document.createElement('div');t.id='banpop';t.className='tip';t.setAttribute('role','tooltip');
-  t.innerHTML=`${BANANA(18)}<span>You earn a banana for every daily round you score <b>90 or more</b>, meaning your guess was within about 10% of the answer.</span>`;
+const banTip=el=>showTip(el,'banpop',`${BANANA(18)}<span>You earn a banana for every daily round you score <b>90 or more</b>, meaning your guess was within about 10% of the answer.</span>`);
+const nameTip=el=>showTip(el,'namepop','<span>Your name appears on challenge leaderboards and may appear in weekend results posts.</span>');
+function showTip(el,id,html){
+  const old=document.getElementById(id);if(old){old.remove();el.setAttribute('aria-expanded','false');return}
+  const t=document.createElement('div');t.id=id;t.className='tip';t.setAttribute('role','tooltip');
+  t.innerHTML=html;
   document.body.appendChild(t);const b=el.getBoundingClientRect(),w=t.offsetWidth;
   t.style.left=Math.max(12,Math.min(innerWidth-w-12,b.right+scrollX-w))+'px';t.style.top=(b.bottom+scrollY+10)+'px';
   el.setAttribute('aria-expanded','true');
@@ -949,7 +953,7 @@ function showMenu(jump){USE.other=1;
     <div class="head in" style="--d:1;margin-bottom:-16px"><h2>Menu</h2><button class="sq" id="back">Back</button></div>
     <div id="opench" class="in" style="--d:2;display:flex;flex-direction:column;gap:10px"></div>
     <div id="wkmenu"></div>
-    <div class="eyebrow in" style="--d:2">Account</div>
+    <div class="eyebrow in" style="--d:2;display:flex;align-items:center;gap:6px">Account <button class="infob" id="namehelp" type="button" aria-label="How your name is used" aria-expanded="false" aria-describedby="namepop">i</button></div>
     <div class="acct in" style="--d:2" id="acct">${acctHtml()}</div>
     <div class="eyebrow in" style="--d:3">Your daily stats</div>
     <div class="stats in" style="--d:3;grid-template-columns:repeat(2,minmax(0,1fr))">
@@ -997,7 +1001,7 @@ function showMenu(jump){USE.other=1;
   weekendMenu();
   if(jump==='badges')setTimeout(()=>{const el=document.getElementById('badges');if(el)window.scrollTo(0,el.getBoundingClientRect().top+scrollY-12)},50);
   app.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const r=puzzleFor(DAILIES.find(x=>x.n===+b.dataset.n)),s=saved(r.n);s?showResults(r,s):r.n===TODAY.n?showStart():leave(r,liveSaved(r.n))});
-  document.getElementById('back').onclick=showStart;
+  document.getElementById('back').onclick=showStart;document.getElementById('namehelp').onclick=e=>{e.stopPropagation();nameTip(e.currentTarget)};
   document.getElementById('opt-theme').onclick=e=>{toggleTheme();e.currentTarget.querySelector('.toggle').classList.toggle('on',document.documentElement.dataset.theme==='dark')};
   document.getElementById('opt-hc').onclick=e=>{SET.hc=!SET.hc;store.set('settings',SET);applySettings();e.currentTarget.querySelector('.toggle').classList.toggle('on',SET.hc);e.currentTarget.setAttribute('aria-pressed',String(SET.hc))};
   document.getElementById('opt-bgb').onclick=e=>{SET.bgb=!SET.bgb;store.set('settings',SET);applySettings();e.currentTarget.querySelector('.toggle').classList.toggle('on',SET.bgb);e.currentTarget.setAttribute('aria-pressed',SET.bgb)};
