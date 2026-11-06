@@ -101,7 +101,7 @@ const fmtDay=d=>{const [y,mo,dd]=d.split('-');return['Jan','Feb','Mar','Apr','Ma
 const add=(iso,k)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+k);return d.toISOString().slice(0,10)};
 const todayET=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 let TOKEN='';try{TOKEN=(JSON.parse(localStorage.getItem('snug:session')||'null')||{}).token||''}catch(_){}
-let RANGE='30',CUSTOM={from:'',to:''};try{RANGE=sessionStorage.getItem('db-admin-range')||'30'}catch(_){}
+let RANGE='30',CUSTOM={from:'',to:''};try{RANGE=localStorage.getItem('db-admin-range')||'30'}catch(_){}
 if(RANGE==='90')RANGE='30';
 const logo='<a class="logo" href="./"><span class="m" aria-hidden="true"><img src="banana.svg" width="18" height="18" alt=""></span><span class="t">dailybanana</span></a><span class="chipa">ADMIN</span>';
 
@@ -117,27 +117,42 @@ function rangeDates(R=RANGE){
   if(R==='all')return{from:'2026-11-03',to:t};
   return{from:add(t,-(+R||30)+1),to:t};
 }
-async function load(){
+// Standard dashboard caching: numbers for each range are kept on this device for 30 minutes and shown instantly.
+// The server is only asked when they're older than that, when you tap Refresh, or for a custom date range.
+const FRESH_MS=30*60e3,ADM=new Map();let LAST='',PRE=false;
+const cacheGet=key=>{if(ADM.has(key))return ADM.get(key);try{const v=JSON.parse(localStorage.getItem('db-adm:'+key)||'null');if(v&&v.d)ADM.set(key,v);return v}catch(_){return null}};
+const cachePut=(key,d)=>{const v={at:Date.now(),d};ADM.set(key,v);
+  try{localStorage.setItem('db-adm:'+key,JSON.stringify(v))}catch(_){   // full: drop older ranges and try again
+    try{Object.keys(localStorage).filter(k=>k.startsWith('db-adm:')&&k!=='db-adm:'+key).forEach(k=>localStorage.removeItem(k));localStorage.setItem('db-adm:'+key,JSON.stringify(v))}catch(_){}}};
+const fresh=v=>v&&Date.now()-v.at<FRESH_MS;
+async function load(force=false){
   if(!TOKEN)return gate();
-  const {from,to}=rangeDates();
-  const key=from+'_'+to,seen=ADM.get(key)||(()=>{try{const v=JSON.parse(sessionStorage.getItem('db-adm:'+key)||'null');if(v)ADM.set(key,v);return v}catch(_){return null}})();
-  if(seen)draw(seen);   // show the last numbers for this range right away, then refresh them
+  const {from,to}=rangeDates(),key=from+'_'+to,seen=cacheGet(key);
+  if(seen)draw(seen.d,seen.at);
   else if(!m.querySelector('main'))m.innerHTML='<main class="wrapx"><div class="mut">Loading…</div></main>';
-  const want=key;LAST=key;
+  LAST=key;
+  if(seen&&fresh(seen)&&!force&&RANGE!=='custom'){prefetch();return}   // fresh enough: no server call
+  setBusy(true);
   const d=await fetchRange(from,to);
-  if(LAST!==want)return;   // a different range was picked meanwhile
+  if(LAST!==key)return;   // a different range was picked meanwhile
+  setBusy(false);
   if(d&&d.unauth)return gate('This account isn\'t the admin. Sign in with your admin Google or Discord account on the game\'s Menu.');
   if(!d)return seen?null:m.innerHTML='<main class="wrapx"><div class="msg">Could not reach the server.</div></main>';
   if(!d.health)return seen?null:m.innerHTML='<main class="wrapx"><div class="msg">Server error.</div></main>';
-  draw(d);
+  draw(d,Date.now());prefetch();
 }
-const ADM=new Map();let LAST='',PRE=false;
+function setBusy(on){const b=document.getElementById('refresh');if(b){b.disabled=on;b.textContent=on?'Updating…':'Refresh'}}
+// once the range on screen is ready, quietly fill in the other preset ranges that are out of date, one at a time
+async function prefetch(){if(PRE)return;PRE=true;
+  for(const R of ['1','7','30','all']){const {from,to}=rangeDates(R);if(fresh(cacheGet(from+'_'+to)))continue;await fetchRange(from,to)}
+  PRE=false}
 async function fetchRange(from,to){const key=from+'_'+to;
   const r=await fetch(`${API}/admin?from=${from}&to=${to}`,{headers:{authorization:'Bearer '+TOKEN}}).catch(()=>null);
   if(!r)return null;if(r.status===401)return{unauth:true};
   const d=await r.json().catch(()=>null);
-  if(d&&d.health){ADM.set(key,d);try{sessionStorage.setItem('db-adm:'+key,JSON.stringify(d))}catch(_){}}
+  if(d&&d.health)cachePut(key,d);
   return d}
+const ago=t=>{const mi=Math.round((Date.now()-t)/60e3);return mi<1?'just now':mi<60?`${mi} min ago`:`${Math.round(mi/60)} h ago`};
 // a change vs the previous period: arrow + number, never color alone
 const DEF={
   'Games to review':'Games with 3 or more exact answers, or under 30 seconds of answering in total, are left out of score stats automatically. Unusual games that aren\'t clear-cut (a near-perfect score, 85+ on every round, or the same game sent twice) wait in the Inbox and keep counting unless you leave them out. Left out means the game no longer counts toward averages, rankings, the archive or posts. The player keeps their own result.',
@@ -254,7 +269,7 @@ function whereHtml(d){
       ${miniTable('Languages',W.languages,k=>nameOf('l',k))}
     </div>
     <div class="grid g6" style="margin-top:12px">${card('Installed app',n(W.installed),'opened as an app')}</div>`}
-function draw(d){
+function draw(d,at=Date.now()){
   const H=d.health,R=d.retention,D=d.daily,Q=d.quick,B=d.bananas,T=d.traffic;
   const label=RANGE==='1'?'Today':RANGE==='all'?'All time':RANGE==='custom'?`${fmtDay(d.from)} – ${fmtDay(d.to)}`:`Last ${RANGE} days`;
   const ret=(k,days)=>R[k].v==null?card(`D${days} retention`,'–',`needs ${days} day${days>1?'s':''} of data`):card(`D${days} retention`,p(R[k].v),`of ${n(R[k].n)} new player${R[k].n===1?'':'s'}`);
@@ -265,7 +280,7 @@ function draw(d){
     <div class="range" role="group" aria-label="Date range">${[['1','Today'],['7','7D'],['30','30D'],['all','All']].map(([k,l])=>`<button data-r="${k}" class="${RANGE===k?'on':''}">${l}</button>`).join('')}
       <button data-r="custom" class="${RANGE==='custom'?'on':''}">Custom</button>
       ${RANGE==='custom'?`<input type="date" id="cf" value="${d.from}" aria-label="From"><input type="date" id="ct" value="${d.to}" aria-label="To">`:''}</div>
-    <div class="head"><h1>Overview</h1><span class="mut small">${label} · ${fmtDay(d.from)}–${fmtDay(d.to)}</span></div>
+    <div class="head"><h1>Overview</h1><span class="mut small">${label} · ${fmtDay(d.from)}–${fmtDay(d.to)} · updated ${ago(at)}</span><button class="sqa" id="refresh" type="button" style="margin-left:auto;height:34px">Refresh</button></div>
 
     <h2>Player health</h2>
     <div class="grid">
@@ -330,8 +345,9 @@ function draw(d){
       <span>“–” means not tracked yet or not enough time has passed, never zero. Days are Eastern time. 🍌 = a round scored 90+ (within about 10%).</span>
     </div>
   </main>`;
-  m.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{RANGE=b.dataset.r;try{sessionStorage.setItem('db-admin-range',RANGE)}catch(_){}
+  m.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{RANGE=b.dataset.r;try{localStorage.setItem('db-admin-range',RANGE)}catch(_){}
     if(RANGE==='custom'&&!CUSTOM.from){CUSTOM={from:d.from,to:d.to}}load()});
+  document.getElementById('refresh').onclick=()=>load(true);
   const cf=document.getElementById('cf'),ct=document.getElementById('ct');
   if(cf)cf.onchange=ct.onchange=()=>{CUSTOM={from:cf.value,to:ct.value};if(CUSTOM.from&&CUSTOM.to)load()};
   // tap a number for what it means and how it's worked out
@@ -341,7 +357,8 @@ function draw(d){
     const box=b.parentElement;box.querySelectorAll('button').forEach(x=>x.disabled=true);
     const r=await fetch(`${API}/admin`,{method:'POST',headers:{authorization:'Bearer '+TOKEN,'content-type':'application/json'},body:JSON.stringify({action:'review',key:box.dataset.key,s:b.dataset.s||null})}).catch(()=>null);
     if(!r||!r.ok){box.querySelectorAll('button').forEach(x=>x.disabled=false);box.insertAdjacentHTML('beforeend','<span class="small">Could not save that. Try again.</span>');return}
-    ADM.clear();try{Object.keys(sessionStorage).filter(k=>k.startsWith('db-adm:')).forEach(k=>sessionStorage.removeItem(k))}catch(_){}load()});
+    for(const [k,v] of ADM)ADM.set(k,{...v,at:0});try{Object.keys(localStorage).filter(k=>k.startsWith('db-adm:')).forEach(k=>{const v=JSON.parse(localStorage.getItem(k));v.at=0;localStorage.setItem(k,JSON.stringify(v))})}catch(_){}
+    load(true)});
   // hover/focus readout on the bars
   const tip=document.getElementById('tip'),chart=document.getElementById('chart');
   chart.querySelectorAll('.bars span').forEach(s=>{
