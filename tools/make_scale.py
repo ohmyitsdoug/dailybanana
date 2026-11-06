@@ -29,6 +29,10 @@ if missing: sys.exit(f'core.txt names items that are not in scale_items.txt: {so
 for i in items:
     i['unit'] = i['name'] in CORE
     if i['unit']: i['core'] = True
+# renamed items keep their old names in 'was', so challenges and saved games made before the rename still find them
+RENAMED = {'American football field': ['football field']}
+for i in items:
+    if i['name'] in RENAMED: i['was'] = RENAMED[i['name']]
 try: OLD_NAMES = [i['name'] for i in json.load(open(os.path.join(HERE, '..', 'data', 'items.json')))]
 except Exception: OLD_NAMES = []
 json.dump(items, open(os.path.join(HERE, '..', 'data', 'items.json'), 'w'), separators=(',', ':'))

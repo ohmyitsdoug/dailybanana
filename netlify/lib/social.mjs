@@ -139,7 +139,7 @@ export async function build(kind, store, { date = etParts().date, preview = fals
     // the answer to yesterday's "guess this"
     const posts = await recent(store, 20), w = posts.find((x) => x.kind === 'wed' && x.extra && x.extra.q && x.date === addDays(date, -1)) || (preview && posts.find((x) => x.kind === 'wed' && x.extra && x.extra.q));
     if (!w) return null;
-    const by = Object.fromEntries(items.map((i) => [i.name, i])), A = by[w.extra.q.a], B = by[w.extra.q.b];
+    const by = Object.fromEntries(items.flatMap((i) => [...(i.was || []).map((w) => [w, i]), [i.name, i]])), A = by[w.extra.q.a], B = by[w.extra.q.b];
     if (!A || !B) return null;
     // Threads and Bluesky have no stories, so there it's a regular post (their second post on Thursdays)
     const q = { A, B, ans: B.cm / A.cm }, ans = P.shownAns(q.ans);
@@ -236,7 +236,7 @@ export function hintFor(unit, items) {
 export async function openWeekend(store, wk, items) {
   const cur = await store.get('weekend/current', { type: 'json' }).catch(() => null);
   if (cur && cur.n === wk.n) return cur;   // already made (a retry)
-  const by = Object.fromEntries(items.map((i) => [i.name, i]));
+  const by = Object.fromEntries(items.flatMap((i) => [...(i.was || []).map((w) => [w, i]), [i.name, i]]));
   const units = wk.units.map((n) => by[n]).filter(Boolean).sort((a, b) => a.cm - b.cm);
   const ranges = [[250, 2000], [250, 2000], [25, 250], [25, 250], [2, 25], [2, 25]];
   const used = new Set(), rounds = [];

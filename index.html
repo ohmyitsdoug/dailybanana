@@ -652,7 +652,7 @@ function randomRounds(){
   return out;
 }
 // challenges travel by item name, so they keep working if the item list grows
-const BYNAME=()=>Object.fromEntries(ITEMS.map(i=>[i.name,i.id]));
+const BYNAME=()=>Object.fromEntries(ITEMS.flatMap(i=>[...(i.was||[]).map(w=>[w,i.id]),[i.name,i.id]]));   // old names too (renamed items)
 const nameOf=v=>typeof v==='object'?v.name:ITEMS[v].name;
 const toNames=rounds=>rounds.map(x=>({a:nameOf(x.a),b:nameOf(x.b)}));
 // a weekend challenge measures in its own unit, which isn't in the item list

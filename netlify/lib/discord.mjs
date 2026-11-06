@@ -57,7 +57,7 @@ export async function weekendResults(store, code, items) {
   const c = await store.get(`challenges/${code}`, { type: 'json' }).catch(() => null);
   if (!c) return null;
   const es = (await getAll(store, `entries/${code}/`)).sort((a, b) => b.score - a.score || a.at - b.at);
-  const by = Object.fromEntries(items.map((i) => [i.name, i]));
+  const by = Object.fromEntries(items.flatMap((i) => [...(i.was || []).map((w) => [w, i]), [i.name, i]]));   // old names too (renamed items)
   return { c, players: es.length, avg: es.length ? es.reduce((t, e) => t + e.score, 0) / es.length : null, best: es.length ? es[0].score : null, winner: es[0] ? es[0].name : null,
     rounds: c.rounds.map((r) => { const A = by[r.a], B = by[r.b]; return A && B ? { q: { A, B, ans: B.cm / A.cm } } : null; }).filter(Boolean) };
 }
