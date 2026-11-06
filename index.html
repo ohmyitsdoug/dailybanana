@@ -423,7 +423,8 @@ const RELEASES=[
       'Guess an answer exactly to earn a 💯, plus a new Golden banana badge.',
       'Almost 200 new everyday things to measure, and 100 more to measure them with.',
       'Weekend challenges: a new themed challenge every Saturday, open all weekend.',
-      'The Menu screen now counts down to the next weekend challenge.']}]},
+      'The Menu screen now counts down to the next weekend challenge.',
+      'Your daily rank now only compares you with real players. Finish before 10 people have played and you’re an early bird: check back later to see where you landed.']}]},
   {v:'1.0',from:'2026-11-04',date:'Nov 4, 2026',groups:[{notes:[
     'Join a challenge with a code, right from the home screen.',
     'Copy a challenge code from the top of its page.',
@@ -1228,21 +1229,16 @@ async function syncNow(){
 function pushSync(){if(SESSION&&API)fetch(`${API}/sync`,{method:'POST',headers:{'content-type':'application/json',...authHdr()},body:JSON.stringify({data:localData()}),keepalive:true}).catch(()=>{})}
 
 // ---------- how you did against everyone (dailies) ----------
-// With 12+ players we use their real scores; before that, an estimate from a simulated crowd whose guesses
-// get wilder as the answers get bigger (seeded by the daily, so everyone sees the same estimate).
-const REAL_AFTER=12;
-function simCrowd(r){
-  let t=(r.n+1)*2654435761>>>0;const rnd=()=>{t+=0x6D2B79F5;let x=t;x=Math.imul(x^x>>>15,x|1);x^=x+Math.imul(x^x>>>7,x|61);return((x^x>>>14)>>>0)/4294967296};
-  const norm=()=>Math.sqrt(-2*Math.log(rnd()||1e-9))*Math.cos(2*Math.PI*rnd());
-  const sig=r.qs.map(q=>0.22+0.07*Math.max(0,Math.log10(q.ans)));
-  const totals=[],rounds=r.qs.map(()=>[]);
-  for(let k=0;k<3000;k++){const skill=Math.exp(0.35*norm());let tot=0;
-    r.qs.forEach((q,i)=>{const p=rnd()<0.03?0:Math.round(100*10**-Math.abs(norm()*sig[i]*skill));rounds[i].push(p);tot+=p});totals.push(tot)}
-  return{players:0,totals,rounds};
-}
+// Only real scores: until 10 people have finished a daily there isn't enough to compare, so early finishers
+// are "early birds" and the rank fills in when they come back (the results screen re-checks the stats).
+const REAL_AFTER=10;
 const beat=(xs,v)=>{if(!xs.length)return null;let lo=0,eq=0;for(const x of xs){if(x<v)lo++;else if(x===v)eq++}return Math.min(99,Math.max(1,Math.round(100*(lo+eq/2)/xs.length)))};
-async function rankText(r,res){
-  const st=await getStats(r.n),d=st&&st.players>=REAL_AFTER?st:simCrowd(r),b=beat(d.totals,res.total);
+const realStats=st=>st&&st.players>=REAL_AFTER&&Array.isArray(st.totals)&&st.totals.length?st:null;
+// card = the line on the share image; otherwise the results screen line
+async function rankText(r,res,card=false){
+  const d=realStats(await getStats(r.n));
+  if(!d)return card?'Early bird · one of today’s first players':'Early bird! Not enough players yet to compare scores. Check back later.';
+  const b=beat(d.totals,res.total);
   return b>=50?`Top ${Math.max(1,100-b)}% of players today`:`Better than ${b}% of players today`;
 }
 // ---------- share image: a 1080×1350 card (Instagram portrait), no answers or item names ----------
@@ -1276,7 +1272,7 @@ async function shareImage(r,res,btn){
     fit(500,38);x.fillStyle=INK;x.fillText(TAG,L,250);   // one line under the logo, shrinks to fit
     font(700,230);x.fillStyle=INK;try{x.letterSpacing='-6px'}catch(_){}x.fillText(fmt(res.total),L-6,505);const sw=x.measureText(fmt(res.total)).width;try{x.letterSpacing='0px'}catch(_){}
     font(700,72);x.fillStyle=MUT;x.fillText(`/ ${ROUNDS*MAX_PTS}`,L+sw+12,505);
-    const line=r.quick?(res.chal?(res.chal.weekend?`Weekend challenge · ${res.chal.weekend.theme||''}`:res.own?'My challenge':`Challenge from ${res.chal.host}`):'Quick play · 6 random questions'):await rankText(r,res);
+    const line=r.quick?(res.chal?(res.chal.weekend?`Weekend challenge · ${res.chal.weekend.theme||''}`:res.own?'My challenge':`Challenge from ${res.chal.host}`):'Quick play · 6 random questions'):await rankText(r,res,true);
     font(700,52);x.fillStyle=INK;while(x.measureText(line).width>R-L&&parseInt(x.font)>30)font(700,parseInt(x.font)-2);x.fillText(line,L,610);
     const g=20,sq=(R-L-g*(ROUNDS-1))/ROUNDS,sy=680;
     for(let i=0;i<ROUNDS;i++){const a=ans[i]||{},p=a.p||0,X=L+i*(sq+g),miss=a.guess==null||p<40,bull=!miss&&p>=90;
@@ -1511,11 +1507,10 @@ async function roundImage(q,a,btn){
   btn.disabled=false;
 }
 async function showRank(r,res){
-  const st=await getStats(r.n);
-  const real=st&&st.players>=REAL_AFTER,d=real?st:simCrowd(r);
+  const st=await getStats(r.n),d=realStats(st);
   const el=document.getElementById('rank');if(!el)return;
   el.textContent=await rankText(r,res);
-  res.answers.forEach((a,i)=>{const sp=document.getElementById('pr'+i);if(sp&&d.rounds[i])sp.textContent=` · better than ${beat(d.rounds[i],a.p||0)}%`});
+  res.answers.forEach((a,i)=>{const sp=document.getElementById('pr'+i);if(sp)sp.textContent=d&&d.rounds&&d.rounds[i]&&d.rounds[i].length?` · better than ${beat(d.rounds[i],a.p||0)}%`:''});
   // where the typical player guessed (median guess), once a few people have played
   if(st&&st.guess_n>=3&&Array.isArray(st.guesses)){
     r.qs.forEach((q,i)=>{const g=st.guesses[i],el=document.getElementById('mini'+i);if(!el||!(g>0))return;
