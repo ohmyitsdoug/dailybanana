@@ -162,7 +162,9 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .mlegend{font-size:12px;color:var(--mut);display:flex;gap:14px;align-items:center;margin:0 0 4px}
 .mlegend i{display:inline-block;vertical-align:middle;margin-right:5px}
 .scale-ends{display:flex;justify-content:space-between;gap:8px;font-size:14px}
-.prow.round{align-items:flex-start}
+.prow.round{align-items:flex-start;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.prow.round:focus-visible{outline:3px solid var(--accsh);outline-offset:2px}
+.prow .t[hidden]{display:none}
 .prow .t .rare{color:var(--acc-text);font-weight:700}
 .reveal .score{font-size:48px}
 .note .rare{color:var(--acc-text);font-weight:700}
@@ -1142,8 +1144,9 @@ function showResults(r,res){
   const rounds=`    <div class="in" style="--d:2"><div class="eyebrow" style="margin-bottom:4px">Your rounds</div>
       ${r.quick?'':`<div class="mlegend" id="mleg" hidden><span><i style="width:10px;height:10px;border-radius:50%;background:var(--ink)"></i>you</span><span><i style="width:8px;height:8px;background:var(--acc);border:2px solid var(--ink);transform:rotate(45deg)"></i>typical player</span><span><i style="width:2px;height:12px;background:var(--accsh)"></i>answer</span></div>`}
       <div class="path">${r.qs.map((q,i)=>{const a=res.answers[i]||{};
-        return`<div class="prow round"><span class="i num">${i+1}</span><span class="w"><b>${esc(question(q).replace(/^Approximately h/,'H'))}</b><br>
-          <span class="t">${calcLine(q,a)}<span id="pr${i}"></span></span>
+        return`<div class="prow round" data-flip="${i}" tabindex="0" aria-expanded="false"><span class="i num">${i+1}</span><span class="w"><b>${esc(question(q).replace(/^Approximately h/,'H'))}</b><br>
+          <span class="t">answer: about ${fmt(q.show)} · ${a.guess!=null?`you: ${fmt(q.v2?shownAns(a.guess):nice(a.guess))}`:'no guess'}<span id="pr${i}"></span></span>
+          <span class="t calc" hidden>${calcLine(q,a)}</span>
           ${r.quick?'':`<span class="mini" id="mini${i}" hidden><span class="c"></span>${a.guess!=null?`<span class="you" style="left:${posOf(a.guess,q.ans).toFixed(1)}%"></span>`:''}</span>`}</span>
           <span class="num">${a.guess==null?'–':a.p||0}</span></div>`}).join('')}
       </div></div>
@@ -1155,6 +1158,9 @@ function showResults(r,res){
   window.scrollTo(0,0);wireNav();
   tick=setInterval(()=>{const cd=document.getElementById('cd');if(cd)cd.textContent=untilMidnight();else clearInterval(tick)},1000);
   document.getElementById('again').onclick=()=>quick();
+  // easter egg: tap a round to swap the short answer line for the math in bananas (tap again to swap back)
+  app.querySelectorAll('[data-flip]').forEach(row=>{const flip=()=>{const [t,c]=row.querySelectorAll('.t'),on=c.hidden;c.hidden=!on;t.hidden=on;row.setAttribute('aria-expanded',String(on))};
+    row.onclick=e=>{if(e.target.closest('a,button'))return;flip()};row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip()}}});
   SHOWN={r,res};if(r.quick)chalBox(res);else showRank(r,res);
   // keep the daily rank current while the results stay open: re-check the scores every 30 minutes (a change redraws the rank)
   if(!r.quick){const rk=setInterval(()=>{if(!document.getElementById('rank')||SHOWN.r!==r)return clearInterval(rk);getStats(r.n)},30*60e3)}
