@@ -126,7 +126,7 @@ export async function build(kind, store, { date = etParts().date, preview = fals
     const i = pick(fi), q = randomPair(items, { lo: 6, hi: 250 });
     if (!preview) { u.facts.push(i); await remember(store, u); }
     const img = P.factPost(facts[i]);
-    return { kind, ...withTags(kind, `${facts[i]}\nNow guess how many ${q.A.plural} ${q.B.dim} ${P.the(q.B)} is. 6 questions a day at dailybanana.io`), images: [img], story: [P.storyOf(img, false)], extra: { fact: i } };
+    return { kind, ...withTags(kind, `${facts[i]}\nNow guess how many ${q.A.plural} ${q.B.dim} ${P.theQ(q.B)} is. 6 questions a day at dailybanana.io`), images: [img], story: [P.storyOf(img, false)], extra: { fact: i } };
   }
   if (kind === 'wed') {
     const avoid = new Set(u.pairs), [lo, hi] = pick(BUCKETS.slice(1, 4)), q = randomPair(items, { lo, hi, avoid });

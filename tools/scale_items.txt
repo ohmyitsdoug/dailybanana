@@ -1332,10 +1332,10 @@ witch hat | witch hats | a | tall | 40 |
 car windshield | car windshields | a | wide | 150
 one-car garage door | one-car garage doors | a | wide | 275
 Olympic pool lane | Olympic pool lanes | an | wide | 250
-shopping cart | shopping carts | a | wide | 58
+two-lane road | two-lane roads | a | wide | 730
 elevator door | elevator doors | an | wide | 107
 kitchen stove | kitchen stoves | a | wide | 76
-dishwasher | dishwashers | a | wide | 61
-washing machine | washing machines | a | wide | 69
+crosswalk | crosswalks | a | wide | 300
+loading dock door | loading dock doors | a | wide | 245
 # big things to compare with other big things
 San Francisco Bay Bridge | San Francisco Bay Bridges | the | long | 718000

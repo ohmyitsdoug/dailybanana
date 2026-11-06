@@ -10,7 +10,8 @@ export const config = { path: ['/archive', '/archive/*'] };
 const DAY = 86400e3;
 export const publishedAt = (d) => Date.parse(d.date + 'T12:00:00Z') + DAY;
 const the = (b) => (b.art ? `${b.art} ${b.name}` : b.name);
-const question = (A, B) => `How many ${A.plural} ${B.dim} is ${the(B)}?`;
+const theQ = (b) => (b.avg ? `the average ${b.name}` : the(b)), anAvg = (b) => (b.avg ? `an average ${b.name}` : the(b));   // sizes that vary are averages
+const question = (A, B) => `How many ${A.plural} ${B.dim} is ${theQ(B)}?`;
 const posOf = (g, ans) => (g <= ans ? (50 * g) / ans : 100 - (50 * ans) / g);
 const median = (xs) => { if (!xs.length) return null; const s = [...xs].sort((a, b) => a - b), m = s.length >> 1; return s.length % 2 ? s[m] : Math.sqrt(s[m - 1] * s[m]); };
 const avg = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
@@ -93,7 +94,7 @@ export default async (req) => {
     ${qs.map((q, i) => `<section class="round">
       <div class="eyebrow">Round ${i + 1}</div>
       <h3 class="q">${esc(question(q.A, q.B))}</h3>
-      <p class="a"><b>Answer: about ${fmt(ansOf(q))} ${esc(ansOf(q) === 1 ? q.A.name : q.A.plural)}.</b> ${esc(the(q.B).replace(/^./, (c) => c.toUpperCase()))} is about ${len(q.B.cm)} ${esc(q.B.dim)}, and ${esc(the(q.A))} is about ${len(q.A.cm)}.</p>
+      <p class="a"><b>Answer: about ${fmt(ansOf(q))} ${esc(ansOf(q) === 1 ? q.A.name : q.A.plural)}.</b> ${esc(anAvg(q.B).replace(/^./, (c) => c.toUpperCase()))} is about ${len(q.B.cm)} ${esc(q.B.dim)}, and ${esc(the(q.A))} is about ${len(q.A.cm)}.</p>
       ${q.typical ? `<span class="mini"><span class="c"></span><span class="avg" style="left:${posOf(q.typical, q.ans).toFixed(1)}%"></span></span><div class="ends"><span>too low</span><span>typical guess: ${fmt(nice(q.typical))}</span><span>too high</span></div>` : ''}
       ${q.avgPts != null ? `<p class="small mut" style="margin:8px 0 0">Average ${Math.round(q.avgPts)} points · ${q.close}% of players were within 10%</p>` : ''}
     </section>`).join('')}

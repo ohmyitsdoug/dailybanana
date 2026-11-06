@@ -1,0 +1,173 @@
+# Things with an exact or standard size: unique landmarks and regulation/manufactured sizes.
+# Everything NOT listed here is an average ("How many bananas long is the average carrot?").
+# money and cards
+penny
+quarter
+nickel
+dime
+half dollar
+dollar bill
+credit card
+playing card
+playing card deck
+business card
+SD card
+sim card
+index card
+# sports (regulation sizes)
+golf ball
+ping pong ball
+baseball
+hockey puck
+soccer ball
+basketball
+football
+tennis ball
+softball
+volleyball
+bowling ball
+bowling pin
+rugby ball
+pickleball
+racquetball
+lacrosse ball
+water polo ball
+curling stone
+tennis court
+basketball court
+bowling lane
+Olympic swimming pool
+Olympic pool lane
+American football field
+hockey rink
+running track lap
+golf hole cup
+baseball base
+home plate
+football goalpost
+basketball hoop
+basketball backboard
+soccer goal
+hockey goal
+tennis net
+volleyball net
+ping pong table
+dartboard
+cricket pitch
+balance beam
+Olympic diving platform
+javelin
+marathon
+cornhole board
+# toys and products made to one size
+LEGO brick
+LEGO minifigure
+Rubik's Cube
+Monopoly board
+Jenga block
+Jenga tower
+Oreo cookie
+M&M
+Tic Tac
+AA battery
+AAA battery
+C battery
+D battery
+9-volt battery
+CD
+vinyl record
+floppy disk
+sheet of paper
+printer paper ream
+ruler
+yardstick
+soda can
+2-liter soda bottle
+55-inch TV
+stop sign
+# building standards
+two-by-four
+sheet of plywood
+brick
+cinder block
+shipping container
+lane of highway
+two-lane road
+queen bed
+king bed
+twin bed
+crib
+front door
+one-car garage door
+loading dock door
+# one-of-a-kind things and places
+Statue of Liberty
+Big Ben clock tower
+London Eye
+Great Pyramid of Giza
+Washington Monument
+Space Needle
+Gateway Arch
+Titanic
+Eiffel Tower
+Empire State Building
+Taipei 101 tower
+CN Tower
+Burj Khalifa
+Golden Gate Bridge
+Golden Gate tower
+San Francisco Bay Bridge
+Mount Everest
+Leaning Tower of Pisa
+Christ the Redeemer statue
+Mona Lisa
+Hollywood sign letter
+International Space Station
+Airbus A380
+Saturn V rocket
+space shuttle
+Mars rover
+Hubble telescope
+Apollo lunar module
+Voyager antenna
+meteor crater
+Moon
+Earth
+Manhattan
+Central Park
+Las Vegas Strip
+Hoover Dam
+Niagara Falls
+Angel Falls
+Grand Canyon
+Mount Rushmore face
+Great Sphinx
+Colosseum
+Parthenon
+Taj Mahal
+Sydney Opera House
+Big Ben bell
+Arc de Triomphe
+Brooklyn Bridge
+Tower Bridge
+One World Trade Center
+Willis Tower
+Shanghai Tower
+Petronas Towers
+Chrysler Building
+Mount Kilimanjaro
+Mount Fuji
+Matterhorn
+Mount Rainier
+Mariana Trench
+Great Wall of China
+Panama Canal
+English Channel
+Lake Tahoe
+Hyperion, the tallest tree
+tallest man ever
+Statue of David
+The Thinker
+The Starry Night
+Oscar statuette
+Stanley Cup

@@ -15,7 +15,10 @@ export const fmt = (n) => Number(n).toLocaleString('en-US');
 export const shownAns = (n) => (n<10?Math.round(n*10)/10:n<100?Math.round(n):n<1000?Math.round(n/10)*10:n<10000?Math.round(n/50)*50:Math.round(n/500)*500);   // the answer as players see it (rounding from v1.1)
 export function nice(n) { if (n < 10) return Math.round(n * 10) / 10; const p = 10 ** Math.max(0, Math.floor(Math.log10(n)) - 1); return Math.round(n / p) * p; }
 export const the = (b) => (b.art ? `${b.art} ${b.name}` : b.name);
-export const question = (q) => `How many ${q.A.plural} ${q.B.dim} is ${the(q.B)}?`;
+// things whose size varies are averages: "the average carrot" in questions, "an average carrot" in sentences
+export const theQ = (b) => (b.avg ? `the average ${b.name}` : the(b));
+export const anAvg = (b) => (b.avg ? `an average ${b.name}` : the(b));
+export const question = (q) => `How many ${q.A.plural} ${q.B.dim} is ${theQ(q.B)}?`;
 const unitWord = (q, n) => (n === 1 ? q.A.name : q.A.plural);
 
 function poster(t, chip, foot) {

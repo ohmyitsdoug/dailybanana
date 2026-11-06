@@ -33,6 +33,12 @@ for i in items:
 RENAMED = {'American football field': ['football field']}
 for i in items:
     if i['name'] in RENAMED: i['was'] = RENAMED[i['name']]
+# exact sizes (tools/exact.txt): everything else is an average, and its questions say so ("the average carrot")
+EXACT = {l.strip() for l in open(os.path.join(HERE, 'exact.txt')) if l.strip() and not l.startswith('#')}
+missing = EXACT - {i['name'] for i in items}
+if missing: sys.exit(f'exact.txt names items that are not in scale_items.txt: {sorted(missing)}')
+for i in items:
+    if i['name'] not in EXACT: i['avg'] = True
 try: OLD_NAMES = [i['name'] for i in json.load(open(os.path.join(HERE, '..', 'data', 'items.json')))]
 except Exception: OLD_NAMES = []
 json.dump(items, open(os.path.join(HERE, '..', 'data', 'items.json'), 'w'), separators=(',', ':'))
