@@ -41,6 +41,12 @@
 :root[data-theme="dark"]{
   --bg:#2A1A0E;--ink:#FFF3C9;--mut:#CDB68C;--card:#382415;--line:#4E3622;
   --acc:#FFD43B;--acc-ink:#2A1A0E;--acc-text:#FFD43B;--accsh:#FFD43B;color-scheme:dark}
+/* High contrast (Menu → Settings, off by default): every text color reaches WCAG AAA (7:1) on its background.
+   Light: ink 17.6:1, muted 13.6:1, accent text 10.3:1. Dark: ink 19.5:1, muted 15.8:1, yellow 13.7:1. */
+:root[data-hc]{--bg:#FFF8D6;--ink:#1C0F05;--mut:#3B2412;--card:#FFFDF2;--line:#8A6A3A;--acc-ink:#1C0F05;--acc-text:#5C3200;--accsh:#5C3200}
+:root[data-hc][data-theme="dark"]{--bg:#140A03;--ink:#FFFFFF;--mut:#F2E6C8;--card:#22140A;--line:#8A6A3A;--acc-ink:#140A03;--acc-text:#FFD43B;--accsh:#FFD43B}
+:root[data-hc] .sqr.on.good{background:#5C3A1B;color:#FFFFFF}
+:root[data-hc] .sqr span{opacity:1}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink)}
 body{font-family:'Space Grotesk',system-ui,sans-serif;font-size:16px;line-height:1.4;-webkit-font-smoothing:antialiased;
@@ -432,6 +438,7 @@ const RELEASES=[
       'Weekend challenges: a new themed challenge every Saturday, open all weekend.',
       'The Menu screen now counts down to the next weekend challenge.',
       'Install Daily Banana as an app from the Menu (Chrome on computers and Android phones).',
+      'New High contrast setting in the Menu: every bit of text meets the highest web contrast standard (WCAG AAA).',
       'Your daily rank now only compares you with real players. Finish before 10 people have played and you’re an early bird: check back later to see where you landed.']}]},
   {v:'1.0',from:'2026-11-04',date:'Nov 4, 2026',groups:[{notes:[
     'Join a challenge with a code, right from the home screen.',
@@ -534,8 +541,8 @@ const ICON={
 const store={get(k,d){try{const v=localStorage.getItem('snug:'+k);return v==null?d:JSON.parse(v)}catch(_){return d}},
   set(k,v){try{localStorage.setItem('snug:'+k,JSON.stringify(v))}catch(_){}},
   del(k){try{localStorage.removeItem('snug:'+k)}catch(_){}}};
-const SET=Object.assign({motion:true,bgb:true},store.get('settings',{}));
-function applySettings(){const h=document.documentElement;h.classList.toggle('calm',!SET.motion);h.classList.toggle('nobgb',!SET.bgb)}
+const SET=Object.assign({motion:true,bgb:true,hc:false},store.get('settings',{}));
+function applySettings(){const h=document.documentElement;h.classList.toggle('calm',!SET.motion);h.classList.toggle('nobgb',!SET.bgb);h.toggleAttribute('data-hc',!!SET.hc)}
 applySettings();
 const reduced=()=>!SET.motion||matchMedia('(prefers-reduced-motion: reduce)').matches;
 function toggleTheme(){const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;store.set('theme',t);const m=document.getElementById('tc');if(m)m.content=t==='dark'?'#2A1A0E':'#FFF0A0'}
@@ -906,6 +913,7 @@ function showMenu(jump){USE.other=1;
       ${INSTALL?'<button class="lrow" id="opt-install"><span>Install the app</span><span class="mut">On this computer or phone</span></button>':''}
       <a class="lrow" href="/archive" target="_blank" rel="noopener"><span>Archive</span><span class="mut" aria-label="opens in a new tab"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="square" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg></span></a>
       <button class="lrow" id="opt-theme"><span>Dark mode</span><span class="toggle ${document.documentElement.dataset.theme==='dark'?'on':''}" aria-hidden="true"></span></button>
+      <button class="lrow" id="opt-hc" aria-pressed="${!!SET.hc}"><span>High contrast</span><span class="toggle ${SET.hc?'on':''}" aria-hidden="true"></span></button>
       <button class="lrow" id="opt-motion"><span>Animations</span><span class="toggle ${SET.motion?'on':''}" aria-hidden="true"></span></button>
       <button class="lrow" id="opt-bgb" aria-pressed="${SET.bgb}"><span>Background bananas</span><span class="toggle ${SET.bgb?'on':''}" aria-hidden="true"></span></button>
       ${SESSION&&SESSION.user.admin?'<a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">→</span></a><button class="lrow" id="opt-social"><span>Social post image</span><span class="mut">→</span></button>':''}
@@ -925,6 +933,7 @@ function showMenu(jump){USE.other=1;
   app.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const r=puzzleFor(DAILIES.find(x=>x.n===+b.dataset.n)),s=saved(r.n);s?showResults(r,s):r.n===TODAY.n?showStart():leave(r,liveSaved(r.n))});
   document.getElementById('back').onclick=showStart;
   document.getElementById('opt-theme').onclick=e=>{toggleTheme();e.currentTarget.querySelector('.toggle').classList.toggle('on',document.documentElement.dataset.theme==='dark')};
+  document.getElementById('opt-hc').onclick=e=>{SET.hc=!SET.hc;store.set('settings',SET);applySettings();e.currentTarget.querySelector('.toggle').classList.toggle('on',SET.hc);e.currentTarget.setAttribute('aria-pressed',String(SET.hc))};
   document.getElementById('opt-bgb').onclick=e=>{SET.bgb=!SET.bgb;store.set('settings',SET);applySettings();e.currentTarget.querySelector('.toggle').classList.toggle('on',SET.bgb);e.currentTarget.setAttribute('aria-pressed',SET.bgb)};
   document.getElementById('opt-motion').onclick=e=>{SET.motion=!SET.motion;store.set('settings',SET);applySettings();e.currentTarget.querySelector('.toggle').classList.toggle('on',SET.motion)};
   window.scrollTo(0,0);

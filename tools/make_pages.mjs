@@ -14,6 +14,7 @@ const FAQ = [
   ['How do challenges work?', 'Up to an hour after a quick game, you can turn it into a challenge link. Anyone with the link plays the same six questions once, for 24 hours, and sees a shared scoreboard. You can have one open challenge at a time and join as many as you like.'],
   ['Are there badges?', 'Yes. Badges are earned in the daily, like scoring 95 or more on a round, playing 7 dailies in a row, or getting 90+ on the day\'s biggest number. A couple come from challenges and from signing in.'],
   ['Do I need an account?', 'No. You can play as a guest and everything is saved on your device. Signing in with Google or Discord keeps your scores, streak and badges on every device.'],
+  ['Is Daily Banana accessible?', 'Yes. The whole game works with just a keyboard: press Tab to move between buttons, type your guess and press Enter, then Enter again for the next round. In the Menu, Settings has a high-contrast mode (text meets WCAG AAA contrast), dark mode, and a switch to turn off animations and the background bananas. Every round has a clear text question, and the game works with browser zoom and larger text.'],
   ['Is Daily Banana free?', 'Yes. It is free to play, with no ads.'],
   ['Does the game use AI?', 'No AI runs in the game. The questions come from a fixed list of everyday items with typical sizes, and the daily schedule is set in advance, so everyone gets the same daily.'],
   ['Who makes Daily Banana?', 'Daily Banana is made by Smidgen Games LLC, an independent game studio that publishes tabletop games. Learn more at playsmidgen.com.'],
@@ -26,7 +27,7 @@ const faqBody = `<h1>Daily Banana FAQ</h1>
 <a class="cta" href="/">Play today's daily <span aria-hidden="true">→</span></a>`;
 writeFileSync(new URL('../faq.html', import.meta.url), page({
   title: 'Daily Banana FAQ · how the daily size-guessing game works',
-  description: 'How Daily Banana works: rules, scoring, where sizes come from, daily reset time, quick play, challenges, badges and accounts.',
+  description: 'How Daily Banana works: rules, scoring, where sizes come from, daily reset time, quick play, challenges, badges, accounts and accessibility.',
   path: '/faq', body: faqBody,
   jsonld: [{ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: FAQ.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) }],
 }));
@@ -38,6 +39,8 @@ const aboutBody = `<h1>About Daily Banana</h1>
 <p>Each daily has 6 rounds, 25 seconds each. Your points are your accuracy as a percent, so a close guess scores well even when it isn't exact. Every day mixes small counts and huge ones, practical comparisons and silly ones. A new daily arrives at midnight in your time zone, and past dailies, with their answers and how players did, are posted in the <a href="/archive">archive</a>.</p>
 <h2>About the sizes</h2>
 <p>All sizes are approximations: typical averages from publicly available data, rounded for play. Real bananas, buses and teaspoons vary. The game asks you to picture an average one.</p>
+<h2>Accessibility</h2>
+<p>Daily Banana can be played entirely with a keyboard: Tab to move, type a guess, Enter to submit and continue. Settings in the Menu include a high-contrast mode that meets WCAG AAA text contrast, dark mode, and an option to turn off animations.</p>
 <h2>Who makes it</h2>
 <p>Daily Banana is made by <a href="https://playsmidgen.com/?utm_source=dailybanana&utm_medium=game&utm_campaign=about">Smidgen Games LLC</a>, an independent game studio that publishes tabletop games. Questions or feedback: <a href="mailto:contact@dailybanana.io">contact@dailybanana.io</a>.</p>
 <p>Follow along on Instagram: <a href="https://www.instagram.com/dailybanana.io/" rel="me">@dailybanana.io</a></p>
@@ -47,7 +50,7 @@ writeFileSync(new URL('../about.html', import.meta.url), page({
   title: 'About Daily Banana · ridiculous measurements for everyday items',
   description: 'Daily Banana is a free daily size-guessing game by Smidgen Games: how many bananas long is a school bus?',
   path: '/about', body: aboutBody,
-  jsonld: [{ '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Daily Banana', url: SITE_URL, applicationCategory: 'GameApplication', operatingSystem: 'Any (web browser)', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+  jsonld: [{ '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Daily Banana', url: SITE_URL, applicationCategory: 'GameApplication', operatingSystem: 'Any (web browser)', accessMode: ['textual', 'visual'], accessModeSufficient: ['textual'], accessibilityFeature: ['highContrastDisplay', 'displayTransformability', 'readingOrder', 'structuralNavigation'], accessibilityControl: ['fullKeyboardControl', 'fullMouseControl', 'fullTouchControl'], accessibilityHazard: ['noFlashingHazard', 'noSoundHazard'], offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
     description: 'A free daily size-guessing game: how many of one everyday thing would line up to match another.', publisher: { '@type': 'Organization', name: 'Smidgen Games LLC', url: 'https://playsmidgen.com' }, sameAs: ['https://www.instagram.com/dailybanana.io/'] }],
 }));
 console.log('wrote about.html and faq.html');
