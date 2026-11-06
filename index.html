@@ -99,6 +99,9 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .fine{font-size:13px;color:var(--mut)}
 .foot{font-size:12px;color:var(--mut);text-align:center}
 .kofiw{text-align:center}
+.fol{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.fol .stat b{font-size:22px}
+@media (min-width:500px){.fol{grid-template-columns:repeat(5,minmax(0,1fr))}}
 .rate-b{display:flex;justify-content:space-between;gap:6px}
 .rate-b button{flex:1;aspect-ratio:1;max-width:60px;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;border:2px solid var(--ink);background:var(--card);color:var(--ink);cursor:pointer;padding:0;font:inherit;font-weight:700;font-size:13px;line-height:1;font-variant-numeric:tabular-nums}
 .rate-b button.on{color:#3B2412}
@@ -977,7 +980,7 @@ function showMenu(jump){USE.other=1;
       <button class="lrow" id="opt-hc" aria-pressed="${!!SET.hc}"><span>High contrast</span><span class="toggle ${SET.hc?'on':''}" aria-hidden="true"></span></button>
       <button class="lrow" id="opt-motion"><span>Animations</span><span class="toggle ${SET.motion?'on':''}" aria-hidden="true"></span></button>
       <button class="lrow" id="opt-bgb" aria-pressed="${SET.bgb}"><span>Background bananas</span><span class="toggle ${SET.bgb?'on':''}" aria-hidden="true"></span></button>
-      ${SESSION&&SESSION.user.admin?'<a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">→</span></a><button class="lrow" id="opt-social"><span>Social post image</span><span class="mut">→</span></button>':''}
+      ${SESSION&&SESSION.user.admin?'<a class="lrow" href="admin.html"><span>Admin panel</span><span class="mut">→</span></a><button class="lrow" id="opt-social"><span>Social media</span><span class="mut">→</span></button>':''}
       <button class="lrow" id="opt-feedback"><span>Have feedback?</span><span class="mut">→</span></button>
     </div>
     <a class="btn social in" style="--d:7" href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span>Follow us on Instagram</span></a>
@@ -1548,11 +1551,21 @@ function showSchedule(){
   const end=()=>{w.remove();removeEventListener('keydown',key);if(back&&back.focus)back.focus()},key=e=>{if(e.key==='Escape')end()};
   addEventListener('keydown',key);w.onclick=e=>{if(e.target===w)end()};document.getElementById('psx').onclick=end;
 }
+// follower counts on the Social media page: the server checks each platform at most every 6 hours
+const FOLLOW=[['instagram','Instagram'],['facebook','Facebook'],['threads','Threads'],['bluesky','Bluesky'],['discord','Discord servers']];
+function loadFollowers(fresh){
+  cached('fol',fresh?0:30*60e3,()=>fetch(`${API}/social?followers=${fresh?'fresh':'1'}`,{headers:authHdr()}).then(r=>r.ok?r.json():null)).then(f=>{
+    if(!f)return;FOLLOW.forEach(([k])=>{const el=document.getElementById('fol-'+k);if(el)el.textContent=f[k]==null?'–':fmt(f[k])});
+    const n=document.getElementById('folnote');if(n)n.innerHTML=`Checked ${esc(new Date(f.at).toLocaleString('en-US',{weekday:'short',hour:'numeric',minute:'2-digit'}))} · <button class="link" id="folr" style="font:inherit;background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer">Refresh</button> · “–” means that platform isn’t connected or didn’t answer`;
+    const r=document.getElementById('folr');if(r)r.onclick=()=>{CACHE.delete('fol');loadFollowers(true)}}).catch(()=>{})}
 async function showSocial(pick){
   if(!(SESSION&&SESSION.user.admin))return showStart();
   const cur=pick||socialPick();
   app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:14px">
-    <div class="head"><h2>Social posts</h2><button class="sq" id="back">Back</button></div>
+    <div class="head"><h2>Social media</h2><button class="sq" id="back">Back</button></div>
+    <div class="eyebrow">Followers</div>
+    <div class="fol" id="fol">${FOLLOW.map(([k,l])=>`<div class="stat"><b id="fol-${k}">…</b><span>${l}</span></div>`).join('')}</div>
+    <span class="note" id="folnote"></span>
     <div class="eyebrow">Auto-posting</div>
     <button class="lrow" id="aplive" style="border:2px solid var(--ink)"><span><b>Post for real</b><br><span class="mut" id="aplivesub">Loading…</span></span><span class="toggle" id="apltog" aria-hidden="true"></span></button>
     <button class="lrow" id="apsched" style="border:2px solid var(--ink)"><span><b>Post schedule</b><br><span class="mut">What goes out each day, on each platform</span></span><span aria-hidden="true">›</span></button>
@@ -1612,6 +1625,7 @@ async function wireAutopost(){
     J=j};
   let J=null;draw(await api());
   document.getElementById('apsched').onclick=showSchedule;
+  loadFollowers(false);
   document.getElementById('aplive').onclick=async()=>{if(!J||J.error)return;const on=!J.live;
     if(on&&!await confirmBox({title:'Start posting for real?',body:'From the next scheduled time, posts go to Instagram and the Facebook Page automatically.',yes:'Turn it on',no:'Keep practicing'}))return;
     await api({action:'live',on});draw(await api())};

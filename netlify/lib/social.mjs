@@ -442,6 +442,24 @@ async function bskyPost(store, images, caption) {
   return first.uri;
 }
 
+// ---------- follower counts (for the admin Social media page): fetched at most every 6 hours ----------
+export async function followers(store, { fresh = false } = {}) {
+  const old = await store.get('social/followers', { type: 'json' }).catch(() => null);
+  if (old && !fresh && Date.now() - old.at < 6 * HOUR) return old;
+  const safe = (p) => p.then((v) => (Number.isFinite(v) ? v : null)).catch(() => null);
+  const ig = process.env.IG_USER_ID, page = process.env.FB_PAGE_ID, bsky = (process.env.BSKY_HANDLE || process.env.BLUESKY_HANDLE || '').replace(/^@/, '');
+  const [instagram, facebook, threads, bluesky, discord] = await Promise.all([
+    ig && process.env.META_TOKEN ? safe(graph(ig, { fields: 'followers_count' }, 'GET').then((j) => j.followers_count)) : null,
+    page && process.env.META_TOKEN ? safe(pageToken(page).then((tok) => graph(page, { fields: 'followers_count,fan_count', access_token: tok }, 'GET')).then((j) => j.followers_count ?? j.fan_count)) : null,
+    threadsToken() ? safe(th('me/threads_insights', { metric: 'followers_count' }, 'GET').then((j) => j.data && j.data[0] && j.data[0].total_value && j.data[0].total_value.value)) : null,
+    bsky ? safe(fetch(`https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(bsky)}`).then((r) => r.json()).then((j) => j.followersCount)) : null,
+    safe(getAll(store, 'discord/hooks/').then((h) => new Set(h.map((x) => x.guild).filter(Boolean)).size)),
+  ]);
+  const rec = { at: Date.now(), instagram, facebook, threads, bluesky, discord };
+  await store.setJSON('social/followers', rec).catch(() => {});
+  return rec;
+}
+
 export const destinations = () => ({ threads: !!threadsToken(), bluesky: !!bskyLogin() });
 
 // ---------- the hourly run ----------

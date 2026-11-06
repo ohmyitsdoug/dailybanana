@@ -6,7 +6,7 @@
 //   POST { action:'delete', id } / { action:'clear' }   remove one unposted post / every preview
 import { db, json } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
-import { build, save, recent, publish, config, imgUrl, etParts, PLAN, KEEP_DAYS, destinations } from '../lib/social.mjs';
+import { build, save, recent, publish, config, imgUrl, etParts, PLAN, KEEP_DAYS, destinations, followers } from '../lib/social.mjs';
 
 const KINDS = ['results_story', 'mon', 'tue', 'wed', 'thu_story', 'thu', 'fri', 'sat', 'sun_story', 'sun', 'milestone'];
 const view = (r) => ({ ...r, images: r.images.map(imgUrl), story: r.story.map(imgUrl), others: (r.others || []).map(imgUrl) });
@@ -15,6 +15,8 @@ export default async (req) => {
   const store = db();
   if (!isAdminUser(await userFor(req, store))) return json({ error: 'not the admin account' }, 401);
   if (req.method === 'GET') {
+    const q = new URL(req.url).searchParams;
+    if (q.has('followers')) return json(await followers(store, { fresh: q.get('followers') === 'fresh' }));
     const since = Date.now() - KEEP_DAYS * 864e5, posts = (await recent(store, 200)).filter((r) => r.at >= since).map(view), cfg = await config(store);
     return json({ live: !!cfg.live, posts, plan: PLAN, now: etParts(), dest: destinations() });
   }
