@@ -547,6 +547,22 @@ addEventListener('beforeinstallprompt',e=>{e.preventDefault();INSTALL=e});
 addEventListener('appinstalled',()=>{INSTALL=null});
 if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
 const DEVICE=(()=>{let d=store.get('device',null);if(!d){d=(crypto.randomUUID?crypto.randomUUID():String(Math.random()).slice(2)+Date.now());store.set('device',d)}return d})();
+// ---------- anonymous context for the admin's "Where players are" (no IP, no location, nothing stored on the device) ----------
+const ENV=(()=>{let tz='';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||''}catch(_){}
+  const ua=navigator.userAgent||'',tablet=/iPad|Tablet/i.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)||(/Android/i.test(ua)&&!/Mobile/i.test(ua));
+  const dev=tablet?'tablet':/Mobi|iPhone|Android/i.test(ua)?'phone':'desktop';
+  const app=!!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+  return{tz:tz.slice(0,40),lang:String(navigator.language||'').slice(0,10),dev,app}})();
+// time in the game per day: counts only while the page is showing and someone touched it in the last 2 minutes,
+// and sends the total when the page is hidden or closed (plus every 5 minutes), with what this visit did
+const USE={daily:0,quick:0,other:0},SESSION_ID=Math.random().toString(36).slice(2,10);
+let LAST_INPUT=Date.now(),ACTIVE_MS=0,SENT_MS=0;
+['pointerdown','keydown','scroll','touchstart'].forEach(ev=>addEventListener(ev,()=>{LAST_INPUT=Date.now()},{passive:true,capture:true}));
+setInterval(()=>{if(document.visibilityState==='visible'&&Date.now()-LAST_INPUT<120e3)ACTIVE_MS+=5000},5000);
+function sendTime(){const secs=Math.round((ACTIVE_MS-SENT_MS)/1000);if(secs<5)return;SENT_MS=ACTIVE_MS;
+  log('time',{device:DEVICE,secs,sid:SESSION_ID,use:USE,h:new Date().getHours()})}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sendTime()});
+addEventListener('pagehide',sendTime);setInterval(sendTime,300e3);
 // each player gets the next daily at their own midnight (like Wordle)
 const todayISO=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 
@@ -835,7 +851,7 @@ function showHelp(){
 }
 
 // ---------- menu: account, your stats, badges, history, settings (and admin stats for admins) ----------
-function showMenu(jump){
+function showMenu(jump){USE.other=1;
   const hist=playedDailies().reverse();
   const scores=hist.map(x=>x.res.total);
   const qt=quickTotals();
@@ -922,7 +938,8 @@ function startGame(r,resume){
     if(rem<=1000){S.answers=[...S.answers];S.answers[S.i]={guess:null,p:0,t:ROUND_SECONDS*1000};S.phase='reveal';S.left=ROUND_SECONDS*1000;S.missed=true;saveLive();if(r.quick)pushSync()}
     else{S.left=rem;S.resumeRunning=true}
   }
-  if(!resume)log('start',{mode:r.quick?'quick':'daily',puzzle:r.quick?null:r.n,chal:!!r.chal,device:DEVICE});   // for the admin's starts and completion rate
+  if(!resume)log('start',{mode:r.quick?'quick':'daily',puzzle:r.quick?null:r.n,chal:!!r.chal,device:DEVICE});
+  USE[r.quick?'quick':'daily']=1;   // for the admin's starts and completion rate
   S.phase==='reveal'?showReveal():showQuestion();
   if(S.missed){S.missed=false;toast('Time ran out on that question while you were away')}
   else if(S.resumeRunning){S.resumeRunning=false;startClock()}   // the round picks up with the time that was left
@@ -1065,7 +1082,7 @@ function finish(why){
     store.set('v07:'+r.n,res);
     res.badges=awardBadges(res,r);if(res.badges.length)store.set('v07:'+r.n,res);
     pushSync();stale('st:'+r.n);
-    log('play',{puzzle:r.n,points:R.answers.map(a=>a.p||0),guesses:R.answers.map(a=>a.guess==null?null:+a.guess),score:total,ms:R.answers.reduce((t,a)=>t+(a.t||0),0),device:DEVICE});
+    log('play',{puzzle:r.n,points:R.answers.map(a=>a.p||0),guesses:R.answers.map(a=>a.guess==null?null:+a.guess),score:total,ms:R.answers.reduce((t,a)=>t+(a.t||0),0),device:DEVICE,h:new Date().getHours(),tz:ENV.tz});
   }else{
     quickDrop();
     Object.assign(res,{id:'q'+Date.now().toString(36),at:Date.now(),rounds:toNames(r.rounds),chal:r.chal||null,own:false});
@@ -1691,7 +1708,7 @@ function bragCheck(){
 }
 const ordinal=n=>n+(n%100>=11&&n%100<=13?'th':['th','st','nd','rd'][n%10]||'th');
 // the page a challenge link opens
-async function showChallenge(code){
+async function showChallenge(code){USE.other=1;
   clearInterval(tick);S=null;
   app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:14px"><div class="note" style="padding:30px 0">Loading the challenge…</div></div>`;wireNav();
   const c=await getChal(code);
@@ -1831,7 +1848,7 @@ loadData().then(()=>{
     // pull scores from your other devices, then refresh the home screen if it's showing
     if(SESSION)syncNow().then(changed=>{testerCheck();bragCheck();if(changed&&!S&&document.querySelector('.home'))redrawQuietly(showStart)});
   });
-  log('visit',{device:DEVICE,src:SRC});
+  log('visit',{device:DEVICE,src:SRC,...ENV});
   rescoreV3();testerCheck();bragCheck();backfillGuesses();
 }).catch(e=>{
   console.error(e);

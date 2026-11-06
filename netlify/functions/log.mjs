@@ -6,6 +6,8 @@
 //   { kind:"start", mode:"daily"|"quick", puzzle, chal, device }  a game was started (daily: once per device per puzzle)
 //   { kind:"share", what:"results"|"challenge", device }      someone copied their results or a challenge link
 //   { kind:"kofi", device }                                   tapped Buy me a banana (one per device per day)
+//   { kind:"visit", …, tz, lang, dev, app }                  also: time zone, language, phone/tablet/desktop, installed app (country comes from Netlify)
+//   { kind:"time", device, secs, sid, use:{daily,quick,other}, h }   seconds actively in the game since the last report
 //   { kind:"backfill", puzzle, score, points, guesses, device } one time: guesses for a daily finished before they were sent
 // Netlify Blobs keys: seen/{device} {first day} · visits/{day}/{device} {first} · plays/{puzzle}/{id} · quick/{day}/{id} · shares/{day}/{id}
 import { db, cleanDevice, day, getAll } from '../lib/db.mjs';
@@ -17,7 +19,7 @@ const tag = (x) => String(x || '').toLowerCase().replace(/[^a-z0-9_.\-]/g, '').s
 const cleanSrc = (x) => (x && typeof x === 'object' && tag(x.s) ? { s: tag(x.s), m: tag(x.m), c: tag(x.c) } : null);
 const id = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-export default async (req) => {
+export default async (req, context) => {
   if (req.method !== 'POST') return new Response('POST only', { status: 405 });
   let b;
   try { b = await req.json(); } catch { return new Response('bad json', { status: 400 }); }
@@ -29,14 +31,19 @@ export default async (req) => {
     const src = cleanSrc(b.src);
     if (!seen) { seen = { first: today, ...(src ? { src } : {}) }; await store.setJSON(`seen/${device}`, seen); }
     else if (!seen.src && src && seen.first === today) { seen.src = src; await store.setJSON(`seen/${device}`, seen); }
-    await store.setJSON(`visits/${today}/${device}`, { first: seen.first });
+    // country (2 letters) from Netlify's edge, never the IP; the rest comes from the browser's own settings
+    const cc = String((context && context.geo && context.geo.country && context.geo.country.code) || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+    const tz = String(b.tz || '').replace(/[^A-Za-z0-9_/+\-]/g, '').slice(0, 40), lang = String(b.lang || '').replace(/[^A-Za-z-]/g, '').slice(0, 10);
+    const dev = ['phone', 'tablet', 'desktop'].includes(b.dev) ? b.dev : '';
+    await store.setJSON(`visits/${today}/${device}`, { first: seen.first, ...(cc ? { cc } : {}), ...(tz ? { tz } : {}), ...(lang ? { lang } : {}), ...(dev ? { dev } : {}), ...(b.app ? { app: true } : {}) });
     return new Response('ok');
   }
   if (b.kind === 'play') {
     const puzzle = Number.isInteger(b.puzzle) && b.puzzle >= 0 && b.puzzle < 10000 ? b.puzzle : null;
     if (puzzle === null) return new Response('skip');
     const guesses = (Array.isArray(b.guesses) ? b.guesses : []).slice(0, 6).map((g) => (Number.isFinite(+g) && +g > 0 && +g < 1e9 && g !== null ? +g : null));
-    await store.setJSON(`plays/${puzzle}/${id()}`, { score: score(b.score), points: pts(b.points), guesses, ms: ms(b.ms), device, day: today });
+    const h = Number.isInteger(b.h) && b.h >= 0 && b.h < 24 ? b.h : null;   // the player's local hour when they finished
+    await store.setJSON(`plays/${puzzle}/${id()}`, { score: score(b.score), points: pts(b.points), guesses, ms: ms(b.ms), device, day: today, ...(h !== null ? { h } : {}) });
     return new Response('ok');
   }
   if (b.kind === 'backfill') {
@@ -74,6 +81,18 @@ export default async (req) => {
   }
   if (b.kind === 'share') {
     await store.setJSON(`shares/${today}/${id()}`, { what: b.what === 'challenge' ? 'challenge' : 'results', device });
+    return new Response('ok');
+  }
+  if (b.kind === 'time') {
+    // one record per device per day: total active seconds, how many separate visits, and what they did
+    const secs = Math.max(0, Math.min(3600, Math.round(+b.secs || 0)));
+    if (!secs) return new Response('skip');
+    const k = `time/${today}/${device}`, r = (await store.get(k, { type: 'json' }).catch(() => null)) || { secs: 0, sids: [], daily: false, quick: false, other: false };
+    const sid = String(b.sid || '').replace(/[^a-z0-9]/g, '').slice(0, 12), u = b.use || {};
+    r.secs = Math.min(6 * 3600, r.secs + secs);
+    if (sid && !r.sids.includes(sid) && r.sids.length < 50) r.sids.push(sid);
+    r.daily = r.daily || !!u.daily; r.quick = r.quick || !!u.quick; r.other = r.other || !!u.other;
+    await store.setJSON(k, r);
     return new Response('ok');
   }
   if (b.kind === 'install') {

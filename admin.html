@@ -16,11 +16,15 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'Space Grotesk',
 a{color:var(--ink)}
 .top{border-bottom:2px solid var(--ink)}
 .wrapx{max-width:1120px;margin:0 auto;padding:14px 20px}
-.top .wrapx{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.top .wrapx{display:flex;align-items:center;gap:14px}
 .navr{display:flex;gap:8px}
 .sqa{height:40px;min-width:40px;border:2px solid var(--ink);background:var(--bg);display:flex;align-items:center;justify-content:center;padding:0 12px;font-weight:700;font-size:14px;text-decoration:none;color:var(--ink)}
 .sqa.icon{padding:0;width:40px}
-.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:19px;text-decoration:none}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:19px;text-decoration:none;flex:none}
+.logo .t{white-space:nowrap}
+@media (max-width:440px){.logo .t{display:none}.top .wrapx{gap:10px}}
+.logo .m{display:inline-flex;width:30px;height:30px;border:2px solid var(--ink);box-shadow:2px 2px 0 var(--ink);align-items:center;justify-content:center;background:var(--card);flex:none}
+.chipa{flex:none}
 .chipa{font-size:11px;letter-spacing:1px;padding:1px 6px;border:2px solid var(--ink);font-weight:700}
 .range{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .range button{font:inherit;font-weight:700;font-size:13px;height:34px;padding:0 11px;background:var(--bg);color:var(--ink);border:2px solid var(--ink);cursor:pointer}
@@ -56,6 +60,8 @@ button.card:hover .qi,button.card:focus-visible .qi,button.card[aria-expanded="t
 .tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:4px 8px;white-space:nowrap;transform:translate(-50%,-100%);display:none}
 .tip b{font-size:14px}
 .table.srcs{border:2px solid var(--ink);background:var(--card)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:640px){.grid2{grid-template-columns:1fr}}
 .qb{border:1.5px solid var(--mut);background:none;color:var(--mut);cursor:pointer;font-family:inherit;padding:0;vertical-align:3px}
 details.table{border:2px solid var(--ink);background:var(--card)}
 details.table summary{cursor:pointer;padding:10px 14px;font-weight:700}
@@ -86,7 +92,8 @@ const add=(iso,k)=>{const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate
 const todayET=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 let TOKEN='';try{TOKEN=(JSON.parse(localStorage.getItem('snug:session')||'null')||{}).token||''}catch(_){}
 let RANGE='30',CUSTOM={from:'',to:''};try{RANGE=sessionStorage.getItem('db-admin-range')||'30'}catch(_){}
-const logo='<a class="logo" href="./"><img src="banana.svg" width="24" height="24" alt="">dailybanana</a><span class="chipa">ADMIN</span>';
+if(RANGE==='90')RANGE='30';
+const logo='<a class="logo" href="./"><span class="m" aria-hidden="true"><img src="banana.svg" width="18" height="18" alt=""></span><span class="t">dailybanana</span></a><span class="chipa">ADMIN</span>';
 
 function gate(msg){
   m.innerHTML=`<div class="gate"><div style="display:flex;gap:8px;align-items:center">${logo}</div>${msg?`<div class="msg">${esc(msg)}</div>`:''}
@@ -154,23 +161,64 @@ const DEF={
   'Challenge links copied':'Times players copied or shared a challenge link in the range.',
   'Where players come from':'Every new device in the range, grouped by where its first visit came from: ad tags in the link (like the Meta ad: source · campaign), a Facebook click without tags, another website, or direct. Played = finished any game. Came back = visited or played again on a later day. Signed in and new accounts are counted on that device. Tracked from Nov 4, so older devices show as \u201cbefore tracking\u201d.',
   'New accounts':'Accounts created in the range with Google or Discord sign-in.',
+  'Avg time in the game':'Average time a player spent actively in the game per day (only while the page was showing and they had touched it in the last 2 minutes). One player on one day counts once. Tracked from Nov 6.',
+  'Median time':'The middle value of time in the game per player per day: half spent less, half spent more. Less thrown off by a few very long sessions than the average.',
+  'Just the daily':'Share of player-days where the player did the daily and nothing else (no quick play, no Menu, no challenges).',
+  'Daily and more':'Share of player-days where the player did the daily and also looked around: quick play, the Menu (stats, badges, history) or a challenge.',
+  'Came back the same day':'Share of player-days with two or more separate visits (the game was opened again later that day).',
+  'Visits per day':'Average number of separate visits per player per day.',
+  'Installed app':'Visitors in the range who opened Daily Banana as an installed app rather than in a browser tab.',
+  'When people play the daily':'Dailies finished in each hour of the day, in each player\u2019s own local time. Tracked from Nov 6.',
+  'Countries':'Each visitor\u2019s country, from Netlify\u2019s servers (no IP address or location is saved). Players = visitors who finished a game in the range. Tracked from Nov 6.',
+  'Time zones':'The time zone set on each visitor\u2019s device, which shows the region within a country. Tracked from Nov 6.',
+  'Devices':'Phone, tablet or computer, from the browser. Tracked from Nov 6.',
+  'Languages':'The language each visitor\u2019s browser is set to. Tracked from Nov 6.',
 };
 const pc=(a,b)=>b?`${Math.round(100*a/b)}%`:'';
 const ch=c=>c==null?'<span class="s up">new</span>':`<span class="s ${c>0?'up':''}">${c>0?'▲':c<0?'▼':'•'} ${Math.abs(c)}% vs previous</span>`;
 const card=(label,val,sub='',big=false)=>`<button class="card ${big?'big':''}" data-def="${esc(label)}" aria-expanded="false"><span class="l">${label} <span class="qi" aria-hidden="true">?</span></span><b>${val}</b>${sub?`<span class="s">${sub}</span>`:''}</button>`;
 const since=(d,key)=>d.from<d.since[key]?`tracked from ${fmtDay(d.since[key])}`:'';
 
+// ---------- where players are, and how they play (tracked from Nov 6) ----------
+const CN=(()=>{try{return new Intl.DisplayNames(['en'],{type:'region'})}catch(_){return null}})(),LN=(()=>{try{return new Intl.DisplayNames(['en'],{type:'language'})}catch(_){return null}})();
+const nameOf=(t,k)=>{try{return(t==='c'?CN&&CN.of(k):t==='l'?LN&&LN.of(k):null)||k}catch(_){return k}};
+const mmss=v=>v==null?'–':`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`;
+function miniTable(title,rows,label){
+  return`<div class="table srcs"><div class="wrap"><table><thead><tr><th><button class="qi qb" data-def="${title}" aria-expanded="false" aria-label="What this means">?</button> ${title}</th><th>Visitors</th><th>Players</th></tr></thead>
+    <tbody>${rows.length?rows.map(r=>`<tr><td>${esc(label(r.key))}</td><td>${n(r.visitors)}</td><td>${n(r.players)} <span class="mut">${pc(r.players,r.visitors)}</span></td></tr>`).join(''):'<tr><td class="mut">No data yet</td><td></td><td></td></tr>'}</tbody></table></div></div>`}
+function whereHtml(d){
+  const W=d.where;if(!W)return'';
+  const T=W.time,max=Math.max(1,...W.hours),hl=h=>h===0?'12a':h<12?`${h}a`:h===12?'12p':`${h-12}p`;
+  const note=d.to<d.since.where?'<p class="mut small">Tracked from Nov 6.</p>':'';
+  return`<h2>How people play</h2>${note}
+    <div class="grid g6">
+      ${card('Avg time in the game',T?mmss(T.avg):'–',T?`per player per day · ${n(T.days)} player-days`:'tracked from Nov 6')}${card('Median time',T?mmss(T.median):'–')}
+      ${card('Just the daily',p(T&&T.daily_only),'nothing else that day')}${card('Daily and more',p(T&&T.daily_plus),'quick play, Menu or a challenge')}
+      ${card('Came back the same day',p(T&&T.came_back),'2+ visits that day')}${card('Visits per day',T?T.visits:'–','per player')}
+    </div>
+    <div class="chart" id="hchart"><button class="l small mut" data-def="When people play the daily" aria-expanded="false" style="font:inherit;font-size:13px;background:none;border:0;padding:0;color:var(--mut);cursor:pointer">When people play the daily (their local time) <span class="qi" aria-hidden="true">?</span></button>
+      <div class="bars">${W.hours.map((v,h)=>`<span tabindex="0" data-v="${v}" data-h="${hl(h)}" style="height:${Math.max(2,(v/max)*100)}%" aria-label="${hl(h)}: ${v} dailies"></span>`).join('')}</div>
+      <div class="x"><span>12a</span><span>6a</span><span>12p</span><span>6p</span><span>11p</span></div>
+      <div class="tip" id="htip"></div></div>
+    <h2>Where players are</h2>
+    <div class="grid2">
+      ${miniTable('Countries',W.countries,k=>nameOf('c',k))}
+      ${miniTable('Time zones',W.timezones,k=>k.replace(/_/g,' '))}
+      ${miniTable('Devices',W.devices,k=>k.charAt(0).toUpperCase()+k.slice(1))}
+      ${miniTable('Languages',W.languages,k=>nameOf('l',k))}
+    </div>
+    <div class="grid g6" style="margin-top:12px">${card('Installed app',n(W.installed),'opened as an app')}</div>`}
 function draw(d){
   const H=d.health,R=d.retention,D=d.daily,Q=d.quick,B=d.bananas,T=d.traffic;
   const label=RANGE==='1'?'Today':RANGE==='all'?'All time':RANGE==='custom'?`${fmtDay(d.from)} – ${fmtDay(d.to)}`:`Last ${RANGE} days`;
   const ret=(k,days)=>R[k].v==null?card(`D${days} retention`,'–',`needs ${days} day${days>1?'s':''} of data`):card(`D${days} retention`,p(R[k].v),`of ${n(R[k].n)} new player${R[k].n===1?'':'s'}`);
   const series=[...d.days].reverse().slice(-90),max=Math.max(1,...series.map(x=>x.players));
   m.innerHTML=`<div class="top"><div class="wrapx">${logo}<div style="flex:1"></div>
-    <div class="range" role="group" aria-label="Date range">${[['1','Today'],['7','7D'],['30','30D'],['90','90D'],['all','All']].map(([k,l])=>`<button data-r="${k}" class="${RANGE===k?'on':''}">${l}</button>`).join('')}
-      <button data-r="custom" class="${RANGE==='custom'?'on':''}">Custom</button>
-      ${RANGE==='custom'?`<input type="date" id="cf" value="${d.from}" aria-label="From"><input type="date" id="ct" value="${d.to}" aria-label="To">`:''}</div>
     <div class="navr"><a class="sqa icon" href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener" aria-label="Daily Banana on Instagram"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a><a class="sqa" href="./?menu">Menu</a></div></div></div>
   <main class="wrapx">
+    <div class="range" role="group" aria-label="Date range">${[['1','Today'],['7','7D'],['30','30D'],['all','All']].map(([k,l])=>`<button data-r="${k}" class="${RANGE===k?'on':''}">${l}</button>`).join('')}
+      <button data-r="custom" class="${RANGE==='custom'?'on':''}">Custom</button>
+      ${RANGE==='custom'?`<input type="date" id="cf" value="${d.from}" aria-label="From"><input type="date" id="ct" value="${d.to}" aria-label="To">`:''}</div>
     <div class="head"><h1>Overview</h1><span class="mut small">${label} · ${fmtDay(d.from)}–${fmtDay(d.to)}</span></div>
 
     <h2>Player health</h2>
@@ -219,6 +267,8 @@ function draw(d){
       <tbody>${d.sources.map(x=>`<tr><td>${esc(x.source)}</td><td>${n(x.visitors)}</td><td>${n(x.played)} <span class="mut">${pc(x.played,x.visitors)}</span></td><td>${n(x.daily)} <span class="mut">${pc(x.daily,x.visitors)}</span></td><td>${n(x.signed_in)}</td><td>${n(x.new_accounts)}</td><td>${n(x.came_back)} <span class="mut">${pc(x.came_back,x.visitors)}</span></td></tr>`).join('')}</tbody>
     </table></div></div>`:`<p class="mut small">No new visitors in this range yet. Sources are tracked from Nov 4.</p>`}
 
+    ${whereHtml(d)}
+
     <details class="table"><summary>Day by day</summary><div class="wrap"><table>
       <thead><tr><th>Day</th><th>Players</th><th>New</th><th>Dailies</th><th>Quick</th><th>Visitors</th><th>Returning</th><th>🍌</th><th>Shares</th></tr></thead>
       <tbody>${d.days.map(x=>`<tr><td>${fmtDay(x.day)}</td><td>${n(x.players)}</td><td>${n(x.new)}</td><td>${n(x.dailies)}</td><td>${n(x.quick)}</td><td>${n(x.visitors)}</td><td>${n(x.returning)}</td><td>${n(x.bananas)}</td><td>${n(x.shares)}</td></tr>`).join('')}</tbody>
@@ -242,6 +292,12 @@ function draw(d){
     const show=()=>{const r=s.getBoundingClientRect(),c=chart.getBoundingClientRect();tip.innerHTML='';const b=document.createElement('b');b.textContent=s.dataset.v;tip.append(b,document.createTextNode(` players · ${fmtDay(s.dataset.d)}`));
       tip.style.left=(r.left-c.left+r.width/2)+'px';tip.style.top=(r.top-c.top-6)+'px';tip.style.display='block'};
     s.onmouseenter=show;s.onfocus=show;s.onmouseleave=s.onblur=()=>{tip.style.display='none'};
+  });
+  const hc=document.getElementById('hchart'),ht=document.getElementById('htip');
+  if(hc)hc.querySelectorAll('.bars span').forEach(s=>{
+    const show=()=>{const r=s.getBoundingClientRect(),c=hc.getBoundingClientRect();ht.innerHTML='';const b=document.createElement('b');b.textContent=s.dataset.v;ht.append(b,document.createTextNode(` dailies · ${s.dataset.h}`));
+      ht.style.left=(r.left-c.left+r.width/2)+'px';ht.style.top=(r.top-c.top-6)+'px';ht.style.display='block'};
+    s.onmouseenter=show;s.onfocus=show;s.onmouseleave=s.onblur=()=>{ht.style.display='none'};
   });
 }
 let POP=null;

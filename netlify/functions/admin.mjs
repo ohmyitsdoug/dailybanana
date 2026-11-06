@@ -6,7 +6,7 @@ import { db, json, day, getAll, getAllCached } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
 
 // when each kind of data started being recorded
-const SINCE = { games: '2026-11-03', visits: '2026-11-03', shares: '2026-11-03', quick: '2026-11-03', starts: '2026-11-04', time: '2026-11-04' };
+const SINCE = { games: '2026-11-03', visits: '2026-11-03', shares: '2026-11-03', quick: '2026-11-03', starts: '2026-11-04', time: '2026-11-04', where: '2026-11-06' };
 const ET = (t) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(t));
 const add = (iso, n) => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const span = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86400e3) + 1;
@@ -28,9 +28,10 @@ export default async (req) => {
   // the few that can change get read again: plays still missing guesses (a backfill can add them), brand-new devices' source, challenges, accounts
   const fresh = url.searchParams.get('fresh') === '1', yday = add(today, -1);
   const C = (p, recheck) => getAllCached(store, p, { recheck, fresh });
-  const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users, seenAll, signins, kofi] = await Promise.all([
+  const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users, seenAll, signins, kofi, timeRaw] = await Promise.all([
     C('plays/', (v) => !Array.isArray(v.guesses) || !v.guesses.length), C('quick/'), C('starts/daily/'), C('starts/quick/'),
     C('visits/'), C('shares/'), getAll(store, 'challenges/'), C('entries/'), getAll(store, 'users/'), C('seen/', (v) => !v.first || (v.first >= yday && !v.src)), C('signins/'), C('kofi/'),
+    getAll(store, `time/`),
   ]);
   // one record per game, with its Eastern day
   const dailies = []; const seenDaily = new Set();
@@ -153,6 +154,43 @@ export default async (req) => {
   }
   const sources = [...groups.values()].sort((a, b) => b.visitors - a.visitors);
 
+  // H. where players are and how they play (from Nov 6): country from Netlify's edge, time zone and language from the browser,
+  // local hour of each finished daily, and active time in the game per player per day
+  const lastVisit = new Map();
+  for (const v of vR.sort((a, b) => (a.day < b.day ? -1 : 1))) lastVisit.set(v.device, v);   // each device's latest visit in the range
+  const playedR = new Set(gR.map((g) => g.device));
+  const tally = (pick, top) => {
+    const m = new Map();
+    for (const [dev, v] of lastVisit) { const k = pick(v); if (!k) continue; const r = m.get(k) || { key: k, visitors: 0, players: 0 }; r.visitors++; if (playedR.has(dev)) r.players++; m.set(k, r); }
+    const rows = [...m.values()].sort((a, b) => b.players - a.players || b.visitors - a.visitors);
+    return top ? rows.slice(0, top) : rows;
+  };
+  const tracked = [...lastVisit.values()].filter((v) => v.tz || v.cc || v.dev).length;
+  const hours = Array(24).fill(0);
+  for (const g of dR) if (Number.isInteger(g.h)) hours[g.h]++;
+  const tR = timeRaw.map((t) => ({ ...t, day: t.key.split('/')[1] })).filter((t) => inR(t.day, from, to) && t.secs > 0);
+  const secs = tR.map((t) => t.secs).sort((a, b) => a - b);
+  const share = (f) => (tR.length ? pct(tR.filter(f).length, tR.length) : null);
+  const where = {
+    tracked,
+    countries: tally((v) => v.cc, 15),
+    timezones: tally((v) => v.tz, 12),
+    languages: tally((v) => (v.lang || '').split('-')[0].toLowerCase(), 8),
+    devices: tally((v) => v.dev),
+    installed: [...lastVisit.values()].filter((v) => v.app).length,
+    hours, hours_n: hours.reduce((a, b) => a + b, 0),
+    time: tR.length ? {
+      days: tR.length,
+      avg: Math.round(secs.reduce((a, b) => a + b, 0) / secs.length),
+      median: secs[Math.floor(secs.length / 2)],
+      daily_only: share((t) => t.daily && !t.quick && !t.other),
+      daily_plus: share((t) => t.daily && (t.quick || t.other)),
+      no_daily: share((t) => !t.daily),
+      came_back: share((t) => (t.sids || []).length >= 2),
+      visits: Math.round((10 * tR.reduce((a, t) => a + Math.max(1, (t.sids || []).length), 0)) / tR.length) / 10,
+    } : null,
+  };
+
   // per-day series for the chart and the breakdown table (newest first)
   const days = [];
   for (let d = to; d >= from; d = add(d, -1)) {
@@ -163,5 +201,5 @@ export default async (req) => {
       bananas: g.reduce((t, x) => t + ban(x), 0), shares: shares.filter((s) => s.key.split('/')[1] === d).length });
     if (days.length > 400) break;
   }
-  return json({ from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, days });
+  return json({ from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, days });
 };
