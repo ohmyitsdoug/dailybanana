@@ -28,7 +28,7 @@ export default async (req) => {
       const today = etDate(now), nx = (await weekends()).find((w) => w.date >= today && (!cur || w.n !== cur.n));
       if (nx) out.next = { opens: opensAt(nx.date) };
     }
-    return json(out, 200, { 'cache-control': 'public, max-age=60' });
+    return json(out, 200, { 'cache-control': 'public, max-age=60', 'netlify-cdn-cache-control': 'public, durable, s-maxage=60, stale-while-revalidate=300', 'netlify-vary': 'query=json' });
   }
   return Response.redirect(new URL(c ? `/c/${c.code}` : '/', req.url), 302);
 };

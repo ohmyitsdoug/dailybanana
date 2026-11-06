@@ -120,7 +120,6 @@ async function load(){
   if(!d)return seen?null:m.innerHTML='<main class="wrapx"><div class="msg">Could not reach the server.</div></main>';
   if(!d.health)return seen?null:m.innerHTML='<main class="wrapx"><div class="msg">Server error.</div></main>';
   draw(d);
-  if(!PRE){PRE=true;setTimeout(()=>['1','7','30','all'].forEach(R=>{const x=rangeDates(R);if(x.from+'_'+x.to!==key)fetchRange(x.from,x.to)}),300)}   // the other buttons, ready before they're tapped
 }
 const ADM=new Map();let LAST='',PRE=false;
 async function fetchRange(from,to){const key=from+'_'+to;

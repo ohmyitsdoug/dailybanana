@@ -590,10 +590,10 @@ const USE={daily:0,quick:0,other:0},SESSION_ID=Math.random().toString(36).slice(
 let LAST_INPUT=Date.now(),ACTIVE_MS=0,SENT_MS=0;
 ['pointerdown','keydown','scroll','touchstart'].forEach(ev=>addEventListener(ev,()=>{LAST_INPUT=Date.now()},{passive:true,capture:true}));
 setInterval(()=>{if(document.visibilityState==='visible'&&Date.now()-LAST_INPUT<120e3)ACTIVE_MS+=5000},5000);
-function sendTime(){const secs=Math.round((ACTIVE_MS-SENT_MS)/1000);if(secs<5)return;SENT_MS=ACTIVE_MS;
+function sendTime(min=20){const secs=Math.round((ACTIVE_MS-SENT_MS)/1000);if(secs<min)return;SENT_MS=ACTIVE_MS;
   log('time',{device:DEVICE,secs,sid:SESSION_ID,use:USE,h:new Date().getHours()})}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sendTime()});
-addEventListener('pagehide',sendTime);setInterval(sendTime,300e3);
+addEventListener('pagehide',()=>sendTime(5));
 // each player gets the next daily at their own midnight (like Wordle)
 const todayISO=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 
@@ -1029,7 +1029,7 @@ function startGame(r,resume){
     if(rem<=1000){S.answers=[...S.answers];S.answers[S.i]={guess:null,p:0,t:ROUND_SECONDS*1000};S.phase='reveal';S.left=ROUND_SECONDS*1000;S.missed=true;saveLive();if(r.quick)pushSync()}
     else{S.left=rem;S.resumeRunning=true}
   }
-  if(!resume)log('start',{mode:r.quick?'quick':'daily',puzzle:r.quick?null:r.n,chal:!!r.chal,device:DEVICE});
+  if(!resume&&(r.quick||!store.get('started:'+r.n,false))){if(!r.quick)store.set('started:'+r.n,true);log('start',{mode:r.quick?'quick':'daily',puzzle:r.quick?null:r.n,chal:!!r.chal,device:DEVICE})}   // a daily start once per device
   USE[r.quick?'quick':'daily']=1;   // for the admin's starts and completion rate
   S.phase==='reveal'?showReveal():showQuestion();
   if(S.missed){S.missed=false;toast('Time ran out on that question while you were away')}
@@ -1705,9 +1705,14 @@ const getChal0=code=>cached('ch:'+code,30e3,()=>fetch(`${CH}?code=${encodeURICom
 const getChal=code=>getChal0(code).then(c=>{if(c&&c.open&&c.closes<=Date.now()){c.open=false;stale('ch:'+code)}return c});
 const getStats=n=>API?cached('st:'+n,60e3,()=>fetch(`${API}/stats?n=${n}`).then(x=>x.ok?x.json():null)):Promise.resolve(null);
 const getFacts=()=>cached('facts',864e5,()=>fetch('data/facts.json').then(x=>x.json()));
-function preload(){   // today's ranking, your open challenges, the fun facts: fetched ahead so screens open filled in
+// fetched ahead so screens open filled in: the fun facts, plus open challenges only for players who made or played one lately
+// (today's scores load when the results screen shows). At most every 10 minutes, however often the tab comes back into view.
+let PRELOADED=0;
+const hostedLately=()=>{const h=store.get('hosted',null);return!!(h&&h.closes>Date.now())||quickList().some(q=>q.own&&q.chal&&Date.now()-q.at<25*HOUR)};
+function preload(){
+  if(Date.now()-PRELOADED<10*60e3)return;PRELOADED=Date.now();
   getFacts();if(!API||!TODAY)return;
-  getStats(TODAY.n);myOpen();
+  if(hostedLately())myOpen();
   [...new Set(quickList().filter(q=>q.chal&&Date.now()-q.at<25*HOUR).map(q=>q.chal.code))].forEach(getChal);
 }
 // when the page opens and whenever it comes back into view, once the browser is idle
@@ -1761,7 +1766,7 @@ async function chalBox(res){
     e.currentTarget.disabled=true;
     const c=await chalApi({action:'create',name,rounds:res.rounds,score:res.total,marks:res.answers.map(markA).join(''),playedAt:res.at});
     if(!c.ok){document.getElementById('cherr').textContent=c.error||'Could not make a link right now. Try again.';e.currentTarget.disabled=false;return}
-    res.chal={code:c.code,host:c.host};res.own=true;saveQuick(res);earnBadge('host');chalBox(res);
+    res.chal={code:c.code,host:c.host};res.own=true;saveQuick(res);earnBadge('host');store.set('hosted',{code:c.code,closes:c.closes||Date.now()+24*HOUR});chalBox(res);
   };
 }
 // the Menu's game history: 10 a page, newest first
@@ -1955,7 +1960,7 @@ loadData().then(()=>{
     // pull scores from your other devices, then refresh the home screen if it's showing
     if(SESSION)syncNow().then(changed=>{testerCheck();bragCheck();if(changed&&!S&&document.querySelector('.home'))redrawQuietly(showStart)});
   });
-  log('visit',{device:DEVICE,src:SRC,...ENV});
+  {const d=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York'}).format(new Date());if(store.get('visitDay','')!==d){store.set('visitDay',d);log('visit',{device:DEVICE,src:SRC,...ENV})}}   // once a day per device
   rescoreV3();testerCheck();bragCheck();backfillGuesses();
 }).catch(e=>{
   console.error(e);
