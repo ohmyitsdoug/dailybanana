@@ -500,10 +500,14 @@ const BANANA=(px=16,C=BAN_C)=>{let r='';
 const SITE='https://playsmidgen.com/?utm_source=dailybanana&utm_medium=game&utm_campaign=footer';
 const app=document.getElementById('app');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-// the results calculation, everything measured in bananas (18 cm): "An average golf green is about 111.1 bananas across.
-// A candy bar is about 0.8 bananas. So about 140 candy bars. You said 182."
+// the results calculation, everything measured in bananas (18 cm): "An average golf green is about 111 bananas across.
+// A candy bar is about 3/4 of a banana. So about 140 candy bars. You said 182."
 const BAN_CM=18;
-const inBananas=cm=>{const x=cm/BAN_CM,v=x<10?Math.round(x*10)/10:Math.round(x);return`${fmt(v)} ${v===1?'banana':'bananas'}`};
+// under a banana it's a plain fraction: 3/4, 2/3, 1/2, 1/3, 1/4, otherwise 1/N ("1/6 of a banana")
+const inBananas=cm=>{const x=cm/BAN_CM;
+  if(x<0.4){for(const [n,d] of [[1,3],[1,4]])if(Math.abs(x-n/d)<0.03)return`${n}/${d} of a banana`;return`1/${Math.round(1/x)} of a banana`}
+  if(x<0.95){const [n,d]=[[1,2],[2,3],[3,4],[1,1]].reduce((b,c)=>Math.abs(x-c[0]/c[1])<Math.abs(x-b[0]/b[1])?c:b);if(d>1)return`${n}/${d} of a banana`}
+  const v=x<1.05?1:x<10?Math.round(x*10)/10:Math.round(x);return`${fmt(v)} ${v===1?'banana':'bananas'}`};
 function calcLine(q,a){const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
   const ans=`${fmt(q.show)} ${q.show===1?q.A.name:q.A.plural}`,you=a.guess!=null?` You said ${fmt(q.v2?shownAns(a.guess):nice(a.guess))}.`:' No guess.';
   return`${esc(cap(anAvg(q.B)))} is about <b>${inBananas(q.B.cm)}</b> ${esc(q.B.dim)}. ${esc(cap(anAvg(q.A)))} is about <b>${inBananas(q.A.cm)}</b>. So about <b>${esc(ans)}</b>.${you}`}
