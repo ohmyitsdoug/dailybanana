@@ -3,6 +3,7 @@
 // Kept for 5 minutes in stats-live/{n} so a busy day doesn't re-read every play on every request,
 // and cached for a minute at Netlify's CDN, so most requests never reach the function at all.
 import { db, json, getAll } from '../lib/db.mjs';
+import { reviews, countable } from '../lib/review.mjs';
 const FRESH = 5 * 60e3;
 // Netlify's CDN keeps each daily's answer for a minute and answers repeat requests without running this function
 const CDN = { 'cache-control': 'public, max-age=120', 'netlify-cdn-cache-control': 'public, durable, s-maxage=60, stale-while-revalidate=120', 'netlify-vary': 'query=n' };
@@ -13,10 +14,8 @@ export default async (req) => {
   const store = db();
   const c = await store.get(`stats-live/${n}`, { type: 'json' }).catch(() => null);
   if (c && Date.now() - c.at < FRESH) return json(c.s, 200, CDN);
-  const plays = (await getAll(store, `plays/${n}/`)).filter((p) => Array.isArray(p.points) && p.points.length === 6).sort((a, b) => (a.key < b.key ? -1 : 1));
-  const first = new Map();
-  for (const p of plays) if (!first.has(p.device)) first.set(p.device, p);
-  const ps = [...first.values()];
+  const [plays, rv] = await Promise.all([getAll(store, `plays/${n}/`), reviews(store)]);
+  const ps = countable(plays.filter((p) => Array.isArray(p.points) && p.points.length === 6), rv);   // games left out in Admin don't count
   const s = {
     players: ps.length,
     totals: ps.map((p) => p.score || 0).sort((a, b) => a - b),

@@ -3,6 +3,7 @@
 //   /archive/000    one daily: the six questions, answers, sizes, how players did and where they typically guessed
 // A daily is published once it's over in every time zone (noon UTC the day after its date), so nothing is spoiled.
 import { db, getAll } from '../lib/db.mjs';
+import { reviews, countable } from '../lib/review.mjs';
 import { page, esc, fmt, nice, shownAns, roundAns, SCORE_V2, SCORE_V3, len, fmtDate, shortDate, pad3, SITE_URL } from '../lib/page.mjs';
 
 export const config = { path: ['/archive', '/archive/*'] };
@@ -23,12 +24,9 @@ async function data(origin) {
   return (DATA = { items, dailies, at: Date.now() });
 }
 async function playsFor(store, n) {
-  const plays = (await getAll(store, `plays/${n}/`)).filter((p) => Array.isArray(p.points) && p.points.length === 6).sort((a, b) => (a.key < b.key ? -1 : 1));
-  const first = new Map();
-  for (const p of plays) if (!first.has(p.device)) first.set(p.device, p);
-  return [...first.values()];
+  const [plays, rv] = await Promise.all([getAll(store, `plays/${n}/`), reviews(store)]);
+  return countable(plays.filter((p) => Array.isArray(p.points) && p.points.length === 6), rv);
 }
-
 // A daily's numbers never change once it's over, so they're worked out once and saved (archive/{n}).
 // Until an hour after a daily is published (so last-second games still count) they're worked out live.
 const FREEZE_AFTER = 3600e3;
@@ -45,13 +43,11 @@ async function summarize(store, d, rounds) {
     buckets: [0, 100, 200, 300, 400, 500].map((lo) => scores.filter((s) => s >= lo && (lo === 500 ? s <= 600 : s < lo + 100)).length),
   };
 }
-const FROZEN = new Map();   // kept in memory while the function is warm
 async function numbersFor(store, d) {
-  if (FROZEN.has(d.n)) return FROZEN.get(d.n);
   const saved = await store.get(`archive/${d.n}`, { type: 'json' }).catch(() => null);
-  if (saved) { FROZEN.set(d.n, saved); return saved; }
+  if (saved) return saved;
   const sum = await summarize(store, d, d.rounds);
-  if (Date.now() >= publishedAt(d) + FREEZE_AFTER) { sum.frozen = true; await store.setJSON(`archive/${d.n}`, sum).catch(() => {}); FROZEN.set(d.n, sum); }
+  if (Date.now() >= publishedAt(d) + FREEZE_AFTER) { sum.frozen = true; await store.setJSON(`archive/${d.n}`, sum).catch(() => {}); }
   return sum;
 }
 // the list page: players and average for every daily, kept in one saved index (archive/index)
@@ -68,7 +64,8 @@ async function listNumbers(store, live) {
   return out;
 }
 // frozen pages never change, so Netlify's edge keeps them like static files (until the next deploy)
-const html = (s, status = 200, { forever = false, until = 1800 } = {}) => new Response(s, { status, headers: {
+const html = (s, status = 200, { forever = false, until = 1800, n = null } = {}) => new Response(s, { status, headers: {
+  'netlify-cache-tag': n == null ? 'archive' : `archive,archive-${n}`,
   'content-type': 'text/html; charset=utf-8',
   'cache-control': forever ? 'public, max-age=86400' : 'public, max-age=300',
   'netlify-cdn-cache-control': forever ? 'public, durable, s-maxage=31536000, immutable' : `public, durable, s-maxage=${Math.max(60, Math.round(until))}, stale-while-revalidate=600`,
@@ -152,5 +149,5 @@ export default async (req) => {
         author: { '@type': 'Organization', name: 'Smidgen Games LLC' }, publisher: { '@type': 'Organization', name: 'Smidgen Games LLC', url: 'https://playsmidgen.com' }, mainEntityOfPage: `${SITE_URL}/archive/${pad3(n)}`, image: `${SITE_URL}/og.png` },
       { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: qa },
     ],
-  }), 200, { forever: !!S.frozen });
+  }), 200, { forever: !!S.frozen, n });
 };

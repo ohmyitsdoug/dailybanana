@@ -16,6 +16,7 @@
 //   social/marks/{metric}         { done:[numbers] } milestone marks already posted (or already passed when this started)
 //   social/used                   { facts:[i], pairs:[key] }  recently used facts and questions
 //   weekend/current               { code, n, closes }
+import { reviews, countable } from './review.mjs';
 import { getAll, getAllCached } from './db.mjs';
 import { loadFonts } from './raster.mjs';
 import * as P from './posts.mjs';
@@ -104,7 +105,7 @@ export async function build(kind, store, { date = etParts().date, preview = fals
     const week = dailies.filter((d) => d.date >= start && d.date < date).slice(0, 7);
     const slides = [];
     for (const d of week) {
-      const plays = (await getAll(store, `plays/${d.n}/`)).filter((p) => Array.isArray(p.points));
+      const plays = countable((await getAll(store, `plays/${d.n}/`)).filter((p) => Array.isArray(p.points)), await reviews(store));
       const st = roundStats(plays);
       let i, hasData = st.n >= MIN_PLAYS;
       if (hasData) i = st.rounds.reduce((b, r, k) => (r && (b < 0 || r.avg < st.rounds[b].avg) ? k : b), -1);

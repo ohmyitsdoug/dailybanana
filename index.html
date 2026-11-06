@@ -1177,7 +1177,7 @@ function finish(why){
     store.set('v07:'+r.n,res);
     res.badges=awardBadges(res,r);if(res.badges.length)store.set('v07:'+r.n,res);
     pushSync();stale('st:'+r.n);
-    log('play',{puzzle:r.n,points:R.answers.map(a=>a.p||0),guesses:R.answers.map(a=>a.guess==null?null:+a.guess),score:total,ms:R.answers.reduce((t,a)=>t+(a.t||0),0),device:DEVICE,h:new Date().getHours(),tz:ENV.tz});
+    log('play',{puzzle:r.n,points:R.answers.map(a=>a.p||0),guesses:R.answers.map(a=>a.guess==null?null:+a.guess),score:total,ms:R.answers.reduce((t,a)=>t+(a.t||0),0),pz:R.pauses||0,device:DEVICE,h:new Date().getHours(),tz:ENV.tz});
   }else{
     quickDrop();
     Object.assign(res,{id:'q'+Date.now().toString(36),at:Date.now(),rounds:toNames(r.rounds),chal:r.chal||null,own:false});

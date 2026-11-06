@@ -25,6 +25,16 @@ a{color:var(--ink)}
 @media (max-width:440px){.logo .t{display:none}.top .wrapx{gap:10px}}
 .logo .m{display:inline-flex;width:30px;height:30px;border:2px solid var(--ink);box-shadow:2px 2px 0 var(--ink);align-items:center;justify-content:center;background:var(--card);flex:none}
 .chipa{flex:none}
+.rv{border:2px solid var(--ink);background:var(--card);padding:12px 14px;margin:0 0 12px}
+.rv.ok{opacity:.6}
+.rv .h{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.rv .fl{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.rv .fl span{font-size:12px;font-weight:700;padding:2px 7px;border:2px solid var(--ink)}
+.rv table{border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:13px;margin:4px 0 8px}
+.rv td,.rv th{padding:3px 10px 3px 0;text-align:right}.rv th{font-weight:600;color:var(--mut,inherit);text-align:left}
+.rv .act{display:flex;gap:8px;flex-wrap:wrap}
+.rv .act button{font:inherit;font-weight:700;font-size:13px;height:34px;padding:0 12px;border:2px solid var(--ink);background:var(--bg);color:var(--ink);cursor:pointer}
+.rv .act button.on{background:var(--ink);color:var(--bg)}
 .chipa{font-size:11px;letter-spacing:1px;padding:1px 6px;border:2px solid var(--ink);font-weight:700}
 .range{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .range button{font:inherit;font-weight:700;font-size:13px;height:34px;padding:0 11px;background:var(--bg);color:var(--ink);border:2px solid var(--ink);cursor:pointer}
@@ -130,6 +140,7 @@ async function fetchRange(from,to){const key=from+'_'+to;
   return d}
 // a change vs the previous period: arrow + number, never color alone
 const DEF={
+  'Games to review':'Daily games that look too good: a near-perfect score, 3+ exact answers, very fast answering, a score 200+ above that player\'s usual, the same game sent more than once, or lots of pauses on a high score. Leave out of stats removes the game from averages, rankings, the archive and posts. The player still keeps their result. Looks fine hides the flag.',
   'Daily active players':'Unique players (devices) who finished at least one game, daily or quick play, on the last day of the range. Compared with the day before.',
   'Weekly active players':'Unique players who finished at least one game in the 7 days ending on the last day of the range. Compared with the 7 days before that.',
   'Monthly active players':'Unique players who finished at least one game in the 30 days ending on the last day of the range. Compared with the 30 days before that.',
@@ -190,6 +201,24 @@ const mmss=v=>v==null?'–':`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}
 function miniTable(title,rows,label){
   return`<div class="table srcs"><div class="wrap"><table><thead><tr><th><button class="qi qb" data-def="${title}" aria-expanded="false" aria-label="What this means">?</button> ${title}</th><th>Visitors</th><th>Players</th></tr></thead>
     <tbody>${rows.length?rows.map(r=>`<tr><td>${esc(label(r.key))}</td><td>${n(r.visitors)}</td><td>${n(r.players)} <span class="mut">${pc(r.players,r.visitors)}</span></td></tr>`).join(''):'<tr><td class="mut">No data yet</td><td></td><td></td></tr>'}</tbody></table></div></div>`}
+function reviewHtml(d){const L=d.review||[];
+  const st=s=>s==='out'?'Left out of stats':s==='ok'?'Marked fine':'Not reviewed';
+  const meta=r=>[r.secs!=null?`${r.secs}s answering`:null,r.pauses!=null?`${r.pauses} pause${r.pauses===1?'':'s'}`:null,r.h!=null?`finished ${((r.h+11)%12)+1}${r.h<12?'am':'pm'} their time`:null,
+    [r.cc,r.tz].filter(Boolean).join(' · ')||null,r.first?`first seen ${fmtDay(r.first)}`:null,r.others?`usual daily ${r.others.avg} over ${r.others.n}`:'first daily',`device ${r.device}`].filter(Boolean).join(' · ');
+  return`<h2>Games to review <button class="qi qb" data-def="Games to review" aria-expanded="false" aria-label="What this means">?</button></h2>
+  ${L.length?L.map(r=>`<div class="rv ${r.s==='ok'?'ok':''}">
+    <div class="h"><b>Daily #${String(r.n).padStart(3,'0')} · ${fmtDay(r.day)} · ${r.score}/600</b><span class="small mut">${st(r.s)}</span></div>
+    <div class="fl">${r.flags.map(f=>`<span>${esc(f)}</span>`).join('')}</div>
+    <div style="overflow-x:auto"><table><tr><th>Round</th>${r.points.map((_,i)=>`<td>${i+1}</td>`).join('')}</tr>
+      <tr><th>Guess</th>${r.points.map((_,i)=>`<td>${r.guesses[i]==null?'–':n(r.guesses[i])}</td>`).join('')}</tr>
+      ${r.answers?`<tr><th>Answer</th>${r.answers.map(a=>`<td>${n(a)}</td>`).join('')}</tr>`:''}
+      <tr><th>Points</th>${r.points.map(x=>`<td>${x}</td>`).join('')}</tr></table></div>
+    <div class="small mut" style="margin-bottom:10px">${esc(meta(r))}</div>
+    <div class="act" data-key="${esc(r.key)}">
+      <button data-s="out" class="${r.s==='out'?'on':''}">Leave out of stats</button>
+      <button data-s="ok" class="${r.s==='ok'?'on':''}">Looks fine</button>
+      ${r.s?'<button data-s="">Undo</button>':''}</div>
+  </div>`).join(''):'<p class="mut small">Nothing looks off in this range.</p>'}`}
 function feedbackHtml(d){const F=d.feedback||[];
   return`<h2>Feedback</h2>${F.length?`<div class="table srcs"><div class="wrap"><table><thead><tr><th>Message</th><th>From</th><th>Day</th></tr></thead><tbody>${F.map(f=>`<tr><td style="white-space:pre-wrap;text-align:left;min-width:240px">${esc(f.message)}</td><td>${esc(f.name||'anonymous')}</td><td>${fmtDay(f.day)}</td></tr>`).join('')}</tbody></table></div></div>`:'<p class="mut small">No feedback yet. Players send it from Menu → Have feedback?</p>'}`}
 function ratingsHtml(d){const R=d.ratings;if(!R)return'';const max=Math.max(1,...R.dist);
@@ -282,6 +311,7 @@ function draw(d){
     </table></div></div>`:`<p class="mut small">No new visitors in this range yet. Sources are tracked from Nov 4.</p>`}
 
     ${whereHtml(d)}
+    ${reviewHtml(d)}
     ${ratingsHtml(d)}
     ${feedbackHtml(d)}
 
@@ -302,6 +332,11 @@ function draw(d){
   if(cf)cf.onchange=ct.onchange=()=>{CUSTOM={from:cf.value,to:ct.value};if(CUSTOM.from&&CUSTOM.to)load()};
   // tap a number for what it means and how it's worked out
   m.querySelectorAll('[data-def]').forEach(el=>el.onclick=e=>{e.stopPropagation();showDef(el)});
+  m.querySelectorAll('.rv .act button').forEach(b=>b.onclick=async()=>{
+    const box=b.parentElement;box.querySelectorAll('button').forEach(x=>x.disabled=true);
+    const r=await fetch(`${API}/admin`,{method:'POST',headers:{authorization:'Bearer '+TOKEN,'content-type':'application/json'},body:JSON.stringify({action:'review',key:box.dataset.key,s:b.dataset.s||null})}).catch(()=>null);
+    if(!r||!r.ok){box.querySelectorAll('button').forEach(x=>x.disabled=false);box.insertAdjacentHTML('beforeend','<span class="small">Could not save that. Try again.</span>');return}
+    ADM.clear();try{Object.keys(sessionStorage).filter(k=>k.startsWith('db-adm:')).forEach(k=>sessionStorage.removeItem(k))}catch(_){}load()});
   // hover/focus readout on the bars
   const tip=document.getElementById('tip'),chart=document.getElementById('chart');
   chart.querySelectorAll('.bars span').forEach(s=>{

@@ -43,7 +43,7 @@ export default async (req, context) => {
     if (puzzle === null) return new Response('skip');
     const guesses = (Array.isArray(b.guesses) ? b.guesses : []).slice(0, 6).map((g) => (Number.isFinite(+g) && +g > 0 && +g < 1e9 && g !== null ? +g : null));
     const h = Number.isInteger(b.h) && b.h >= 0 && b.h < 24 ? b.h : null;   // the player's local hour when they finished
-    await store.setJSON(`plays/${puzzle}/${id()}`, { score: score(b.score), points: pts(b.points), guesses, ms: ms(b.ms), device, day: today, ...(h !== null ? { h } : {}) });
+    await store.setJSON(`plays/${puzzle}/${id()}`, { score: score(b.score), points: pts(b.points), guesses, ms: ms(b.ms), device, day: today, ...(h !== null ? { h } : {}), ...(Number.isInteger(b.pz) && b.pz >= 0 && b.pz < 20 ? { pz: b.pz } : {}) });
     return new Response('ok');
   }
   if (b.kind === 'backfill') {

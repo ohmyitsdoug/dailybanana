@@ -2,6 +2,7 @@
 // channels servers connected with the "daily posts" link (Discord webhooks owned by our app).
 //   discord/hooks/{id}    { url, guild, channel, at, kinds:['daily','weekend'] }   one per connected channel (no kinds = both)
 //   discord/done/{date}/{kind}                           an automatic post already sent
+import { reviews, countable } from './review.mjs';
 import { getAll, getAllCached } from './db.mjs';
 import { data, SITE } from './social.mjs';
 import { nice, roundAns, SCORE_V3 } from './page.mjs';
@@ -14,8 +15,7 @@ export const button = (label, url) => [{ type: 1, components: [{ type: 2, style:
 
 export async function results(store, d, items) {
   const plays = (await getAllCached(store, `plays/${d.n}/`)).filter((p) => Array.isArray(p.points) && p.points.length === 6);
-  const first = new Map(); for (const p of plays) if (!first.has(p.device)) first.set(p.device, p);
-  const ps = [...first.values()], scores = ps.map((p) => p.score || p.points.reduce((a, b) => a + b, 0));
+  const ps = countable(plays, await reviews(store)), scores = ps.map((p) => p.score || p.points.reduce((a, b) => a + b, 0));
   return { n: d.n, date: d.date, players: ps.length, avg: ps.length ? scores.reduce((a, b) => a + b, 0) / ps.length : null, best: ps.length ? Math.max(...scores) : null,
     // the answer as it was shown that day (the rounding changed with v1.1 on Nov 5)
     rounds: d.rounds.map((r) => { const A = items[r.a], B = items[r.b], ans = B.cm / A.cm; return { q: { A, B, ans }, show: d.date >= SCORE_V3 ? roundAns(ans) : nice(ans) }; }) };

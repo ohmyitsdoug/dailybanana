@@ -5,6 +5,8 @@
 import { db, json, day, getAll, getAllCached } from '../lib/db.mjs';
 import { userFor, isAdminUser } from '../lib/auth.mjs';
 import { checkName, fallbackName } from '../lib/names.mjs';
+import { reviews, refreshDaily } from '../lib/review.mjs';
+import { shownAns, roundAns, nice, SCORE_V2, SCORE_V3 } from '../lib/page.mjs';
 
 // when each kind of data started being recorded
 const SINCE = { games: '2026-11-03', visits: '2026-11-03', shares: '2026-11-03', quick: '2026-11-03', starts: '2026-11-04', time: '2026-11-04', where: '2026-11-06' };
@@ -16,9 +18,33 @@ const pct = (a, b) => (b ? Math.round((1000 * a) / b) / 10 : null);
 const change = (now, before) => (before ? Math.round(((now - before) / before) * 100) : now ? null : 0);   // null = new (nothing before)
 const isISO = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
 
+// POST { action:'review', key:'plays/12/…', s:'out' | 'ok' | null }: leave a daily game out of score statistics, mark it fine, or undo
+async function review(store, b) {
+  const key = String(b.key || '');
+  if (!/^plays\/\d{1,4}\/[\w-]+$/.test(key)) return json({ error: 'bad key' }, 400);
+  const rv = await reviews(store);
+  if (b.s === 'out' || b.s === 'ok') rv[key] = { s: b.s, at: Date.now() }; else delete rv[key];
+  await store.setJSON('review', rv);
+  await refreshDaily(store, +key.split('/')[1]);
+  return json({ ok: true, s: rv[key] ? rv[key].s : null });
+}
+
+// daily games that look too good: flagged for a look in Admin → Games to review
+const flagsFor = (g, usual, plays) => {
+  const f = [], exact = (g.points || []).filter((x) => x >= 100).length;
+  if (g.score >= 570) f.push(g.score >= 600 ? 'Perfect 600' : 'Near-perfect score');
+  if (exact >= 3) f.push(`${exact} exact answers`);
+  if (g.ms > 0 && g.ms < 45e3 && g.score >= 450) f.push(`Answered in ${Math.round(g.ms / 1000)}s total`);
+  if (usual && usual.n >= 2 && g.score - usual.avg >= 200) f.push(`${Math.round(g.score - usual.avg)} above their usual`);
+  if (plays > 1) f.push(`Sent ${plays} times`);
+  if (g.pz >= 2 && g.score >= 450) f.push(`Paused ${g.pz} times`);
+  return f;
+};
+
 export default async (req) => {
   if (!isAdminUser(await userFor(req))) return json({ error: 'not the admin account' }, 401);
   const store = db(), url = new URL(req.url), today = day();
+  if (req.method === 'POST') { let b = {}; try { b = await req.json(); } catch {} return b.action === 'review' ? review(store, b) : json({ error: 'unknown action' }, 400); }
   let to = isISO(url.searchParams.get('to')) ? url.searchParams.get('to') : today;
   let from = isISO(url.searchParams.get('from')) ? url.searchParams.get('from') : add(to, -29);
   if (to > today) to = today;
@@ -34,6 +60,7 @@ export default async (req) => {
     C('visits/'), C('shares/'), getAll(store, 'challenges/'), C('entries/'), getAll(store, 'users/'), C('seen/', (v) => !v.first || (v.first >= yday && !v.src)), C('signins/'), C('kofi/'),
     getAll(store, `time/`), getAll(store, 'ratings/'), getAll(store, 'feedback/'),
   ]);
+  const RV = await reviews(store);
   // accounts whose name breaks the name rules go back to their original sign-in name (or 'Player')
   let renamed = 0;
   for (const u of users) {
@@ -82,6 +109,7 @@ export default async (req) => {
 
   // C. the daily
   const dR = dailies.filter((g) => inR(g.day, from, to));
+  const dS = dR.filter((g) => !(RV[g.key] && RV[g.key].s === 'out'));   // score numbers leave out games set aside in Games to review
   const sD = startsD.map((s) => ({ ...s, n: +s.key.split('/')[2], device: s.key.split('/')[3] })).filter((s) => inR(s.day, from, to));
   const startsTracked = to >= SINCE.starts;
   const startedKeys = new Set(sD.map((s) => `${s.device}|${s.n}`));
@@ -93,8 +121,8 @@ export default async (req) => {
     completions_tracked: dR.filter((g) => g.day >= SINCE.starts).length,   // same days as starts, so the two compare
     rate: startsTracked && sD.length ? pct(completedAfterStart, sD.length) : null,
     finished_starts: startsTracked ? completedAfterStart : null,   // of the starts, how many were finished
-    accuracy: dR.length ? pct(dR.reduce((t, g) => t + (g.score || 0), 0), dR.length * 600) : null,
-    avg_score: dR.length ? Math.round(dR.reduce((t, g) => t + (g.score || 0), 0) / dR.length) : null,
+    accuracy: dS.length ? pct(dS.reduce((t, g) => t + (g.score || 0), 0), dS.length * 600) : null,
+    avg_score: dS.length ? Math.round(dS.reduce((t, g) => t + (g.score || 0), 0) / dS.length) : null,
     time: timed.length ? Math.round(timed.reduce((t, g) => t + g.ms, 0) / timed.length / 1000) : null,
   };
 
@@ -224,5 +252,24 @@ export default async (req) => {
       bananas: g.reduce((t, x) => t + ban(x), 0), shares: shares.filter((s) => s.key.split('/')[1] === d).length });
     if (days.length > 400) break;
   }
-  return json({ from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
+  // J. games to review: daily games in the range that look too good, plus any already reviewed
+  const [itemsD, dailiesD] = await Promise.all(['items', 'dailies'].map((f) => fetch(`${url.origin}/data/${f}.json`).then((r) => r.json()).catch(() => null)));
+  const sent = new Map(); for (const p of plays) { const k = `${p.device}|${p.key.split('/')[1]}`; sent.set(k, (sent.get(k) || 0) + 1); }
+  const byDev = new Map(); for (const g of dailies) { if (!byDev.has(g.device)) byDev.set(g.device, []); byDev.get(g.device).push(g); }
+  const lastV = new Map(); for (const v of [...visits].sort((a, b) => (a.day < b.day ? -1 : 1))) lastV.set(v.device, v);
+  const seenFirst = new Map(seenAll.map((x) => [x.key.split('/')[1], x.first]));
+  const toReview = [];
+  for (const g of dR) {
+    const others = (byDev.get(g.device) || []).filter((x) => x.key !== g.key), usual = others.length ? { n: others.length, avg: others.reduce((t, x) => t + (x.score || 0), 0) / others.length } : null;
+    const flags = flagsFor(g, usual, sent.get(`${g.device}|${g.n}`) || 1), r = RV[g.key];
+    if (!flags.length && !r) continue;
+    const d = dailiesD && dailiesD.find((x) => x.n === g.n), v = lastV.get(g.device) || {};
+    const answers = d && itemsD ? d.rounds.map((q) => { const ans = itemsD[q.b].cm / itemsD[q.a].cm; return d.date >= SCORE_V3 ? roundAns(ans) : d.date >= SCORE_V2 ? shownAns(ans) : nice(ans); }) : null;
+    toReview.push({ key: g.key, n: g.n, day: g.day, score: g.score, points: g.points, guesses: g.guesses || [], answers, secs: g.ms ? Math.round(g.ms / 1000) : null, pauses: g.pz ?? null,
+      h: g.h ?? null, first: seenFirst.get(g.device) || null, others: usual ? { n: usual.n, avg: Math.round(usual.avg) } : null,
+      cc: v.cc || null, tz: v.tz || null, device: g.device.slice(0, 6), flags, s: r ? r.s : null });
+  }
+  toReview.sort((a, b) => (a.s === 'ok') - (b.s === 'ok') || b.score - a.score);
+
+  return json({ review: toReview, from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
 };
