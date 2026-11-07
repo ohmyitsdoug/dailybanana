@@ -226,7 +226,7 @@ export default async (req) => {
   const adsList = (await store.get('ads', { type: 'json' }).catch(() => null)) || [{ name: 'Dailydle listing', match: 'dailydle', amount: 138.9, from: '2026-11-05', to: '2026-11-12' }];
   // Meta campaigns come in on their own (spend straight from Meta); which visitors they brought is matched by source text, "facebook" unless changed
   const [meta, metaMatch] = await Promise.all([metaP, store.get('ads-meta', { type: 'json' }).catch(() => null)]);
-  const metaRows = (meta.campaigns || []).map((c) => ({ meta: true, id: c.id, name: c.name, status: c.status, match: (metaMatch && metaMatch[c.id]) || 'facebook',
+  const metaRows = (meta.campaigns || []).filter((c) => /daily\s*banana/i.test(c.name || '')).map((c) => ({   // Daily Banana campaigns only, even from an older saved copy meta: true, id: c.id, name: c.name, status: c.status, match: (metaMatch && metaMatch[c.id]) || 'facebook',
     amount: c.spend, from: c.from || today, to: c.to && c.to < today ? c.to : today, impressions: c.impressions, clicks: c.clicks }));
   const ads = [...metaRows, ...adsList].map((a) => {
     const r = { ...a, running: a.meta ? a.status === 'ACTIVE' : today <= a.to, day: Math.min(span(a.from, a.to), Math.max(0, span(a.from, today))), days: span(a.from, a.to), visitors: 0, played: 0, daily: 0, came_back: 0, signed_in: 0 };
