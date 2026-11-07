@@ -1038,7 +1038,7 @@ function showMenu(jump){USE.other=1;
   const todayRes=saved(TODAY.n);
   HGAMES=[...hist.map(x=>({...x,t:x.res.at||new Date(x.d.date+'T12:00').getTime()})),...quickList().map(q=>({q,t:q.at}))].sort((a,b)=>b.t-a.t);HPAGE=0;
   app.innerHTML=`${nav()}<div class="narrow menu" style="display:flex;flex-direction:column;gap:18px">
-    <div class="head in" style="--d:1;margin-bottom:-16px"><h2>Menu</h2><button class="sq" id="back">Back</button></div>
+    <div class="head in" style="--d:1;margin-bottom:-16px"><h2>Menu</h2></div>
     <div id="opench" class="in" style="--d:2;display:flex;flex-direction:column;gap:10px"></div>
     <div id="wkmenu"></div>
     <div class="eyebrow in" style="--d:2;display:flex;align-items:center;gap:6px">Account <button class="infob" id="namehelp" type="button" aria-label="How your name is used" aria-expanded="false" aria-describedby="namepop">i</button></div>
@@ -1089,7 +1089,9 @@ function showMenu(jump){USE.other=1;
   weekendMenu();
   if(jump==='badges')setTimeout(()=>{const el=document.getElementById('badges');if(el)window.scrollTo(0,el.getBoundingClientRect().top+scrollY-12)},50);
   app.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{const r=puzzleFor(DAILIES.find(x=>x.n===+b.dataset.n)),s=saved(r.n);s?showResults(r,s):r.n===TODAY.n?showStart():leave(r,liveSaved(r.n))});
-  document.getElementById('back').onclick=showStart;document.getElementById('namehelp').onclick=e=>{e.stopPropagation();nameTip(e.currentTarget)};
+  // in the Menu, the Menu button in the top bar becomes Back
+  {const mb=document.getElementById('menu');if(mb){mb.textContent='Back';mb.setAttribute('aria-label','Back');mb.onclick=showStart}}
+  document.getElementById('namehelp').onclick=e=>{e.stopPropagation();nameTip(e.currentTarget)};
   document.getElementById('opt-theme').onclick=e=>{toggleTheme();e.currentTarget.querySelector('.toggle').classList.toggle('on',document.documentElement.dataset.theme==='dark')};
   document.getElementById('opt-hc').onclick=e=>{SET.hc=!SET.hc;store.set('settings',SET);applySettings();e.currentTarget.querySelector('.toggle').classList.toggle('on',SET.hc);e.currentTarget.setAttribute('aria-pressed',String(SET.hc))};
   document.getElementById('opt-bgb').onclick=e=>{SET.bgb=!SET.bgb;store.set('settings',SET);applySettings();e.currentTarget.querySelector('.toggle').classList.toggle('on',SET.bgb);e.currentTarget.setAttribute('aria-pressed',SET.bgb)};
