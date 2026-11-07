@@ -39,6 +39,12 @@ export async function metaAds(store, { fresh = false } = {}) {
     await store.setJSON('meta/ads', out).catch(() => {});
     return out;
   } catch (e) {
+    // say which account was asked for and what the token can do, so a mismatch is easy to spot
+    try {
+      const perms = await graph('me/permissions', token, 1);
+      const ok = perms.filter((p) => p.status === 'granted').map((p) => p.permission);
+      e.message += ` · asked for ${act}${raw ? ' (from META_AD_ACCOUNT_ID)' : ''} · this token has: ${ok.length ? ok.join(', ') : 'no permissions'}`;
+    } catch (e2) { e.message += ` · asked for ${act}${raw ? ' (from META_AD_ACCOUNT_ID)' : ''}`; }
     console.error(`meta ads: ${e.message}`);
     // keep showing the last good numbers, with the error
     const out = kept ? { ...kept, at: Date.now(), error: e.message } : { connected: true, at: Date.now(), campaigns: [], error: e.message };
