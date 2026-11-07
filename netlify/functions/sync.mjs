@@ -16,7 +16,10 @@ export function merge(a = {}, b = {}) {
   for (const [k, v] of Object.entries(b.badges || {})) if (!badges[k] || v < badges[k]) badges[k] = v;
   // the unfinished quick game: whichever is newest (a finished one leaves { cleared, at })
   const qlive = [a.qlive, b.qlive].filter((x) => x && x.at).sort((x, y) => y.at - x.at)[0] || null;
-  return { results, quick, badges, name: b.name || a.name || '', ...(qlive ? { qlive } : {}) };
+  // the rating prompt's state: a rating on any device wins, else the most "Not now"s
+  const rates = [a.rate, b.rate].filter((x) => x && typeof x === 'object');
+  const rate = rates.find((x) => x.stars) || rates.sort((x, y) => (y.skips || 0) - (x.skips || 0))[0] || null;
+  return { results, quick, badges, name: b.name || a.name || '', ...(qlive ? { qlive } : {}), ...(rate ? { rate } : {}) };
 }
 
 export default async (req) => {

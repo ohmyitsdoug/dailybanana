@@ -20,6 +20,12 @@ const cleanSrc = (x) => (x && typeof x === 'object' && tag(x.s) ? { s: tag(x.s),
 const id = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 export default async (req, context) => {
+  // GET ?rated=<device>: has this device already rated (or said "Not now" to) the game? So the prompt doesn't come back after storage is cleared
+  if (req.method === 'GET') {
+    const dev = cleanDevice(new URL(req.url).searchParams.get('rated'));
+    const r = dev ? await db().get(`ratings/${dev}`, { type: 'json' }).catch(() => null) : null;
+    return Response.json({ stars: r && r.stars ? r.stars : null, skipped: !!(r && r.skipped) });
+  }
   if (req.method !== 'POST') return new Response('POST only', { status: 405 });
   let b;
   try { b = await req.json(); } catch { return new Response('bad json', { status: 400 }); }

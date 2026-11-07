@@ -903,6 +903,10 @@ function showFeedback(){
     w.querySelector('.box').innerHTML=`<h2 style="font-size:28px">Thanks! 🍌</h2><p style="margin:0">Your message is on its way.</p><button class="btn" type="button" id="fbd">Close</button>`;
     const d=w.querySelector('#fbd');d.onclick=end;d.focus()};
 }
+// the server's record for this device: a rating there (e.g. before the browser's storage was cleared) is saved here too
+async function serverRated(){if(!API)return true;
+  try{const j=await(await fetch(`${API}/log?rated=${encodeURIComponent(DEVICE)}`)).json();if(j&&j.stars){store.set('rate',{stars:j.stars,at:Date.now()});pushSync();return false}}catch(_){}
+  return rateDue()}
 function rateDue(){const v=store.get('rate',null),n=playedDailies().length;
   if(!v)return n>=3;if(v.stars)return false;const skips=v.skips||(v.skipped?1:0);
   return skips===1&&n>=(v.at||3)+7}
@@ -1369,7 +1373,8 @@ function showResults(r,res){
   if(!HIDE)app.querySelectorAll('[data-flip]').forEach(row=>{const flip=()=>{const [t,c]=row.querySelectorAll('.t'),on=c.hidden;c.hidden=!on;t.hidden=on;row.setAttribute('aria-expanded',String(on))};
     row.onclick=e=>{if(e.target.closest('a,button'))return;flip()};row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip()}}});
   SHOWN={r,res};if(r.quick)chalBox(res);else showRank(r,res);
-  if(!r.quick&&rateDue())setTimeout(()=>{if(SHOWN&&SHOWN.r===r&&document.getElementById('rank')&&!document.querySelector('.welcome'))askRating()},1500);
+  // signed in: wait for the account to load first, so a rating left on another device (or the installed app) counts
+  if(!r.quick)Promise.all([SYNCED,new Promise(ok=>setTimeout(ok,1500))]).then(()=>rateDue()&&serverRated()).then(due=>{if(due&&SHOWN&&SHOWN.r===r&&document.getElementById('rank')&&!document.querySelector('.welcome'))askRating()});
   // keep the daily rank current while the results stay open: re-check the scores every 30 minutes (a change redraws the rank)
   if(!r.quick){const rk=setInterval(()=>{if(!document.getElementById('rank')||SHOWN.r!==r)return clearInterval(rk);getStats(r.n)},30*60e3)}
 
@@ -1461,18 +1466,21 @@ async function signInReturn(){
 function localData(){
   const results={};
   try{Object.keys(localStorage).forEach(k=>{const m=k.match(/^snug:v07:(\d+)$/);if(m)results[m[1]]=JSON.parse(localStorage.getItem(k))})}catch(_){}
-  return{results,quick:quickList(),badges:store.get('badges',{}),name:store.get('name',''),qlive:store.get('qlive',null)};
+  return{results,quick:quickList(),badges:store.get('badges',{}),name:store.get('name',''),qlive:store.get('qlive',null),rate:store.get('rate',null)};
 }
 function applyData(d){
   Object.entries(d.results||{}).forEach(([n,res])=>{if(!saved(+n))store.set('v07:'+n,res)});
   const ids=new Set(quickList().map(q=>q.id)),q=[...quickList(),...(d.quick||[]).filter(x=>!ids.has(x.id))].sort((a,b)=>(b.at||0)-(a.at||0));store.set('quick',q.slice(0,60));
   const b=store.get('badges',{});Object.entries(d.badges||{}).forEach(([k,v])=>{if(!b[k]||v<b[k])b[k]=v});store.set('badges',b);
   if(d.name&&!store.get('name',''))store.set('name',d.name);
+  // the rating prompt: once rated on any device, never ask again; otherwise the most "Not now"s wins
+  const rt=store.get('rate',null),dr=d.rate;if(dr&&!(rt&&rt.stars)&&(dr.stars||!rt||(dr.skips||0)>(rt.skips||0)))store.set('rate',dr);
   const ql=store.get('qlive',null);if(d.qlive&&d.qlive.at&&(!ql||(ql.at||0)<d.qlive.at)&&!(S&&S.r.quick))store.set('qlive',d.qlive);   // the newest unfinished quick game wins
 }
 // redraw the current screen in place, without replaying the entrance animations
 function redrawQuietly(fn){const h=document.documentElement,y=scrollY;h.classList.add('still');fn();scrollTo(0,y);requestAnimationFrame(()=>requestAnimationFrame(()=>h.classList.remove('still')))}
 // returns true when the account had something this device didn't (so the screen needs redrawing)
+let SYNCED=Promise.resolve(false);   // the first sync after load, so the rating prompt can wait for it
 async function syncNow(){
   if(!SESSION||!API)return false;
   let changed=false;
@@ -2096,10 +2104,11 @@ loadData().then(()=>{
   signInReturn().then(handled=>{
     if(handled)return;
     if(code||toMenu)history.replaceState(null,'',location.pathname);
+    if(SESSION)SYNCED=syncNow();   // started before the first screen, so the rating prompt can wait for it
     const open=()=>code?showChallenge(code):toMenu?showMenu():(abAutoResults()||showStart());
     open();   // the first-visit popup (welcome) is off from Nov 5 2026, to see if more first-time visitors play
     // pull scores from your other devices, then refresh the home screen if it's showing
-    if(SESSION)syncNow().then(changed=>{testerCheck();bragCheck();if(changed&&!S&&document.querySelector('.home'))redrawQuietly(showStart)});
+    if(SESSION)SYNCED.then(changed=>{testerCheck();bragCheck();if(changed&&!S&&document.querySelector('.home'))redrawQuietly(showStart)});
   });
   {const d=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York'}).format(new Date());if(store.get('visitDay','')!==d){store.set('visitDay',d);log('visit',{device:DEVICE,src:SRC,...ENV})}}   // once a day per device
   rescoreV3();testerCheck();bragCheck();backfillGuesses();

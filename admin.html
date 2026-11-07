@@ -312,6 +312,12 @@ function reviewHtml(d){const L=d.review||[];
   ${box('inbox','Inbox',inbox,'Nothing waiting. Unusual games land here.')}
   ${box('auto','Left out automatically',auto,'None in this range.')}
   ${box('done','Reviewed',done,'Nothing yet.')}`}
+// numbers for the "cheater report" post: counts only, for the range picked at the top
+function cheatHtml(d){const C=d.cheats;if(!C)return'';const E=C.honest_exact_pct||{};
+  return`<h2>Cheater report</h2><p class="small mut" style="margin:-4px 0 12px">Daily games in this range: ${n(C.games)} · ${n(C.left_out)} left out of stats. "Honest" = the ${n(C.counted)} games that count.</p>
+  <div class="grid g6">${card('Perfect 600s',n(C.perfect600))}${card('Under 25 seconds',n(C.under25s),`${n(C.under30s)} under 30`)}${card('Fastest game',C.fastest_s!=null?C.fastest_s+'s':'–')}
+  ${card('Honest median time',C.honest_median_s!=null?C.honest_median_s+'s':'–')}${card('3+ exact answers',n(C.exact3plus))}${card('Honest golden bananas',n(C.golden_players),'players with an exact round')}
+  ${card('Honest average',n(C.honest_avg))}${card('Best honest score',n(C.honest_best))}${card('Honest exact rounds',`${E.one??'–'}% / ${E.two??'–'}% / ${E.three_plus??'–'}%`,'games with 1 / 2 / 3+ exact')}</div>`}
 let RVOPEN=new Set();try{RVOPEN=new Set(JSON.parse(sessionStorage.getItem('db-rvopen')||'[]'))}catch(_){}
 function feedbackHtml(d){const F=d.feedback||[];
   return`<h2>Feedback</h2>${F.length?`<div class="table srcs"><div class="wrap"><table><thead><tr><th>Message</th><th>From</th><th>Day</th></tr></thead><tbody>${F.map(f=>`<tr><td style="white-space:pre-wrap;text-align:left;min-width:240px">${esc(f.message)}</td><td>${esc(f.name||'anonymous')}</td><td>${fmtDay(f.day)}</td></tr>`).join('')}</tbody></table></div></div>`:'<p class="mut small">No feedback yet. Players send it from Menu → Have feedback?</p>'}`}
@@ -412,6 +418,7 @@ function draw(d,at=Date.now()){
 
     ${whereHtml(d)}
     ${reviewHtml(d)}
+    ${cheatHtml(d)}
     ${ratingsHtml(d)}
     ${feedbackHtml(d)}
 
