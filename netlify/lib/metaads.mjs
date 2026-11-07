@@ -23,7 +23,10 @@ export async function metaAds(store, { fresh = false } = {}) {
   if (!token) return { connected: false };
   // just the account number, even if a full Ads Manager link or "act_…" was pasted
   const raw = String(process.env.META_AD_ACCOUNT_ID || '');
-  const act = 'act_' + ((raw.match(/act[_=]?(\d{6,})/) || raw.match(/(\d{6,})/) || [])[1] || '607646691723139');
+  const DEFAULT = '607646691723139';   // Daily Banana's ad account (Smidgen Games)
+  let act = 'act_' + ((raw.match(/act[_=]?(\d{6,})/) || raw.match(/(\d{6,})/) || [])[1] || DEFAULT);
+  // a META_AD_ACCOUNT_ID this token can't read falls back to the Daily Banana account
+  if (act !== 'act_' + DEFAULT) { try { await graph(`${act}?fields=id`, token, 1); } catch (e) { if (/\(#200\)|permission/i.test(e.message)) act = 'act_' + DEFAULT; } }
   const kept = await store.get('meta/ads', { type: 'json' }).catch(() => null);
   if (kept && !fresh && Date.now() - kept.at < (kept.error ? 15 * 60e3 : KEEP)) return kept;   // a failure is remembered for 15 minutes, so it can't slow every view
   try {
