@@ -669,7 +669,7 @@ function judge(guess,q){
 const mark=p=>p>=100?'💯':p>=90?'🍌':p>=70?'🟫':p>=40?'🟨':'⬜';   // darker the closer you get, then the banana, then 💯 for exact (drawn in the app as a golden banana)
 // small tip under the bananas box
 const banTip=el=>showTip(el,'banpop',`${BANANA(18)}<span>You earn a banana for every daily round you score <b>90 or more</b>, meaning your guess was within about 10% of the answer.</span>`);
-const nameTip=el=>showTip(el,'namepop','<span>Your name appears on challenge leaderboards and may appear in weekend results posts.</span>');
+const nameTip=el=>showTip(el,'namepop','<span>Your name appears on the leaderboards of challenges you make or join with friends.</span>');
 function showTip(el,id,html){
   const old=document.getElementById(id);if(old){old.remove();el.setAttribute('aria-expanded','false');return}
   const t=document.createElement('div');t.id=id;t.className='tip';t.setAttribute('role','tooltip');

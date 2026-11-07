@@ -52,17 +52,17 @@ export async function broadcast(store, msg, kind) {
   return { channels: hooks.length, ok, gone, failed };
 }
 
-// the weekend challenge's results: players, average, the winner and all six answers
+// the weekend challenge's results: players, average, the best score and all six answers (no names: totals only)
 export async function weekendResults(store, code, items) {
   const c = await store.get(`challenges/${code}`, { type: 'json' }).catch(() => null);
   if (!c) return null;
   const es = (await getAll(store, `entries/${code}/`)).sort((a, b) => b.score - a.score || a.at - b.at);
   const by = Object.fromEntries(items.flatMap((i) => [...(i.was || []).map((w) => [w, i]), [i.name, i]]));   // old names too (renamed items)
-  return { c, players: es.length, avg: es.length ? es.reduce((t, e) => t + e.score, 0) / es.length : null, best: es.length ? es[0].score : null, winner: es[0] ? es[0].name : null,
+  return { c, players: es.length, avg: es.length ? es.reduce((t, e) => t + e.score, 0) / es.length : null, best: es.length ? es[0].score : null,
     rounds: c.rounds.map((r) => { const A = by[r.a], B = by[r.b]; return A && B ? { q: { A, B, ans: B.cm / A.cm } } : null; }).filter(Boolean) };
 }
 const weekendResultsEmbed = (w) => ({ title: `Weekend challenge results: ${w.c.weekend.theme}`, url: `${SITE}/c/${w.c.code}`, color: GOLD,
-  description: w.players ? `${w.players} player${w.players === 1 ? '' : 's'} · average ${Math.round(w.avg)} / 600 · 🏆 ${w.winner} with ${w.best}` : 'Nobody played this one.',
+  description: w.players ? `${w.players} player${w.players === 1 ? '' : 's'} · average ${Math.round(w.avg)} / 600 · top score ${w.best}` : 'Nobody played this one.',
   image: { url: `${SITE}/discord/weekend/${w.c.code}.jpg` } });
 
 // the automatic posts, checked every hour (Eastern time):

@@ -88,7 +88,7 @@ export default async (req) => {
     let img = await store.get(`discord/img/wk-${code}`, { type: 'arrayBuffer' }).catch(() => null);
     if (!img) {
       await fonts(); const w = await weekendResults(store, code, await data('items'));
-      img = resultsCard({ ...w, chip: 'Weekend results', label: `${c.weekend.theme} · players averaged`, sub: w.players ? `${w.players} player${w.players === 1 ? '' : 's'} · winner ${w.winner} with ${w.best}` : '', foot: ['Play today’s daily', 'dailybanana.io'] }).jpeg(90);
+      img = resultsCard({ ...w, chip: 'Weekend results', label: `${c.weekend.theme} · players averaged`, sub: w.players ? `${w.players} player${w.players === 1 ? '' : 's'} · top score ${w.best}` : '', foot: ['Play today’s daily', 'dailybanana.io'] }).jpeg(90);
       await store.set(`discord/img/wk-${code}`, img);
     }
     return new Response(img, { headers: { 'content-type': 'image/jpeg', 'cache-control': 'public, max-age=3600' } });
