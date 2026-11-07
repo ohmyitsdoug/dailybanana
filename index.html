@@ -298,6 +298,28 @@ button.stat{font:inherit;color:inherit;background:var(--bg);text-align:left;curs
 .board div{display:flex;gap:10px;align-items:baseline;padding:7px 2px;border-bottom:1px solid var(--line);font-size:15px}
 .board .n{width:18px;color:var(--mut)}.board .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .board .you{font-weight:700}
+/* live dot on Join while the weekend challenge is open and you haven't played it */
+#joinch{position:relative;overflow:visible}
+.live{position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:#E5432F;border:2px solid var(--ink);box-sizing:border-box;z-index:2;pointer-events:none}
+.live::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid #E5432F;animation:livepulse 1.8s ease-out infinite}
+.calm .live::after{animation:none;opacity:0}
+@keyframes livepulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(2.6);opacity:0}}
+@media (prefers-reduced-motion:reduce){.live::after{animation:none;opacity:0}}
+/* weekend intro and weekend stats */
+.wki{display:flex;flex-direction:column;gap:14px;max-width:520px;padding-top:6px}
+@media (min-width:1100px){.wki{padding-top:28px}}
+.wki h1{margin:0;font-size:40px;line-height:1.02;letter-spacing:-1.5px}
+.wks{display:flex;flex-direction:column;gap:10px}
+.wks .eyebrow{margin:0}
+.spread{display:flex;align-items:flex-end;gap:3px;height:64px;border-bottom:2px solid var(--ink)}
+.spread i{flex:1;background:var(--line);min-height:2px}
+.spread i.me{background:var(--ink)}
+.spread-x{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:4px}
+.wkq{display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:baseline;font-size:14px}
+.wkq .l{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:1px}
+.wkc{display:flex;flex-direction:column}
+.wkc div{display:flex;gap:10px;align-items:baseline;padding:6px 2px;border-bottom:1px solid var(--line);font-size:15px}
+.wkc .n{width:18px;color:var(--mut)}.wkc .nm{flex:1;min-width:0}
 .namein{height:48px;border:2px solid var(--ink);padding:0 12px;font:inherit;font-size:16px;background:var(--card);color:var(--ink);width:100%;box-sizing:border-box}
 .acct{display:flex;flex-direction:column;gap:10px}
 .btn .pi{display:inline-flex;width:22px;height:22px;flex:none}
@@ -719,6 +741,57 @@ function quick(chal){
   leave({...puzzleFor({rounds}),n:0,quick:true,date:todayISO(),chal:chal?{code:chal.code,host:chal.host,...(wk?{weekend:wk}:{})}:null});
 }
 const quickList=()=>store.get('quick',[]);
+// ---------- weekend challenge ----------
+const wkPlayed=code=>quickList().some(q=>q.chal&&q.chal.code===code);
+// Saturday or Sunday in Eastern time, or early Monday before it closes (midnight Pacific): the only times the app asks about it
+const wkWindow=()=>{const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).map(x=>[x.type,x.value]));
+  return p.weekday==='Sat'||p.weekday==='Sun'||(p.weekday==='Mon'&&+p.hour<4)};
+const tzFmt=(t,tz,o)=>new Intl.DateTimeFormat('en-US',{timeZone:tz,...o}).format(new Date(t));
+// the open weekend challenge for someone who hasn't played it yet (or null)
+const wkToPlay=()=>wkWindow()?weekendNow().then(w=>w&&w.open&&w.code&&!wkPlayed(w.code)?w:null).catch(()=>null):Promise.resolve(null);
+// before the weekend challenge: what it is, when it closes, then Begin
+function showWeekendIntro(c){
+  if(!c||!c.weekend||!c.open||wkPlayed(c.code)||c.entries.some(e=>e.you))return showChallenge(c.code);
+  clearInterval(tick);S=null;USE.other=1;
+  const last=c.closes-60e3,a=tzFmt(c.created,'America/New_York',{month:'short',day:'numeric'}),b=tzFmt(last,'America/Los_Angeles',{month:'short',day:'numeric'});
+  const range=a.split(' ')[0]===b.split(' ')[0]?`${a}–${b.split(' ')[1]}`:`${a} – ${b}`;
+  const close=`${tzFmt(last,'America/Los_Angeles',{weekday:'short',month:'short',day:'numeric'})} at ${tzFmt(last,'America/Los_Angeles',{hour:'numeric',minute:'2-digit'})} PT`;
+  app.innerHTML=`${nav()}<div class="narrow wki in" style="--d:1" data-chpage="${esc(c.code)}">
+    <span class="tag" style="align-self:flex-start">Weekend challenge · ${range}</span>
+    <h1>${esc(c.weekend.theme||'Weekend challenge')}</h1>
+    <p class="lead" style="margin:0">Compete with players worldwide all weekend for the ultimate banana bragging rights.</p>
+    <p class="note" style="margin:0;line-height:1.45">6 rounds, 25 seconds each, one try. Every round swaps the banana for something from this theme.<br><b style="color:var(--ink)">Closes ${close}</b></p>
+    <button class="btn main" id="wkbegin" style="margin-top:4px"><span>Begin the challenge</span><span aria-hidden="true">→</span></button>
+    <p class="note" style="margin:0">Results go up Monday morning on Instagram. <a href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener" style="color:var(--ink);font-weight:700">Follow @dailybanana.io</a></p>
+  </div>`;
+  wireNav();window.scrollTo(0,0);
+  document.getElementById('wkbegin').onclick=()=>quick(c);
+}
+async function openWeekend(code){const c=await getChal(code);if(!c)return;showWeekendIntro(c)}
+// the weekend's numbers for everyone: your place, the top 5, the score spread, the best and worst rounds, top countries
+const FLAG=cc=>[...cc].map(ch=>String.fromCodePoint(127397+ch.charCodeAt(0))).join('');
+let REGION=null;const regionName=cc=>{try{REGION=REGION||new Intl.DisplayNames(['en'],{type:'region'});return REGION.of(cc)||cc}catch(_){return cc}};
+function wkStatsHtml(c){
+  const st=c.stats;if(!st||!st.players)return board(c);
+  const me=c.entries.find(e=>e.you);
+  const top=c.entries.filter(e=>e.rank<=5);if(me&&me.rank>5)top.push(me);
+  const brd=`<div class="board">${top.map(e=>`<div class="${e.you?'you':''}"><span class="n num">${e.rank}</span><span class="nm">${esc(e.name)}${e.you?' (you)':''}</span><span>${esc(e.marks||'')}</span><b class="num">${fmt(e.score)}</b></div>`).join('')}</div>`;
+  const mx=Math.max(1,...st.spread),mine=me?Math.min(11,Math.floor(me.score/50)):-1;
+  const spread=`<div class="spread" role="img" aria-label="Score spread for ${fmt(st.players)} players${me?`, your score ${me.score} is highlighted`:''}">${st.spread.map((n,i)=>`<i class="${i===mine?'me':''}" style="height:${Math.max(3,Math.round(100*n/mx))}%"></i>`).join('')}</div><div class="spread-x"><span>0</span><span>average ${fmt(st.avg)}</span><span>600</span></div>`;
+  let qs='';
+  if(st.rounds_n>=3&&st.rounds.every(x=>x!=null)){const rr=fromNames(c.rounds,c.weekend&&c.weekend.unit);
+    if(!rr.some(x=>x.a==null||x.b==null)){const P=puzzleFor({rounds:rr}).qs,hi=st.rounds.indexOf(Math.max(...st.rounds)),lo=st.rounds.indexOf(Math.min(...st.rounds));
+      qs=`<div class="wkq"><span class="l">Easiest</span><span>${esc(question(P[hi]).replace(/^Approximately h/,'H'))}</span><b class="num">${st.rounds[hi]}</b><span class="l">Hardest</span><span>${esc(question(P[lo]).replace(/^Approximately h/,'H'))}</span><b class="num">${st.rounds[lo]}</b></div>`}}
+  const cs=st.countries||[];
+  const ctry=`<div class="wkc">${cs.map((x,i)=>`<div><span class="n num">${i+1}</span><span class="nm">${FLAG(x.cc)} ${esc(regionName(x.cc))}</span><span class="note">${fmt(x.players)} players</span><b class="num">${fmt(x.avg)}</b></div>`).join('')}</div>${cs.length<5?`<span class="note">${cs.length?'More countries appear as people play.':`Countries appear once ${st.min_country} people from the same country have played.`}</span>`:''}`;
+  return`<div class="wks">
+    <span class="note">${me?`You’re <b style="color:var(--ink)">${ordinal(me.rank)}</b> of ${fmt(st.players)} players`:`${fmt(st.players)} players so far`} · ${c.open?`closes in ${leftLabel(c.closes-Date.now())}`:'final results'}</span>
+    <span class="eyebrow">Leaderboard</span>${brd}
+    <span class="eyebrow">Score spread</span><div>${spread}</div>
+    ${qs?`<span class="eyebrow">Rounds</span>${qs}`:''}
+    <span class="eyebrow">Top countries</span>${ctry}
+  </div>`;
+}
 const quickTotalsFromList=()=>{const l=quickList();return{g:l.length,t:l.reduce((a,q)=>a+(q.total||0),0),b:l.reduce((a,q)=>a+(q.answers||[]).filter(x=>(x&&x.p||0)>=90).length,0)}};
 // lifetime totals; falls back to the saved list (which also covers games synced from another device)
 const quickTotals=()=>{const a=store.get('qstats',null),b=quickTotalsFromList();return a&&a.g>=b.g?a:b};
@@ -848,7 +921,7 @@ function askRating(){
   w.onclick=e=>{if(e.target===w)skip()};
 }
 const kofiBtn=(d)=>`<div class="kofiw in" style="--d:${d}"><a class="kofi" href="${KOFI}" target="_blank" rel="noopener">🍌 Buy me a banana</a></div>`;
-document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.kofi'))log('kofi',{device:DEVICE})});
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.kofi')){log('kofi',{device:DEVICE});if(SHOWN&&document.getElementById('cprow-ab'))abLog('kofi',modeOf(SHOWN.r,SHOWN.res))}});
 const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}"><div class="ftxt">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · <button class="vbtn" aria-label="Version ${version()}, see what's new">v${version()}</button><br><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></div></div>`;
 function wireNav(){
   const on=(id,f)=>{const el=document.getElementById(id);if(el)el.onclick=f};
@@ -907,6 +980,8 @@ function showStart(){
   document.getElementById('daily').onclick=()=>res?showResults(p,res):live?leave(p,live):leave(p);
   document.getElementById('quick').onclick=()=>{const q=quickLive();q?leave(q.r,q):quick()};
   document.getElementById('joinch').onclick=()=>showJoin();
+  wkToPlay().then(w=>{const j=document.getElementById('joinch');if(!w||!j||j.querySelector('.live'))return;
+    j.insertAdjacentHTML('beforeend','<span class="live" aria-hidden="true"></span>');j.setAttribute('aria-label','Join a challenge with a code. The weekend challenge is live')});
   preload();
   // after today's daily, count down to the next one (and roll over to it at midnight)
   if(res)tick=setInterval(()=>{const el=document.getElementById('hcd');if(!el)return clearInterval(tick);
@@ -1185,15 +1260,31 @@ async function showFact(r){
   if(!r.quick&&r.n<1)return;   // #000 has no fun fact; #001 starts the list (the barleycorn one)
   el.textContent=FACTS[r.quick?Math.floor(Math.random()*FACTS.length):(r.n-1)%FACTS.length];document.getElementById('fact').hidden=false;
 }
-const RESULTS_LAYOUT='A';   // A: your rounds, then sharing and Play again · B: sharing above the rounds
+// ---------- A/B test: the results layout (Nov 6 – Tue Nov 10, ends 12am Eastern Wed Nov 11) ----------
+// A: your rounds, then sharing and Play again (as before) · B: score as "505 / 600", sharing and Play again above the rounds,
+// and a return visit after finishing today's daily opens on the results. Each device keeps its version for the whole test.
+// When the test ends (or a winner is set here), everyone gets AB_WINNER (A until one is picked).
+const AB_TEST='res1',AB_ENDS=Date.parse('2026-11-11T05:00:00Z'),AB_WINNER=null;
+const abLive=()=>!AB_WINNER&&Date.now()<AB_ENDS;
+function abVersion(){if(AB_WINNER)return AB_WINNER;if(!abLive())return'A';
+  let v=store.get('ab:'+AB_TEST,null);if(v!=='A'&&v!=='B'){v=Math.random()<.5?'A':'B';store.set('ab:'+AB_TEST,v)}return v}
+const abLog=(ev,mode)=>{if(abLive())log('ab',{test:AB_TEST,v:abVersion(),ev,mode:mode||null,device:DEVICE})};
+const modeOf=(r,res)=>r.quick?(res.chal?'chal':'quick'):'daily';
+// version B: the first time the game opens in a visit, after today's daily is done, go straight to the results
+function abAutoResults(){
+  if(abVersion()!=='B'||!TODAY||!saved(TODAY.n))return false;
+  try{if(sessionStorage.getItem('db-auto-res'))return false;sessionStorage.setItem('db-auto-res','1')}catch(_){return false}
+  showResults(puzzleFor(TODAY),saved(TODAY.n));return true;
+}
 function showResults(r,res){
   clearInterval(tick);
+  const LAYOUT=abVersion(),MODE=modeOf(r,res);
   const title=r.quick?(res.chal?'Daily Banana · challenge':'Daily Banana · quick play'):`Daily Banana #${pad3(r.n)}`;
   const marks=res.answers.map(markA).join(' ');   // a space between each mark, so they don't run together
   const shareTxt=`${title} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n${marks}\n${location.host||'dailybanana.io'}`;
   const SHARE=`<div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(title)} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n<span class="emo">${marks}</span>\n${esc(location.host||'dailybanana.io')}</div>
     <div class="legend-row in" style="--d:4">${LEGEND.split(' · ').map(x=>{const [e,...t]=x.split(' ');return`<span><span class="emo">${e}</span> ${t.join(' ')}</span>`}).join('')}</div>
-    <div class="cprow in" style="--d:5"><button class="btn main" id="cp"><span id="cpl">Copy results</span>${ICON.copy}</button><button class="btn sharebtn" id="dl" aria-label="Share your results as an image">${ICON.share}</button></div>`;
+    <div class="cprow in" style="--d:5" id="cprow-ab"><button class="btn main" id="cp"><span id="cpl">Copy results</span>${ICON.copy}</button><button class="btn sharebtn" id="dl" aria-label="Share your results as an image">${ICON.share}</button></div>`;
   const PLAYBTN=`<button class="btn in" style="--d:6;width:100%" id="again">Play again</button>`;
   const PLAY=`<div class="fact in" style="--d:7" id="fact" hidden><span class="eyebrow">Fun fact</span><p id="factt"></p></div>
     ${kofiBtn(7)}
@@ -1201,7 +1292,8 @@ function showResults(r,res){
     <div class="foot in" style="--d:7">${r.quick?'':`Next daily in <span class="num" id="cd">${untilMidnight()}</span> · `}© 2026 · <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a></div>`;
   const top=`    <div class="sumrow in" style="--d:1">
       <div style="display:flex;flex-direction:column;gap:4px"><span class="note">${r.quick?(res.chal?(res.own?'Your challenge':(res.chal.weekend?'Weekend challenge':`Challenge from ${esc(res.chal.host)}`)):'Quick play'):`Daily #${pad3(r.n)}`}${res.why==='paused'?' · ended by pausing':''}</span>
-        <b class="score num">${fmt(res.total)}</b><span style="font-size:14px">out of ${ROUNDS*MAX_PTS} · <span class="emo">${marks}</span></span></div>
+        ${LAYOUT==='B'?`<b class="score num">${fmt(res.total)}<span style="font-weight:400;font-size:14px;letter-spacing:0">&nbsp;/ ${ROUNDS*MAX_PTS}</span></b>`
+          :`<b class="score num">${fmt(res.total)}</b><span style="font-size:14px">out of ${ROUNDS*MAX_PTS} · <span class="emo">${marks}</span></span>`}</div>
       <div class="r">${r.quick?'':`<span>${streak()} day streak</span>`}</div>
     </div>
     ${r.quick?'':`<div class="in" style="--d:1;display:flex;flex-direction:column;gap:2px"><b id="rank" style="font-size:17px">&nbsp;</b></div>`}
@@ -1219,11 +1311,16 @@ function showResults(r,res){
     ${r.quick?`<div class="in" style="--d:3" id="chalbox"></div>`:''}
 `;
   app.innerHTML=`${nav()}<div class="narrow" style="max-width:560px">
-    ${top}${RESULTS_LAYOUT==='B'?SHARE+PLAYBTN+rounds:rounds+SHARE+PLAYBTN}${PLAY}
+    ${top}${LAYOUT==='B'?SHARE+PLAYBTN+rounds:rounds+SHARE+PLAYBTN}${PLAY}
   </div>`;
   window.scrollTo(0,0);wireNav();
   tick=setInterval(()=>{const cd=document.getElementById('cd');if(cd)cd.textContent=untilMidnight();else clearInterval(tick)},1000);
-  document.getElementById('again').onclick=()=>quick();
+  document.getElementById('again').onclick=()=>{abLog('again',MODE);quick()};
+  abLog('view',MODE);
+  // on a weekend, after the daily: if you haven't played the weekend challenge, Play again becomes the way in
+  if(!r.quick)wkToPlay().then(w=>{const b=document.getElementById('again');if(!w||!b||SHOWN.r!==r)return;
+    b.innerHTML='<span>Try the weekend challenge</span><span aria-hidden="true">→</span>';b.style.justifyContent='space-between';b.style.padding='0 20px';
+    b.onclick=()=>{abLog('weekend',MODE);openWeekend(w.code)}});
   // easter egg: tap a round to swap the short answer line for the math in bananas (tap again to swap back)
   app.querySelectorAll('[data-flip]').forEach(row=>{const flip=()=>{const [t,c]=row.querySelectorAll('.t'),on=c.hidden;c.hidden=!on;t.hidden=on;row.setAttribute('aria-expanded',String(on))};
     row.onclick=e=>{if(e.target.closest('a,button'))return;flip()};row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip()}}});
@@ -1233,11 +1330,11 @@ function showResults(r,res){
   if(!r.quick){const rk=setInterval(()=>{if(!document.getElementById('rank')||SHOWN.r!==r)return clearInterval(rk);getStats(r.n)},30*60e3)}
 
   showFact(r);
-  const dl=document.getElementById('dl');if(dl)dl.onclick=()=>shareImage(r,res,dl);
+  const dl=document.getElementById('dl');if(dl)dl.onclick=()=>{abLog('share',MODE);shareImage(r,res,dl)};
   document.getElementById('cp').onclick=async()=>{
     const lab=document.getElementById('cpl');
-    try{await navigator.clipboard.writeText(shareTxt);lab.textContent='Copied!';toast('Results copied to your clipboard');log('share',{what:'results',device:DEVICE})}catch(_){
-      const rg=document.createRange();rg.selectNodeContents(document.getElementById('sh'));const s=getSelection();s.removeAllRanges();s.addRange(rg);lab.textContent='Selected: copy it'}
+    try{await navigator.clipboard.writeText(shareTxt);lab.textContent='Copied!';toast('Results copied to your clipboard');log('share',{what:'results',device:DEVICE});abLog('copy',MODE)}catch(_){
+      const rg=document.createRange();rg.selectNodeContents(document.getElementById('sh'));const s=getSelection();s.removeAllRanges();s.addRange(rg);lab.textContent='Selected: copy it';abLog('copy',MODE)}
   };
 }
 
@@ -1720,7 +1817,7 @@ function board(c){
   c.entries.forEach(e=>{e.you=e===me});
   // Bragging rights: only once the challenge has run its full 24 hours (closing it early doesn't count)
   if(!c.weekend&&!c.open&&!c.closed&&me&&c.entries.length>1&&c.entries.every(e=>e.you||e.score<me.score)&&earnBadge('beat24'))pushSync();   // a win: the top score outright
-  return`<div class="board">${c.entries.map((e,i)=>`<div class="${e.you?'you':''}"><span class="n num">${i+1}</span><span class="nm">${esc(e.name)}${e.you?' (you)':''}</span><span>${esc(e.marks||'')}</span><b class="num">${fmt(e.score)}</b></div>`).join('')}</div>`;
+  return`<div class="board">${c.entries.map((e,i)=>`<div class="${e.you?'you':''}"><span class="n num">${e.rank||i+1}</span><span class="nm">${esc(e.name)}${e.you?' (you)':''}</span><span>${esc(e.marks||'')}</span><b class="num">${fmt(e.score)}</b></div>`).join('')}</div>`;
 }
 const status=c=>c.open?`Open · closes in ${leftLabel(c.closes-Date.now())}`:'Closed';
 function shareLinkRow(code){return`<div class="linkbox"><code id="lk">${esc(chalLink(code))}</code><button class="sq" id="cplk">Copy</button><button class="sq icon" id="chimg" aria-label="Share this challenge as an image">${ICON.share}</button></div>`}
@@ -1736,6 +1833,7 @@ async function chalBox(res){
   const put=h=>{const b=document.getElementById('chalbox');if(b)b.innerHTML=`<div class="chal">${h}</div>`;return!!b};
   if(res.chal){   // a challenge game (yours or a friend's): show the scoreboard
     const c=await getChal(res.chal.code);if(!c)return;
+    if(c.weekend){put(`<h3>${chalName(c)}</h3>${wkStatsHtml(c)}<button class="btn" id="viewch">Full scoreboard</button>`);const v=document.getElementById('viewch');if(v)v.onclick=()=>showChallenge(c.code);return}
     if(!put(`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>${res.own?'Your challenge':chalName(c)}</h3><button class="codechip" id="cpcode" aria-label="Copy challenge code ${esc(c.code)}">${esc(c.code)} ${ICON.copy}</button></div><span class="note">${status(c)}</span>${board(c)}${c.open?shareLinkRow(c.code):''}
       <div class="two">${c.mine&&c.open?'<button class="btn" id="closech">Close it</button>':''}<button class="btn" id="viewch">Scoreboard</button></div>`))return;
     wireLink(c.code,c.host);wireCode(c.code);
@@ -1794,10 +1892,10 @@ async function openChallenges(){
   if(!codes.length)return;
   const cs=(await Promise.all(codes.map(getChal))).filter(c=>c&&c.open);
   const b=document.getElementById('opench');if(!b||!cs.length)return;
-  b.innerHTML=`<div class="eyebrow">Open challenges</div>`+cs.map(c=>{const i=c.entries.findIndex(e=>e.you);
+  b.innerHTML=`<div class="eyebrow">Open challenges</div>`+cs.map(c=>{const me=c.entries.find(e=>e.you),i=me?(me.rank||c.entries.indexOf(me)+1)-1:-1,tot=c.stats?c.stats.players:c.entries.length;
     return`<button class="chal" data-ch="${esc(c.code)}" style="text-align:left;font:inherit;color:inherit;cursor:pointer">
       <h3>${(c.mine||ownChal(c.code))?'Your challenge':chalName(c)}</h3>
-      <span class="note">Closes in ${leftLabel(c.closes-Date.now())} · ${c.entries.length} played${i>=0?` · you're ${ordinal(i+1)} of ${c.entries.length}`:''}</span></button>`}).join('');
+      <span class="note">Closes in ${leftLabel(c.closes-Date.now())} · ${tot} played${i>=0?` · you're ${ordinal(i+1)} of ${tot}`:''}</span></button>`}).join('');
   b.querySelectorAll('[data-ch]').forEach(x=>x.onclick=()=>showChallenge(x.dataset.ch));
 }
 const ownChal=code=>quickList().some(q=>q.own&&q.chal&&q.chal.code===code);
@@ -1820,13 +1918,14 @@ async function showChallenge(code){USE.other=1;
   if(c.open&&c.closes-Date.now()<864e5)setTimeout(()=>{if(document.querySelector(`[data-chpage="${code}"]`)){stale('ch:'+code);showChallenge(code)}},c.closes-Date.now()+1500);
   const me=c.entries.find(e=>e.you);
   const played=me||quickList().some(q=>q.chal&&q.chal.code===c.code);
+  if(c.weekend&&c.open&&!played)return showWeekendIntro(c);
   app.innerHTML=`${nav()}<div class="narrow" data-chpage="${esc(c.code)}" style="display:flex;flex-direction:column;gap:14px">
     <div class="head in" style="--d:1"><h2>${(c.mine||ownChal(c.code))?'Your challenge':chalName(c)}</h2><button class="sq" id="back">Home</button></div>
     <div class="in" style="--d:1;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="codechip" id="cpcode" aria-label="Copy challenge code ${esc(c.code)}">${esc(c.code)} ${ICON.copy}</button><span class="note">${status(c)} · 6 rounds, the same for everyone · ${c.entries.length} played</span></div>
-    <div class="in" style="--d:2">${board(c)}</div>
+    <div class="in" style="--d:2">${c.weekend?wkStatsHtml(c):board(c)}</div>
     ${c.open&&!played?`<div class="chal in" style="--d:3"><h3>Your turn</h3><span class="note">Six questions, 25 seconds each. You get one try.</span>${nameNote()}<button class="btn main" id="playch"><span>Play the challenge</span><span aria-hidden="true">→</span></button><span class="note" id="cherr"></span></div>`:''}
     ${c.open&&(c.mine||ownChal(c.code))?`<div class="chal in" style="--d:3"><h3>Share it</h3>${shareLinkRow(c.code)}${c.mine?'<button class="btn" id="closech">Close challenge now</button>':''}</div>`:''}
-    ${!c.open?`<div class="note in" style="--d:3">This challenge is closed. ${c.entries[0]?`${esc(c.entries[0].name)} came out on top.`:''}</div>`:''}
+    ${!c.open?`<div class="note in" style="--d:3">This challenge is closed. ${c.entries[0]?`${esc(c.entries[0].name)} came out on top.`:''}${c.weekend?' Results go up Monday morning on <a href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener">Instagram</a>.':''}</div>`:''}
   </div>${footer(5)}`;
   wireNav();wireLink(c.code,c.host);wireCode(c.code);
   document.getElementById('back').onclick=showStart;
@@ -1863,7 +1962,7 @@ function showJoin(prefill=''){
     if(!c){out.innerHTML=`<p class="note">We couldn't find a challenge with the code <b>${esc(code)}</b>. Check the letters and try again.</p>`;return}
     const played=c.entries.some(x=>x.you)||quickList().some(q=>q.chal&&q.chal.code===c.code);
     out.innerHTML=`<div class="chal in" style="--d:1"><h3>Challenge found!</h3>
-      <span class="note">${c.host||c.weekend?chalName(c):'Daily Banana challenge'} · ${status(c)} · ${c.entries.length} played</span>
+      <span class="note">${c.host||c.weekend?chalName(c):'Daily Banana challenge'} · ${status(c)} · ${c.stats?c.stats.players:c.entries.length} played</span>
       ${c.open&&!played?`${nameNote()}<button class="btn main" id="startch"><span>Start challenge</span><span aria-hidden="true">→</span></button>`
         :`<span class="note">${c.open?'You\'ve already played this one.':'This challenge has closed.'}</span><button class="btn" id="viewch">See the scoreboard</button>`}</div>`;
     const st=document.getElementById('startch');if(st)st.onclick=()=>quick(c);
@@ -1889,15 +1988,15 @@ function weekendCard(){weekendNow().then(w=>{const el=document.getElementById('w
     <span class="note">${w.open?`6 questions, a different unit each time · closes in ${leftLabel(w.closes-Date.now())}`:`${esc(w.theme)} · closed`}</span>
     <button class="btn ${w.open?'main':''}" id="wkgo"><span>${w.open?'Play the weekend challenge':'See the final scoreboard'}</span><span aria-hidden="true">→</span></button></div>`;
   document.getElementById('wkgo').onclick=async()=>{if(!w.open)return showChallenge(w.code);const c=await getChal(w.code);if(!c)return;
-    const played=c.entries.some(x=>x.you)||quickList().some(q=>q.chal&&q.chal.code===c.code);played?showChallenge(c.code):quick(c)}})}
+    showWeekendIntro(c)}})}
 function weekendMenu(){weekendNow().then(w=>{const el=document.getElementById('wkmenu');if(!el||!w||!(w.open||wkSoon(w)))return;
   el.innerHTML=`<div class="list in" style="--d:1"><button class="lrow" id="wkm" style="border:2px solid var(--ink);background:var(--acc);color:#2A1A0E;padding-left:14px;padding-right:14px"><span>Weekend challenge${w.open?` · ${esc(w.theme)}`:''}</span><span id="wkmcd">${w.open?`closes in ${leftLabel(w.closes-Date.now())} →`:''}</span></button></div>`;
-  document.getElementById('wkm').onclick=()=>showJoin();
+  document.getElementById('wkm').onclick=()=>w.open&&w.code?openWeekend(w.code):showJoin();
   if(!w.open)wkCountdown(w,'wkmcd',t=>t.startsWith('starting')?'starting soon':`starts in ${t}`)})}
 // a finished challenge game posts its score (one try per person)
 async function postChallenge(res){
   if(!res.chal||res.own)return;
-  await chalApi({action:'play',code:res.chal.code,name:nameNow(),score:res.total,marks:res.answers.map(markA).join('')});
+  await chalApi({action:'play',code:res.chal.code,name:nameNow(),score:res.total,marks:res.answers.map(markA).join(''),points:res.answers.map(a=>a&&a.guess!=null?a.p||0:null)});
 }
 
 // ---------- confirm popup (resolves true/false) ----------
@@ -1941,7 +2040,7 @@ loadData().then(()=>{
   signInReturn().then(handled=>{
     if(handled)return;
     if(code||toMenu)history.replaceState(null,'',location.pathname);
-    const open=()=>code?showChallenge(code):toMenu?showMenu():showStart();
+    const open=()=>code?showChallenge(code):toMenu?showMenu():(abAutoResults()||showStart());
     open();   // the first-visit popup (welcome) is off from Nov 5 2026, to see if more first-time visitors play
     // pull scores from your other devices, then refresh the home screen if it's showing
     if(SESSION)syncNow().then(changed=>{testerCheck();bragCheck();if(changed&&!S&&document.querySelector('.home'))redrawQuietly(showStart)});
