@@ -110,6 +110,8 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .rate-b button.on{background:var(--acc)}
 .rate-b button:focus-visible{outline:3px solid var(--accsh);outline-offset:2px}
 .rate-c{width:100%;font:inherit;font-size:15px;padding:8px 10px;border:2px solid var(--ink);background:var(--card);color:var(--ink);resize:vertical;min-height:64px}
+.navkofi{display:none!important;width:auto!important;padding:0 14px;gap:6px;font-weight:700;font-size:15px;text-decoration:none;color:var(--ink);background:var(--card);white-space:nowrap}
+@media (min-width:1100px){.navkofi{display:inline-flex!important}}
 .kofi{display:inline-flex;align-items:center;gap:6px;margin:4px 0;padding:8px 14px;border:2px solid var(--ink);background:var(--card);color:var(--ink);font-weight:700;font-size:14px;text-decoration:none;box-shadow:3px 3px 0 var(--accsh)}
 .kofi:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--accsh)}
 .dellink{display:block;margin:28px auto 0;background:none;border:0;color:var(--mut);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:6px}
@@ -867,7 +869,7 @@ function awardBadges(res,r){
 // ---------- shared pieces ----------
 const nav=(right='')=>`<header class="nav in" style="--d:0">
   <button class="logo" id="home" aria-label="Home"><span class="m" aria-hidden="true">${BANANA(18)}</span>dailybanana.io</button>
-  <div class="r">${right}<a class="sq icon" id="ig" href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener" aria-label="Daily Banana on Instagram"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a><button class="sq" id="menu">Menu</button></div>
+  <div class="r">${right}<a class="sq navkofi" href="${KOFI}" target="_blank" rel="noopener">🍌 Buy me a banana</a><a class="sq icon" id="ig" href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener" aria-label="Daily Banana on Instagram"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a><button class="sq" id="menu">Menu</button></div>
 </header>`;
 const KOFI='https://ko-fi.com/dougpuccetti';
 // ---------- rating: after a player's 3rd finished daily (1-5 bananas, optional comment) ----------
@@ -924,7 +926,7 @@ function askRating(){
   w.onclick=e=>{if(e.target===w)skip()};
 }
 const kofiBtn=(d)=>`<div class="kofiw in" style="--d:${d}"><a class="kofi" href="${KOFI}" target="_blank" rel="noopener">🍌 Buy me a banana</a></div>`;
-document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.kofi')){log('kofi',{device:DEVICE});if(SHOWN&&document.getElementById('cprow-ab'))abLog('kofi',modeOf(SHOWN.r,SHOWN.res))}});
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('.kofi,.navkofi')){log('kofi',{device:DEVICE,...(e.target.closest('.navkofi')?{where:'nav'}:{})});if(SHOWN&&document.getElementById('cprow-ab'))abLog('kofi',modeOf(SHOWN.r,SHOWN.res))}});
 const footer=(d=12)=>`<div class="foot footer in" style="--d:${d}"><div class="ftxt">© 2026 · Powered by <a href="${SITE}" target="_blank" rel="noopener">Smidgen Games</a> · <button class="vbtn" aria-label="Version ${version()}, see what's new">v${version()}</button><br><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></div></div>`;
 function wireNav(){
   const on=(id,f)=>{const el=document.getElementById(id);if(el)el.onclick=f};
