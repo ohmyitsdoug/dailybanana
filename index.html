@@ -774,8 +774,6 @@ let REGION=null;const regionName=cc=>{try{REGION=REGION||new Intl.DisplayNames([
 function wkStatsHtml(c){
   const st=c.stats;if(!st||!st.players)return board(c);
   const me=c.entries.find(e=>e.you);
-  const top=c.entries.filter(e=>e.rank<=5);if(me&&me.rank>5)top.push(me);
-  const brd=`<div class="board">${top.map(e=>`<div class="${e.you?'you':''}"><span class="n num">${e.rank}</span><span class="nm">${esc(e.name)}${e.you?' (you)':''}</span><span>${esc(e.marks||'')}</span><b class="num">${fmt(e.score)}</b></div>`).join('')}</div>`;
   const mx=Math.max(1,...st.spread),mine=me?Math.min(11,Math.floor(me.score/50)):-1;
   const spread=`<div class="spread" role="img" aria-label="Score spread for ${fmt(st.players)} players${me?`, your score ${me.score} is highlighted`:''}">${st.spread.map((n,i)=>`<i class="${i===mine?'me':''}" style="height:${Math.max(3,Math.round(100*n/mx))}%"></i>`).join('')}</div><div class="spread-x"><span>0</span><span>average ${fmt(st.avg)}</span><span>600</span></div>`;
   let qs='';
@@ -786,7 +784,6 @@ function wkStatsHtml(c){
   const ctry=`<div class="wkc">${cs.map((x,i)=>`<div><span class="n num">${i+1}</span><span class="nm">${FLAG(x.cc)} ${esc(regionName(x.cc))}</span><span class="note">${fmt(x.players)} players</span><b class="num">${fmt(x.avg)}</b></div>`).join('')}</div>${cs.length<5?`<span class="note">${cs.length?'More countries appear as people play.':`Countries appear once ${st.min_country} people from the same country have played.`}</span>`:''}`;
   return`<div class="wks">
     <span class="note">${me?`You’re <b style="color:var(--ink)">${ordinal(me.rank)}</b> of ${fmt(st.players)} players`:`${fmt(st.players)} players so far`} · ${c.open?`closes in ${leftLabel(c.closes-Date.now())}`:'final results'}</span>
-    <span class="eyebrow">Leaderboard</span>${brd}
     <span class="eyebrow">Score spread</span><div>${spread}</div>
     ${qs?`<span class="eyebrow">Rounds</span>${qs}`:''}
     <span class="eyebrow">Top countries</span>${ctry}
@@ -1833,7 +1830,7 @@ async function chalBox(res){
   const put=h=>{const b=document.getElementById('chalbox');if(b)b.innerHTML=`<div class="chal">${h}</div>`;return!!b};
   if(res.chal){   // a challenge game (yours or a friend's): show the scoreboard
     const c=await getChal(res.chal.code);if(!c)return;
-    if(c.weekend){put(`<h3>${chalName(c)}</h3>${wkStatsHtml(c)}<button class="btn" id="viewch">Full scoreboard</button>`);const v=document.getElementById('viewch');if(v)v.onclick=()=>showChallenge(c.code);return}
+    if(c.weekend){put(`<h3>${chalName(c)}</h3>${wkStatsHtml(c)}`);return}
     if(!put(`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3>${res.own?'Your challenge':chalName(c)}</h3><button class="codechip" id="cpcode" aria-label="Copy challenge code ${esc(c.code)}">${esc(c.code)} ${ICON.copy}</button></div><span class="note">${status(c)}</span>${board(c)}${c.open?shareLinkRow(c.code):''}
       <div class="two">${c.mine&&c.open?'<button class="btn" id="closech">Close it</button>':''}<button class="btn" id="viewch">Scoreboard</button></div>`))return;
     wireLink(c.code,c.host);wireCode(c.code);
@@ -1925,7 +1922,7 @@ async function showChallenge(code){USE.other=1;
     <div class="in" style="--d:2">${c.weekend?wkStatsHtml(c):board(c)}</div>
     ${c.open&&!played?`<div class="chal in" style="--d:3"><h3>Your turn</h3><span class="note">Six questions, 25 seconds each. You get one try.</span>${nameNote()}<button class="btn main" id="playch"><span>Play the challenge</span><span aria-hidden="true">→</span></button><span class="note" id="cherr"></span></div>`:''}
     ${c.open&&(c.mine||ownChal(c.code))?`<div class="chal in" style="--d:3"><h3>Share it</h3>${shareLinkRow(c.code)}${c.mine?'<button class="btn" id="closech">Close challenge now</button>':''}</div>`:''}
-    ${!c.open?`<div class="note in" style="--d:3">This challenge is closed. ${c.entries[0]?`${esc(c.entries[0].name)} came out on top.`:''}${c.weekend?' Results go up Monday morning on <a href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener">Instagram</a>.':''}</div>`:''}
+    ${!c.open?`<div class="note in" style="--d:3">This challenge is closed. ${c.entries[0]&&!c.weekend?`${esc(c.entries[0].name)} came out on top.`:''}${c.weekend?' Results go up Monday morning on <a href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener">Instagram</a>.':''}</div>`:''}
   </div>${footer(5)}`;
   wireNav();wireLink(c.code,c.host);wireCode(c.code);
   document.getElementById('back').onclick=showStart;

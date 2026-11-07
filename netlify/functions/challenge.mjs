@@ -51,9 +51,9 @@ async function view(store, code, device, user) {
     .sort((a, b) => b.score - a.score || a.at - b.at)
     .map((e, i) => ({ ...e, rank: i + 1 }));
   let stats = null;
-  if (c.weekend) {   // the weekend sends a short board: the top 10 plus your own row, with the numbers for everyone
+  if (c.weekend) {   // no leaderboard of names for the weekend (it invites cheating): only your own row, for your place, plus everyone's totals
     stats = weekendStats(raw.filter((e) => Number.isFinite(e.score)));
-    entries = entries.filter((e) => e.rank <= 10 || e.you);
+    entries = entries.filter((e) => e.you);
   }
   return { code, host: c.host, weekend: c.weekend || null, rounds: c.rounds, created: c.created, closes: c.closes, open: isOpen(c), closed: !!c.closed, mine: owns(c, device, user), entries, ...(stats ? { stats } : {}) };
 }
