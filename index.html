@@ -1296,7 +1296,7 @@ async function showFact(r){
 // A: your rounds, then sharing and Play again (as before) · B: score as "505 / 600", sharing and Play again above the rounds,
 // and a return visit after finishing today's daily opens on the results. Each device keeps its version for the whole test.
 // When the test ends (or a winner is set here), everyone gets AB_WINNER (A until one is picked).
-const AB_TEST='res1',AB_ENDS=Date.parse('2026-11-11T05:00:00Z'),AB_WINNER=null;
+const AB_TEST='res1',AB_ENDS=Date.parse('2026-11-11T05:00:00Z'),AB_WINNER='B';   // B won (Nov 7): score as N / 600, share block above the rounds, results open once per session
 const abLive=()=>!AB_WINNER&&Date.now()<AB_ENDS;
 function abVersion(){if(AB_WINNER)return AB_WINNER;if(!abLive())return'A';
   let v=store.get('ab:'+AB_TEST,null);if(v!=='A'&&v!=='B'){v=Math.random()<.5?'A':'B';store.set('ab:'+AB_TEST,v)}return v}
