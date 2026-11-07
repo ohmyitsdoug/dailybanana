@@ -1912,7 +1912,7 @@ function renderHistory(){
   box.innerHTML=(slice.map(g=>{
     if(g.d)return`<button class="lrow" data-n="${g.d.n}"><span>Daily #${pad3(g.d.n)} · ${fmtDate(g.d.date)}</span><b>${fmt(g.res.total)}</b></button>`;
     const q=g.q,when=`${fmtDate(dateOf(q.at))} ${timeLabel(q.at)}`;
-    if(q.chal)return`<button class="lrow" data-ch="${esc(q.chal.code)}"><span><span class="hl" title="${q.own?'Your challenge':`Challenge from ${esc(q.chal.host)}`}" aria-label="Challenge">Ch</span> ${q.own?'':`from ${esc(q.chal.host)} · `}${when}</span><span style="display:flex;gap:8px;align-items:center"><span class="chip" data-chip="${esc(q.chal.code)}" hidden></span><b>${fmt(q.total)}</b></span></button>`;
+    if(q.chal)return`<button class="lrow" data-ch="${esc(q.chal.code)}"><span><span class="hl" title="${q.chal.weekend?'Weekend challenge':q.own?'Your challenge':`Challenge from ${esc(q.chal.host)}`}" aria-label="Challenge">Ch</span> ${q.chal.weekend?'Weekend · ':q.own?'':`from ${esc(q.chal.host)} · `}${when}</span><span style="display:flex;gap:8px;align-items:center"><span class="chip" data-chip="${esc(q.chal.code)}" hidden></span><b>${fmt(q.total)}</b></span></button>`;
     // a quick game can be opened (to make a challenge link) only within an hour of finishing it
     return now-q.at<CHALLENGE_WITHIN?`<button class="lrow" data-q="${q.id}"><span>Quick play · ${when}</span><b>${fmt(q.total)}</b></button>`
       :`<div class="lrow old" aria-disabled="true"><span>Quick play · ${when}</span><b>${fmt(q.total)}</b></div>`;
