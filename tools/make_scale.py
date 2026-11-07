@@ -30,7 +30,7 @@ for i in items:
     i['unit'] = i['name'] in CORE
     if i['unit']: i['core'] = True
 # renamed items keep their old names in 'was', so challenges and saved games made before the rename still find them
-RENAMED = {'American football field': ['football field']}
+RENAMED = {'American football field': ['football field'], 'Meteor Crater in Arizona': ['meteor crater']}
 for i in items:
     if i['name'] in RENAMED: i['was'] = RENAMED[i['name']]
 # exact sizes (tools/exact.txt): everything else is an average, and its questions say so ("the average carrot")
@@ -52,7 +52,7 @@ for a in units:
         for k, (lo, hi) in enumerate(BUCKETS):
             if lo <= r <= hi: pairs[k].append((a['id'], b['id']))
 FROZEN = 4   # dailies #000..FROZEN stay as they are (#004 is Nov 7; the wide/big-vs-big update starts with #005, Nov 8)
-RENAMES = {'football field': 'American football field'}   # old name -> new, so frozen dailies keep pointing at the same item
+RENAMES = {'football field': 'American football field', 'meteor crater': 'Meteor Crater in Arizona'}   # old name -> new, so frozen dailies keep pointing at the same item
 old = {}
 try: old = {d['n']: d for d in json.load(open(os.path.join(HERE, '..', 'data', 'dailies.json')))}
 except Exception: pass

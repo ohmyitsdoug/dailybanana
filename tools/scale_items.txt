@@ -718,7 +718,7 @@ Earth | Earths | the | across | 1274200000 |
 Hubble telescope | Hubble telescopes | the | long | 1330 | 
 Apollo lunar module | lunar modules | an | tall | 700 | 
 Voyager antenna | Voyager antennas | a | across | 370 | 
-meteor crater | meteor craters |  | across | 118600 | 
+Meteor Crater in Arizona | Meteor Craters in Arizona |  | across | 118600 | 
 # ---- kitchen & food (more) ----
 measuring cup | measuring cups | a | tall | 10 | u
 spatula | spatulas | a | long | 30 | u
