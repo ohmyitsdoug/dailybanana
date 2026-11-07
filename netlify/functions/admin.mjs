@@ -154,6 +154,24 @@ export async function report(store, { from, to, origin = process.env.URL || 'htt
   // C. the daily
   const dR = dailies.filter((g) => inR(g.day, from, to));
   const dS = dR.filter((g) => !isOut(g, RV));   // score numbers leave out games set aside in Games to review
+  // fun "cheater report" numbers for the range (counts only, no names): perfect games, very fast games, too many exact answers
+  const cheats = (() => {
+    const ex = (g) => (g.points || []).filter((x) => x >= 100).length, msOf = (g) => (g.ms > 0 ? g.ms : null);
+    const fast = dR.filter((g) => msOf(g)), honest = dS.filter((g) => msOf(g)).map(msOf).sort((x, y) => x - y);
+    const sc = dS.map((g) => g.score || 0), hist = [0, 0, 0, 0];
+    for (const g of dS) hist[Math.min(3, ex(g))]++;
+    return {
+      games: dR.length, counted: dS.length, left_out: dR.length - dS.length,
+      perfect600: dR.filter((g) => (g.score || 0) >= 600).length,
+      under25s: fast.filter((g) => msOf(g) < 25e3).length, under30s: fast.filter((g) => msOf(g) < 30e3).length,
+      fastest_s: fast.length ? Math.round(Math.min(...fast.map(msOf)) / 100) / 10 : null,
+      honest_median_s: honest.length ? Math.round(honest[Math.floor(honest.length / 2)] / 1000) : null,
+      exact3plus: dR.filter((g) => ex(g) >= 3).length,
+      honest_exact_pct: dS.length ? { none: pct(hist[0], dS.length), one: pct(hist[1], dS.length), two: pct(hist[2], dS.length), three_plus: pct(hist[3], dS.length) } : null,
+      honest_avg: sc.length ? Math.round(sc.reduce((x, y) => x + y, 0) / sc.length) : null, honest_best: sc.length ? Math.max(...sc) : null,
+      golden_players: new Set(dS.filter((g) => ex(g) >= 1).map((g) => g.device)).size,
+    };
+  })();
   const sD = startsD.map((s) => ({ ...s, n: +s.key.split('/')[2], device: s.key.split('/')[3] })).filter((s) => inR(s.day, from, to));
   const startsTracked = to >= SINCE.starts;
   const startedKeys = new Set(sD.map((s) => `${s.device}|${s.n}`));
@@ -388,5 +406,5 @@ export async function report(store, { from, to, origin = process.env.URL || 'htt
   }
   toReview.sort((a, b) => b.day.localeCompare(a.day) || b.score - a.score);
 
-  return ({ depth, ab, ads, meta: { connected: !!meta.connected, at: meta.at || null, error: meta.error || null }, review: toReview, from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
+  return ({ cheats, depth, ab, ads, meta: { connected: !!meta.connected, at: meta.at || null, error: meta.error || null }, review: toReview, from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
 };

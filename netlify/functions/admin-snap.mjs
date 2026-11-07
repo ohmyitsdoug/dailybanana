@@ -7,7 +7,7 @@ import { report, presets, saveSnap } from './admin.mjs';
 export default async () => {
   const store = db(), t0 = Date.now();
   for (const [p, [from, to]] of Object.entries(presets())) {
-    try { await saveSnap(store, p, await report(store, { from, to, reuse: 5 * 60e3 })); }
+    try { const d = await report(store, { from, to, reuse: 5 * 60e3 }); await saveSnap(store, p, d); if (p === 'all') console.log('cheater report', JSON.stringify(d.cheats)); }
     catch (e) { console.log('admin snap failed', p, e && e.message); }
   }
   console.log('admin snaps', Date.now() - t0, 'ms');
