@@ -1986,6 +1986,7 @@ function showJoin(prefill=''){
   clearInterval(tick);S=null;
   app.innerHTML=`${nav()}<div class="narrow" style="display:flex;flex-direction:column;gap:14px;max-width:520px">
     <div class="head in" style="--d:1"><h2>Join a challenge</h2><button class="sq" id="back">Home</button></div>
+    <div id="wkbar"></div>
     <p class="in" style="--d:1;margin:0">Got a challenge code from a friend or from our posts? Type it in to play the same 6 questions.</p>
     <form id="joinf" class="in" style="--d:2;display:flex;flex-direction:column;gap:12px" autocomplete="off">
       <input class="codein" id="code" maxlength="8" placeholder="ABC234" aria-label="Challenge code" autocapitalize="characters" spellcheck="false" value="${esc(prefill)}">
@@ -2023,6 +2024,11 @@ function wkCountdown(w,id,fmtFn){clearInterval(wkTick);
     el.textContent=fmtFn(ms<3600e3?`${Math.floor(ms/60000)}m ${String(Math.floor(ms/1000)%60).padStart(2,'0')}s`:leftLabel(ms))};
   upd();wkTick=setInterval(upd,1000)}
 function weekendCard(){weekendNow().then(w=>{const el=document.getElementById('wkcard');if(!el||!w)return;
+  // phones: an open weekend challenge you haven't played is a slim bar at the top, above the code box (the keyboard covers the bottom)
+  const bar=document.getElementById('wkbar');
+  if(bar&&w.open&&w.code&&!wkPlayed(w.code)&&matchMedia('(max-width:1099px)').matches){
+    bar.innerHTML=`<div class="list in" style="--d:1"><button class="lrow" id="wkb" style="border:2px solid var(--ink);background:var(--acc);color:#2A1A0E;padding-left:14px;padding-right:14px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Weekend challenge · ${esc(w.theme)}</span><span style="flex:none;font-weight:700">Play →</span></button></div>`;
+    document.getElementById('wkb').onclick=()=>openWeekend(w.code);return}
   if(wkSoon(w)){el.innerHTML=`<div class="chal in" style="--d:1"><span class="eyebrow">This weekend</span><h3>Weekend challenge</h3>
       <span class="note">A new themed challenge: 6 questions, each measured with something from a surprise theme. Open until midnight Pacific on Sunday.</span>
       <div class="btn" role="status" aria-live="polite" style="cursor:default;justify-content:center;background:var(--acc);color:#2A1A0E"><span id="wkcd">Starting in…</span></div></div>`;
