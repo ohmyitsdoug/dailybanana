@@ -129,7 +129,9 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .sqr.on.bull.gold{background:#B35C00;color:#fff;box-shadow:inset 0 0 0 2px #F5C400,3px 3px 0 var(--ink);position:relative;z-index:1}   /* orange gold; white text is 4.7:1 */
 .sqr.on.bull.gold .n{color:#fff}
 .sqr .hundo{font-size:22px;line-height:1}
-.sqr .gb{display:block;opacity:1;width:80cqw;aspect-ratio:276/264;margin:-38cqw 0 0;filter:drop-shadow(1.5px 0 0 #B35C00) drop-shadow(-1.5px 0 0 #B35C00) drop-shadow(0 1.5px 0 #B35C00) drop-shadow(0 -1.5px 0 #B35C00);background:url(golden-banana.svg) center/contain no-repeat;flex:none}   /* the golden banana and its star, a bit bigger than the plain banana */
+.sqr .gb{display:block;opacity:1;width:80cqw;aspect-ratio:276/264;margin:-38cqw 0 0;position:relative;flex:none}
+.sqr .gb::before,.sqr .gb::after{content:"";position:absolute;inset:0;background:url(golden-banana.svg) center/contain no-repeat}
+.sqr .gb::before{background-image:url(golden-star.svg);filter:drop-shadow(1.5px 0 0 #B35C00) drop-shadow(-1.5px 0 0 #B35C00) drop-shadow(0 1.5px 0 #B35C00) drop-shadow(0 -1.5px 0 #B35C00)}   /* the outline goes around the star only, not the banana */
 .apsel{flex:1;min-height:44px;border:2px solid var(--ink);background:var(--card);color:var(--ink);font:inherit;font-weight:700;padding:0 10px}
 .apday{border:2px solid var(--ink);background:var(--bg)}
 .apday summary{cursor:pointer;padding:12px 14px;display:flex;flex-direction:column;gap:2px;list-style:none}
@@ -1537,7 +1539,7 @@ async function shareImage(r,res,btn){
       const gold=bull&&p>=100,fill=gold?'#B35C00':bull?CARD:miss?CARD:p>=70?'#8A5A2B':ACC,col=p>=70&&!bull?'#FFF3C9':miss?MUT:INK;
       if(miss){x.fillStyle=fill;x.fillRect(X,sy,sq,sq);x.lineWidth=4;x.strokeStyle=MUT;x.strokeRect(X+2,sy+2,sq-4,sq-4)}else box(X,sy,sq,sq,fill,5);
       x.fillStyle=col;x.textAlign='center';
-      if(bull&&p>=100){const gi=await goldImg(),gw=sq*0.86,gh=gw*264/276,sil=goldOutline(gi,'#B35C00');x.lineWidth=4;x.strokeStyle='#F5C400';x.strokeRect(X+6,sy+6,sq-12,sq-12);{const gx=X+sq/2-gw/2,gy=sy+sq/2-50-gh/2;for(const [dx,dy] of [[5,0],[-5,0],[0,5],[0,-5],[4,4],[-4,4],[4,-4],[-4,-4]])x.drawImage(sil,gx+dx,gy+dy,gw,gh);x.drawImage(gi,gx,gy,gw,gh)}x.fillStyle='#FFFFFF';font(700,34);if(!wkHidden(r,res))x.fillText(String(p),X+sq/2,sy+sq/2+46)}   // an exact guess: the golden banana
+      if(bull&&p>=100){const gi=await goldImg(),gw=sq*0.86,gh=gw*264/276,sil=goldOutline(await starImg(),'#B35C00');x.lineWidth=4;x.strokeStyle='#F5C400';x.strokeRect(X+6,sy+6,sq-12,sq-12);{const gx=X+sq/2-gw/2,gy=sy+sq/2-50-gh/2;for(const [dx,dy] of [[5,0],[-5,0],[0,5],[0,-5],[4,4],[-4,4],[4,-4],[-4,-4]])x.drawImage(sil,gx+dx,gy+dy,gw,gh);x.drawImage(gi,gx,gy,gw,gh)}x.fillStyle='#FFFFFF';font(700,34);if(!wkHidden(r,res))x.fillText(String(p),X+sq/2,sy+sq/2+46)}   // an exact guess: the golden banana
       else if(bull){ban(54,X+sq/2,sy+sq/2-20);font(700,34);if(!wkHidden(r,res))x.fillText(String(p),X+sq/2,sy+sq/2+46)}
       else if(!wkHidden(r,res)){font(700,44);x.fillText(a.guess==null?'–':String(p),X+sq/2,sy+sq/2+16)}
       x.textAlign='left'}
@@ -1561,8 +1563,9 @@ async function shareImage(r,res,btn){
   }catch(e){toast('Couldn\'t make the image')}
   btn.disabled=false;
 }
-// the golden banana as a solid silhouette, drawn around it as an outline in the square's colour so it stands out where it pops out of the square
+// the golden banana's star as a solid silhouette, drawn around it as an outline in the square's colour so it stands out where it pops out of the square
 const goldOutline=(img,col)=>{const c=document.createElement('canvas');c.width=img.naturalWidth||276;c.height=img.naturalHeight||264;const g=c.getContext('2d');g.drawImage(img,0,0,c.width,c.height);g.globalCompositeOperation='source-in';g.fillStyle=col;g.fillRect(0,0,c.width,c.height);return c};
+let STARIMG=null;const starImg=()=>STARIMG||(STARIMG=new Promise(ok=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>ok(i);i.src='golden-star.svg'}));
 let GOLDIMG=null;const goldImg=()=>GOLDIMG||(GOLDIMG=new Promise(ok=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>ok(i);i.src='golden-banana.svg'}));
 // a challenge as a 1080×1350 image to post or send: the score to beat, the code and the link
 async function chalImage(code,host,c,btn){
