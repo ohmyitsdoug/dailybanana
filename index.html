@@ -310,12 +310,12 @@ button.stat{font:inherit;color:inherit;background:var(--bg);text-align:left;curs
 .board .you{font-weight:700}
 /* live dot on Join while the weekend challenge is open and you haven't played it */
 #joinch{position:relative;overflow:visible}
-.live{position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:#E5432F;border:2px solid var(--ink);box-sizing:border-box;z-index:2;pointer-events:none}
-.live::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid #E5432F;animation:livepulse 1.8s ease-out infinite}
-.calm .live::after{animation:none;opacity:0}
+.livedot{position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:#E5432F;border:2px solid var(--ink);box-sizing:border-box;z-index:2;pointer-events:none}
+.livedot::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid #E5432F;animation:livepulse 1.8s ease-out infinite}
+.calm .livedot::after{animation:none;opacity:0}
 .ldot{display:inline-block;flex:none;width:12px;height:12px;border-radius:50%;background:#E5432F;border:2px solid var(--ink);box-sizing:border-box;vertical-align:-1px;margin-right:8px}
 @keyframes livepulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(2.6);opacity:0}}
-@media (prefers-reduced-motion:reduce){.live::after{animation:none;opacity:0}}
+@media (prefers-reduced-motion:reduce){.livedot::after{animation:none;opacity:0}}
 /* weekend intro and weekend stats */
 .wki{display:flex;flex-direction:column;gap:14px;max-width:520px;padding-top:6px}
 @media (min-width:1100px){.wki{padding-top:28px}}
@@ -996,8 +996,8 @@ function showStart(){
   document.getElementById('daily').onclick=()=>res?showResults(p,res):live?leave(p,live):leave(p);
   document.getElementById('quick').onclick=()=>{const q=quickLive();q?leave(q.r,q):quick()};
   document.getElementById('joinch').onclick=()=>showJoin();
-  wkToPlay().then(w=>{const j=document.getElementById('joinch');if(!w||!j||j.querySelector('.live'))return;
-    j.insertAdjacentHTML('beforeend','<span class="live" aria-hidden="true"></span>');j.setAttribute('aria-label','Join a challenge with a code. The weekend challenge is live')});
+  wkToPlay().then(w=>{const j=document.getElementById('joinch');if(!w||!j||j.querySelector('.livedot'))return;
+    j.insertAdjacentHTML('beforeend','<span class="livedot" aria-hidden="true"></span>');j.setAttribute('aria-label','Join a challenge with a code. The weekend challenge is live')});
   preload();
   // after today's daily, count down to the next one (and roll over to it at midnight)
   if(res)tick=setInterval(()=>{const el=document.getElementById('hcd');if(!el)return clearInterval(tick);
