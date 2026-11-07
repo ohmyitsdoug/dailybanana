@@ -4,8 +4,8 @@ import { Canvas } from './raster.mjs';
 
 export const W = 1080, H = 1350;
 const L = 84, R = W - 84;
-export const BANANA_PX = ['..........bb....', '.........bssb...', '.........bssb...', '.........bydb...', '.........byydb..', '.........byydb..', '.........bylydb.', '........bylyydb.', '........bylyydb.', '.......bylyyydb.', '......bylyyyydb.', '....bbylyyyyddb.', '..bbylyyyyyyddb.', '.bylyyyyyyyddb..', 'bsyyyyyyyyddb...', 'bsdddddddbbb....', '.bbbbbbbbb......'];
-const BAN_C = { b: '#3D2411', y: '#FED53C', l: '#FFE46F', d: '#EAA317', s: '#7B4B1F' };
+export const BANANA_PX = ['..........bb...', '.........bssb..', '.........bssb..', '.........bydb..', '.........byydb.', '.........byydb.', '.........bylydb', '........bylyydb', '........bylyydb', '.......bylyyydb', '......bylyyyydb', '....bbylyyyyddb', '..bbylyyyyyyddb', '.bylyyyyyyyddb.', 'bsyyyyyyyyddb..', 'bsdddddddbbb...', '.bbbbbbbbb.....'];
+const BAN_C = { b: '#3D2512', y: '#FED63D', l: '#FFF1A0', d: '#EAA317', s: '#7C4C20' };
 const TH = {
   dark: { bg: '#2A1A0E', ink: '#FFF3C9', mut: '#CDB68C', card: '#382415', acc: '#FFD43B', chipSh: '#FFF3C9', tileSh: '#FFD43B', barBg: '#FFD43B', barInk: '#2A1A0E', barSh: '#FFF3C9' },
   light: { bg: '#FFE36E', ink: '#3B2412', mut: '#6B4F30', card: '#FFFAE0', acc: '#FFD43B', chipSh: '#3B2412', tileSh: '#3B2412', barBg: '#3B2412', barInk: '#FFF0A0', barSh: '#B97E00' },

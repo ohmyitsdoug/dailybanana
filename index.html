@@ -128,9 +128,7 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .cta2 .btn{padding:0 12px;justify-content:center}
 .sqr.on.bull.gold{background:var(--card)}
 .sqr .hundo{font-size:22px;line-height:1}
-.sqr.on.bull.gold{position:relative;overflow:hidden}
-.sqr .gb{display:block;width:96%;aspect-ratio:1;margin:-2% 0 -20%;background:url(golden-banana.svg) center/contain no-repeat;flex:none}
-.sqr.on.bull.gold{justify-content:flex-end;padding-bottom:3px}
+.sqr .gb{display:block;opacity:1;width:56cqw;aspect-ratio:276/264;margin:-3cqw 0 1cqw;background:url(golden-banana.svg) center/contain no-repeat;flex:none}   /* the golden banana and its star, a bit bigger than the plain banana */
 .apsel{flex:1;min-height:44px;border:2px solid var(--ink);background:var(--card);color:var(--ink);font:inherit;font-weight:700;padding:0 10px}
 .apday{border:2px solid var(--ink);background:var(--bg)}
 .apday summary{cursor:pointer;padding:12px 14px;display:flex;flex-direction:column;gap:2px;list-style:none}
@@ -523,35 +521,33 @@ const MAX_PTS=100;
 // two small, two medium and two large answers per game (from Nov 6), in any order; answers stay under ~2,000 so the two things stay comparable
 const BUCKETS=[[2,25],[2,25],[25,250],[25,250],[250,2000],[250,2000]];
 const HOUR=3600e3, CHALLENGE_WITHIN=HOUR;
-// a 16-bit style banana, drawn pixel by pixel (b outline, y yellow, l highlight, d shade, s stem and tip)
+// the pixel banana (15×17, from Doug's Banana_Icon.svg), drawn pixel by pixel (b outline, y yellow, l highlight, d shade, s stem and tip)
 const BANANA_PX=[
-'..........bb....',
-'.........bssb...',
-'.........bssb...',
-'.........bydb...',
-'.........byydb..',
-'.........byydb..',
-'.........bylydb.',
-'........bylyydb.',
-'........bylyydb.',
-'.......bylyyydb.',
-'......bylyyyydb.',
-'....bbylyyyyddb.',
-'..bbylyyyyyyddb.',
-'.bylyyyyyyyddb..',
-'bsyyyyyyyyddb...',
-'bsdddddddbbb....',
-'.bbbbbbbbb......',
-''];
+'..........bb...',
+'.........bssb..',
+'.........bssb..',
+'.........bydb..',
+'.........byydb.',
+'.........byydb.',
+'.........bylydb',
+'........bylyydb',
+'........bylyydb',
+'.......bylyyydb',
+'......bylyyyydb',
+'....bbylyyyyddb',
+'..bbylyyyyyyddb',
+'.bylyyyyyyyddb.',
+'bsyyyyyyyyddb..',
+'bsdddddddbbb...',
+'.bbbbbbbbb.....',
+];
 // colours from the banana vector artwork
-const BAN_C={b:'#3D2411',y:'#FED53C',l:'#FFE46F',d:'#EAA317',s:'#7B4B1F'};
-// the golden banana: a round guessed exactly (100)
-const GOLD_C={b:'#5C3A00',y:'#F5B800',l:'#FFF6C2',d:'#C27A00',s:'#8A5600'};
+const BAN_C={b:'#3D2512',y:'#FED63D',l:'#FFF1A0',d:'#EAA317',s:'#7C4C20'};
 const BANANA=(px=16,C=BAN_C)=>{let r='';
   // one path per colour, each pixel a hair oversized, so a tilted or faded banana shows no seams between pixels
   const P={};BANANA_PX.forEach((row,y)=>[...row].forEach((c,x)=>{if(C[c])P[c]=(P[c]||'')+`M${x-.03} ${y-.03}h1.06v1.06h-1.06z`}));
   Object.entries(P).forEach(([c,d])=>r+=`<path d="${d}" fill="${C[c]}"/>`);
-  return`<svg width="${px}" height="${Math.round(px*17/16)}" viewBox="0 0 16 17" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`};
+  return`<svg width="${px}" height="${Math.round(px*17/15)}" viewBox="0 0 15 17" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`};
 const SITE='https://playsmidgen.com/?utm_source=dailybanana&utm_medium=game&utm_campaign=footer';
 const app=document.getElementById('app');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1503,10 +1499,10 @@ async function rankText(r,res,card=false){
   return b>=50?`Top ${Math.max(1,100-b)}% of players today`:`Better than ${b}% of players today`;
 }
 // ---------- share image: a 1080×1350 card (Instagram portrait), no answers or item names ----------
-// the pixel banana as a small image (16×17, each pixel blown up 16×), cached per palette
+// the pixel banana as a small image (15×17, each pixel blown up 16×), cached per palette
 const SPRITES={};
 function bananaSprite(C){const key=JSON.stringify(C);if(SPRITES[key])return SPRITES[key];
-  const S=16,o=document.createElement('canvas');o.width=16*S;o.height=17*S;const g=o.getContext('2d');
+  const S=16,o=document.createElement('canvas');o.width=15*S;o.height=17*S;const g=o.getContext('2d');
   BANANA_PX.forEach((row,yy)=>[...row].forEach((k,xx)=>{if(C[k]){g.fillStyle=C[k];g.fillRect(xx*S,yy*S,S,S)}}));
   return SPRITES[key]=o}
 async function shareImage(r,res,btn){
@@ -1517,7 +1513,7 @@ async function shareImage(r,res,btn){
     await Promise.all(['500','700'].map(w=>document.fonts.load(`${w} 60px "Space Grotesk"`).catch(()=>{})));
     const font=(w,px)=>{x.font=`${w} ${px}px ${F}`};
     const ban=(px,cx,cy,rot=0,alpha=1,C=BAN_C)=>{const u=px/16;
-      const o=bananaSprite(C),hh=px*17/16;   // drawn whole first, so faded or tilted bananas get no seams
+      const o=bananaSprite(C),hh=px*17/15;   // drawn whole first, so faded or tilted bananas get no seams
       x.save();x.globalAlpha=alpha;x.imageSmoothingEnabled=!!rot;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.drawImage(o,-px/2,-hh/2,px,hh);x.restore()};
     const box=(X,Y,w,h,fill,sh=6,shc=INK,bw=4)=>{x.fillStyle=shc;x.fillRect(X+sh,Y+sh,w,h);x.fillStyle=fill;x.fillRect(X,Y,w,h);x.lineWidth=bw;x.strokeStyle=INK;x.strokeRect(X+bw/2,Y+bw/2,w-bw,h-bw)};
     const L=84,R=W-84,ans=res.answers||[];
@@ -1540,7 +1536,7 @@ async function shareImage(r,res,btn){
       const fill=bull?CARD:miss?CARD:p>=70?'#8A5A2B':ACC,col=p>=70&&!bull?'#FFF3C9':miss?MUT:INK;
       if(miss){x.fillStyle=fill;x.fillRect(X,sy,sq,sq);x.lineWidth=4;x.strokeStyle=MUT;x.strokeRect(X+2,sy+2,sq-4,sq-4)}else box(X,sy,sq,sq,fill,5);
       x.fillStyle=col;x.textAlign='center';
-      if(bull&&p>=100){const gi=await goldImg();x.save();x.beginPath();x.rect(X+4,sy+4,sq-8,sq-8);x.clip();x.drawImage(gi,X+sq/2-sq*0.42,sy+sq/2-20-sq*0.42,sq*0.84,sq*0.84);x.restore();x.fillStyle=col;font(700,34);if(!wkHidden(r,res))x.fillText(String(p),X+sq/2,sy+sq/2+46)}   // an exact guess: the golden banana
+      if(bull&&p>=100){const gi=await goldImg(),gw=sq*0.6,gh=gw*264/276;x.drawImage(gi,X+sq/2-gw/2,sy+sq/2-22-gh/2,gw,gh);x.fillStyle=col;font(700,34);if(!wkHidden(r,res))x.fillText(String(p),X+sq/2,sy+sq/2+46)}   // an exact guess: the golden banana
       else if(bull){ban(54,X+sq/2,sy+sq/2-20);font(700,34);if(!wkHidden(r,res))x.fillText(String(p),X+sq/2,sy+sq/2+46)}
       else if(!wkHidden(r,res)){font(700,44);x.fillText(a.guess==null?'–':String(p),X+sq/2,sy+sq/2+16)}
       x.textAlign='left'}
@@ -1573,7 +1569,7 @@ async function chalImage(code,host,c,btn){
     const INK='#3B2412',MUT='#6B4F30',CARD='#FFFAE0',ACC='#FFD43B',ACCSH='#B97E00',F='"Space Grotesk",system-ui,sans-serif';
     await Promise.all(['500','700'].map(w=>document.fonts.load(`${w} 60px "Space Grotesk"`).catch(()=>{})));
     const font=(w,px)=>{x.font=`${w} ${px}px ${F}`};
-    const ban=(px,cx,cy,rot=0,alpha=1)=>{const o=bananaSprite(BAN_C),hh=px*17/16;x.save();x.globalAlpha=alpha;x.imageSmoothingEnabled=!!rot;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.drawImage(o,-px/2,-hh/2,px,hh);x.restore()};
+    const ban=(px,cx,cy,rot=0,alpha=1)=>{const o=bananaSprite(BAN_C),hh=px*17/15;x.save();x.globalAlpha=alpha;x.imageSmoothingEnabled=!!rot;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.drawImage(o,-px/2,-hh/2,px,hh);x.restore()};
     const box=(X,Y,w,h,fill,sh=6,shc=INK)=>{x.fillStyle=shc;x.fillRect(X+sh,Y+sh,w,h);x.fillStyle=fill;x.fillRect(X,Y,w,h);x.lineWidth=4;x.strokeStyle=INK;x.strokeRect(X+2,Y+2,w-4,h-4)};
     const L=84,R=W-84,wk=c&&c.weekend,mine=c&&c.entries&&c.entries.find(e=>e.you)||(c&&c.entries&&c.entries.find(e=>e.creator));
     x.fillStyle='#FFE36E';x.fillRect(0,0,W,H);ban(200,890,380,-14,.35);
@@ -1602,7 +1598,7 @@ async function drawRound(q,a,{generic=false}={}){
     await Promise.all(['500','700'].map(w=>document.fonts.load(`${w} 60px "Space Grotesk"`).catch(()=>{})));
     const font=(w,px)=>{x.font=`${w} ${px}px ${F}`};
     const ban=(px,cx,cy,rot=0,alpha=1,C=BAN_C)=>{const u=px/16;
-      const o=bananaSprite(C),hh=px*17/16;   // drawn whole first, so faded or tilted bananas get no seams
+      const o=bananaSprite(C),hh=px*17/15;   // drawn whole first, so faded or tilted bananas get no seams
       x.save();x.globalAlpha=alpha;x.imageSmoothingEnabled=!!rot;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.drawImage(o,-px/2,-hh/2,px,hh);x.restore()};
     const box=(X,Y,w,h,fill,sh,shc)=>{x.fillStyle=shc;x.fillRect(X+sh,Y+sh,w,h);x.fillStyle=fill;x.fillRect(X,Y,w,h);x.lineWidth=4;x.strokeStyle=INK;x.strokeRect(X+2,Y+2,w-4,h-4)};
     const L=84,R=W-84,p=a&&a.guess!=null?a.p||0:0;
@@ -1654,7 +1650,7 @@ async function drawCover(){
   const W=1640,H=624,cv=document.createElement('canvas');cv.width=W;cv.height=H;const x=cv.getContext('2d');
   await document.fonts.load('700 60px "Space Grotesk"').catch(()=>{});
   const INK='#FFF3C9',CARD='#382415',ACC='#FFD43B',sp=bananaSprite(BAN_C);
-  const ban=(cx,cy,px,rot,a)=>{const h=px*17/16;x.save();x.globalAlpha=a;x.imageSmoothingEnabled=!!rot;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.drawImage(sp,-px/2,-h/2,px,h);x.restore()};
+  const ban=(cx,cy,px,rot,a)=>{const h=px*17/15;x.save();x.globalAlpha=a;x.imageSmoothingEnabled=!!rot;x.translate(cx,cy);x.rotate(rot*Math.PI/180);x.drawImage(sp,-px/2,-h/2,px,h);x.restore()};
   x.fillStyle='#2A1A0E';x.fillRect(0,0,W,H);
   [[150,140,150,-18,.22],[360,470,110,22,.18],[110,520,90,8,.14],[560,90,80,-30,.14],[1500,130,160,24,.22],[1290,500,120,-14,.18],[1560,470,90,40,.14],[1090,80,80,12,.14],[760,560,70,-8,.12],[880,60,60,30,.1]].forEach(a=>ban(...a));
   const T='dailybanana.io';x.font='700 112px "Space Grotesk",system-ui,sans-serif';const tw=x.measureText(T).width,tile=176,gap=44,X=(W-(tile+gap+tw))/2,Y=(H-tile)/2;
