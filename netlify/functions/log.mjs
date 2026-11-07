@@ -9,7 +9,7 @@
 //   { kind:"visit", …, tz, lang, dev, app }                  also: time zone, language, phone/tablet/desktop, installed app (country comes from Netlify)
 //   { kind:"time", device, secs, sid, use:{daily,quick,other}, h }   seconds actively in the game since the last report
 //   { kind:"backfill", puzzle, score, points, guesses, device } one time: guesses for a daily finished before they were sent
-// Netlify Blobs keys: seen/{device} {first day} · visits/{day}/{device} {first} · plays/{puzzle}/{id} · quick/{day}/{id} · shares/{day}/{id}
+// Netlify Blobs keys: ab/{day}/{id} {test,v,ev,mode} · seen/{device} {first day} · visits/{day}/{device} {first} · plays/{puzzle}/{id} · quick/{day}/{id} · shares/{day}/{id}
 import { db, cleanDevice, day, getAll } from '../lib/db.mjs';
 
 const pts = (x) => (Array.isArray(x) ? x : []).slice(0, 6).map((v) => Math.max(0, Math.min(100, Math.round(+v || 0))));
@@ -60,6 +60,13 @@ export default async (req, context) => {
       await store.setJSON(`plays/${puzzle}/${id()}`, { score: score(b.score), points: pts(b.points), guesses, device, day: today });
     }
     await store.delete(`stats-live/${puzzle}`).catch(() => {});   // so the next results view uses it
+    return new Response('ok');
+  }
+  if (b.kind === 'ab') {   // the results-layout A/B test: a results view or a button tap, with the version the device sees
+    const EV = ['view', 'copy', 'share', 'again', 'weekend', 'kofi'];
+    if (!['A', 'B'].includes(b.v) || !EV.includes(b.ev)) return new Response('skip');
+    const test = String(b.test || '').replace(/[^a-z0-9_-]/gi, '').slice(0, 20), mode = ['daily', 'quick', 'chal'].includes(b.mode) ? b.mode : null;
+    await store.setJSON(`ab/${today}/${id()}`, { test, v: b.v, ev: b.ev, ...(mode ? { mode } : {}), device });
     return new Response('ok');
   }
   if (b.kind === 'quick') {

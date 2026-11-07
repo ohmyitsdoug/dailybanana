@@ -71,10 +71,10 @@ export default async (req) => {
   await metaP;
   const fresh = url.searchParams.get('fresh') === '1', yday = add(today, -1);
   const C = (p, recheck) => getAllCached(store, p, { recheck, fresh });
-  const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users, seenAll, signins, kofi, timeRaw, ratingsRaw, feedbackRaw] = await Promise.all([
+  const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users, seenAll, signins, kofi, timeRaw, ratingsRaw, feedbackRaw, abRaw] = await Promise.all([
     C('plays/', (v) => !Array.isArray(v.guesses) || !v.guesses.length), C('quick/'), C('starts/daily/'), C('starts/quick/'),
     C('visits/'), C('shares/'), getAll(store, 'challenges/'), C('entries/'), getAll(store, 'users/'), C('seen/', (v) => !v.first || (v.first >= yday && !v.src)), C('signins/'), C('kofi/'),
-    getAll(store, `time/`), getAll(store, 'ratings/'), getAll(store, 'feedback/'),
+    getAll(store, `time/`), getAll(store, 'ratings/'), getAll(store, 'feedback/'), C('ab/'),
   ]);
   const RV = await reviews(store);
   // accounts whose name breaks the name rules go back to their original sign-in name (or 'Player')
@@ -258,8 +258,8 @@ export default async (req) => {
   const share = (f) => (tR.length ? pct(tR.filter(f).length, tR.length) : null);
   const where = {
     tracked,
-    countries: tally((v) => v.cc, 15),
-    timezones: tally((v) => v.tz, 12),
+    countries: tally((v) => v.cc),
+    timezones: tally((v) => v.tz),
     languages: tally((v) => (v.lang || '').split('-')[0].toLowerCase(), 8),
     devices: tally((v) => v.dev),
     installed: [...lastVisit.values()].filter((v) => v.app).length,
@@ -296,6 +296,28 @@ export default async (req) => {
       bananas: g.reduce((t, x) => t + ban(x), 0), shares: shares.filter((s) => s.key.split('/')[1] === d).length });
     if (days.length > 400) break;
   }
+  // L. the results-layout A/B test (all of it, not just the range): per version, who saw results and what they tapped.
+  // The main number is the share of viewers who copied or shared at least once (each device counts once).
+  const AB_TEST = 'res1', abE = abRaw.filter((x) => x.test === AB_TEST && (x.v === 'A' || x.v === 'B'));
+  const abSide = (v) => {
+    const e = abE.filter((x) => x.v === v), devs = (ev) => new Set(e.filter((x) => (Array.isArray(ev) ? ev.includes(x.ev) : x.ev === ev)).map((x) => x.device));
+    const viewers = devs('view'), sharers = [...devs(['copy', 'share'])].filter((d) => viewers.has(d));
+    const count = (ev) => e.filter((x) => x.ev === ev).length;
+    return { viewers: viewers.size, views: count('view'), copy: count('copy'), share: count('share'), again: count('again'), weekend: count('weekend'), kofi: count('kofi'),
+      sharers: sharers.length, rate: viewers.size ? pct(sharers.length, viewers.size) : null,
+      again_devs: [...devs('again')].filter((d) => viewers.has(d)).length };
+  };
+  const abA = abSide('A'), abB = abSide('B');
+  // two-proportion test on "viewers who copied or shared": how sure we can be the gap isn't luck
+  let abConf = null;
+  if (abA.viewers && abB.viewers) {
+    const p1 = abA.sharers / abA.viewers, p2 = abB.sharers / abB.viewers, pp = (abA.sharers + abB.sharers) / (abA.viewers + abB.viewers);
+    const se = Math.sqrt(pp * (1 - pp) * (1 / abA.viewers + 1 / abB.viewers));
+    if (se > 0) { const z = Math.abs(p2 - p1) / se, erf = (x) => { const t = 1 / (1 + 0.3275911 * x); return 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); };
+      abConf = Math.round(1000 * erf(z / Math.SQRT2)) / 10; }
+  }
+  const ab = { test: AB_TEST, ends: '2026-11-11T05:00:00Z', A: abA, B: abB, confidence: abConf };
+
   // J. games to review: daily games in the range that look too good, plus any already reviewed
   const [itemsD, dailiesD] = await Promise.all(['items', 'dailies'].map((f) => fetch(`${url.origin}/data/${f}.json`).then((r) => r.json()).catch(() => null)));
   const sent = new Map(); for (const p of plays) { const k = `${p.device}|${p.key.split('/')[1]}`; sent.set(k, (sent.get(k) || 0) + 1); }
@@ -316,5 +338,5 @@ export default async (req) => {
   }
   toReview.sort((a, b) => b.day.localeCompare(a.day) || b.score - a.score);
 
-  return json({ ads, meta: { connected: !!meta.connected, at: meta.at || null, error: meta.error || null }, review: toReview, from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
+  return json({ ab, ads, meta: { connected: !!meta.connected, at: meta.at || null, error: meta.error || null }, review: toReview, from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
 };

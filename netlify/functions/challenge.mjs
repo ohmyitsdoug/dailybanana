@@ -8,7 +8,7 @@
 //   challenges/{code}           { code, rounds, creator, host, created, closes, closed }
 //   entries/{code}/{device}     { name, score, marks, at }
 //   hosting/{device}            { code, closes }   one open challenge per person
-import { db, json, cleanDevice, getAll } from '../lib/db.mjs';
+import { db, json, cleanDevice, getAll, getAllCached } from '../lib/db.mjs';
 import { userFor } from '../lib/auth.mjs';
 // a signed-in creator owns the challenge on every device they use, not just the one they made it on
 const owns = (c, device, user) => !!c && ((!!device && c.creator === device) || (!!user && !!c.uid && c.uid === user.uid));
@@ -21,20 +21,44 @@ import { boardName } from '../lib/names.mjs';
 const cleanName = (s) => boardName(String(s || '').replace(/[<>"&]/g, '').replace(/\s+/g, ' ').trim().slice(0, 16));   // name rules: lib/names.mjs
 const cleanScore = (n) => Math.max(0, Math.min(MAX, Math.round(+n || 0)));
 const cleanMarks = (s) => [...String(s || '')].slice(0, ROUNDS).join('');
+// each round's points (0-100, null = no guess), for the weekend stats
+const cleanPoints = (a) => (Array.isArray(a) && a.length === ROUNDS ? a.map((x) => (x == null || !Number.isFinite(+x) ? null : Math.max(0, Math.min(100, Math.round(+x))))) : null);
+const ccOf = (context) => String((context && context.geo && context.geo.country && context.geo.country.code) || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+const MIN_COUNTRY = 30;   // a country needs this many players to appear in the weekend's top countries
+const avg = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
+// the weekend challenge's numbers: score spread, how each round went, top countries (totals only, never names)
+function weekendStats(all) {
+  const scores = all.map((e) => e.score);
+  const spread = Array.from({ length: 12 }, (_, i) => scores.filter((x) => (i === 11 ? x >= 550 : x >= i * 50 && x < i * 50 + 50)).length);
+  const withPts = all.filter((e) => Array.isArray(e.points));
+  const rounds = Array.from({ length: ROUNDS }, (_, i) => { const v = withPts.map((e) => e.points[i] ?? 0); return v.length ? Math.round(avg(v)) : null; });
+  const by = new Map();
+  for (const e of all) if (e.cc) { const r = by.get(e.cc) || []; r.push(e.score); by.set(e.cc, r); }
+  const countries = [...by].filter(([, v]) => v.length >= MIN_COUNTRY).map(([cc, v]) => ({ cc, players: v.length, avg: Math.round(avg(v)) }))
+    .sort((a, b) => b.avg - a.avg || b.players - a.players).slice(0, 5);
+  return { players: all.length, avg: scores.length ? Math.round(avg(scores)) : null, spread, rounds, rounds_n: withPts.length, countries, min_country: MIN_COUNTRY };
+}
 const isOpen = (c, now = Date.now()) => c && !c.closed && c.closes > now;
 
 async function view(store, code, device, user) {
   const c = await store.get(`challenges/${code}`, { type: 'json' }).catch(() => null);
   if (!c) return null;
-  const entries = (await getAll(store, `entries/${code}/`))
+  const raw = c.weekend ? await getAllCached(store, `entries/${code}/`) : await getAll(store, `entries/${code}/`);   // weekend: thousands of entries, so cached
+  let entries = raw
     // "you" by this device, or by the signed-in account (its creator entry, or an entry it played from another device)
     .map((e) => ({ name: e.name, score: e.score, marks: e.marks, at: e.at, creator: e.key.endsWith('/' + c.creator),
       you: (!!device && e.key.endsWith('/' + device)) || (!!user && ((!!e.uid && e.uid === user.uid) || (!!c.uid && c.uid === user.uid && e.key.endsWith('/' + c.creator)))) }))
-    .sort((a, b) => b.score - a.score || a.at - b.at);
-  return { code, host: c.host, weekend: c.weekend || null, rounds: c.rounds, created: c.created, closes: c.closes, open: isOpen(c), closed: !!c.closed, mine: owns(c, device, user), entries };
+    .sort((a, b) => b.score - a.score || a.at - b.at)
+    .map((e, i) => ({ ...e, rank: i + 1 }));
+  let stats = null;
+  if (c.weekend) {   // no leaderboard of names for the weekend (it invites cheating): only your own row, for your place, plus everyone's totals
+    stats = weekendStats(raw.filter((e) => Number.isFinite(e.score)));
+    entries = entries.filter((e) => e.you);
+  }
+  return { code, host: c.host, weekend: c.weekend || null, rounds: c.rounds, created: c.created, closes: c.closes, open: isOpen(c), closed: !!c.closed, mine: owns(c, device, user), entries, ...(stats ? { stats } : {}) };
 }
 
-export default async (req) => {
+export default async (req, context) => {
   const store = db(), now = Date.now();
   const user = await userFor(req, store).catch(() => null);
   if (req.method === 'GET') {
@@ -79,7 +103,10 @@ export default async (req) => {
   if (b.action === 'play') {
     if (!isOpen(c, now)) return json({ error: 'This challenge is closed.', ...(await view(store, code, device, user)) }, 409);
     const have = await store.get(`entries/${code}/${device}`).catch(() => null);
-    if (!have) await store.setJSON(`entries/${code}/${device}`, { name: cleanName(b.name), score: cleanScore(b.score), marks: cleanMarks(b.marks), at: now, uid: user ? user.uid : null });
+    if (!have) {
+      const pts = cleanPoints(b.points), cc = ccOf(context);
+      await store.setJSON(`entries/${code}/${device}`, { name: cleanName(b.name), score: cleanScore(b.score), marks: cleanMarks(b.marks), at: now, uid: user ? user.uid : null, ...(pts ? { points: pts } : {}), ...(cc ? { cc } : {}) });
+    }
     return json(await view(store, code, device, user));
   }
   if (b.action === 'close') {
