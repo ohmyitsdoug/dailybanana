@@ -313,6 +313,7 @@ button.stat{font:inherit;color:inherit;background:var(--bg);text-align:left;curs
 .live{position:absolute;top:-7px;right:-7px;width:16px;height:16px;border-radius:50%;background:#E5432F;border:2px solid var(--ink);box-sizing:border-box;z-index:2;pointer-events:none}
 .live::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid #E5432F;animation:livepulse 1.8s ease-out infinite}
 .calm .live::after{animation:none;opacity:0}
+.ldot{display:inline-block;flex:none;width:12px;height:12px;border-radius:50%;background:#E5432F;border:2px solid var(--ink);box-sizing:border-box;vertical-align:-1px;margin-right:8px}
 @keyframes livepulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(2.6);opacity:0}}
 @media (prefers-reduced-motion:reduce){.live::after{animation:none;opacity:0}}
 /* weekend intro and weekend stats */
@@ -2027,20 +2028,20 @@ function weekendCard(){weekendNow().then(w=>{const el=document.getElementById('w
   // phones: an open weekend challenge you haven't played is a slim bar at the top, above the code box (the keyboard covers the bottom)
   const bar=document.getElementById('wkbar');
   if(bar&&w.open&&w.code&&!wkPlayed(w.code)&&matchMedia('(max-width:1099px)').matches){
-    bar.innerHTML=`<div class="list in" style="--d:1"><button class="lrow" id="wkb" style="border:2px solid var(--ink);background:var(--acc);color:#2A1A0E;padding-left:14px;padding-right:14px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Weekend challenge · ${esc(w.theme)}</span><span style="flex:none;font-weight:700">Play →</span></button></div>`;
+    bar.innerHTML=`<div class="list in" style="--d:1"><button class="lrow" id="wkb" aria-label="Play the weekend challenge: ${esc(w.theme)}" style="border:2px solid var(--ink);background:var(--acc);color:#2A1A0E;padding-left:14px;padding-right:14px"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><span class="ldot" aria-hidden="true"></span>Weekend · ${esc(w.theme)}</span><span style="flex:none;font-weight:700">Play →</span></button></div>`;
     document.getElementById('wkb').onclick=()=>openWeekend(w.code);return}
   if(wkSoon(w)){el.innerHTML=`<div class="chal in" style="--d:1"><span class="eyebrow">This weekend</span><h3>Weekend challenge</h3>
       <span class="note">A new themed challenge: 6 questions, each measured with something from a surprise theme. Open until midnight Pacific on Sunday.</span>
       <div class="btn" role="status" aria-live="polite" style="cursor:default;justify-content:center;background:var(--acc);color:#2A1A0E"><span id="wkcd">Starting in…</span></div></div>`;
     return wkCountdown(w,'wkcd',t=>t.startsWith('starting')?'Starting any moment…':`Starting in ${t}`)}
   if(!w.code)return;
-  el.innerHTML=`<div class="chal in" style="--d:1"><span class="eyebrow">${w.open?'This weekend':'Last weekend'}</span><h3>${esc(w.theme)}</h3>
+  el.innerHTML=`<div class="chal in" style="--d:1"><span class="eyebrow">${w.open?'This weekend':'Last weekend'}</span><h3>${w.open&&!wkPlayed(w.code)?'<span class="ldot" aria-hidden="true"></span>':''}${esc(w.theme)}</h3>
     <span class="note">${w.open?`6 questions, a different unit each time · closes in ${leftLabel(w.closes-Date.now())}`:`${esc(w.theme)} · closed`}</span>
     <button class="btn ${w.open?'main':''}" id="wkgo"><span>${w.open?'Play the weekend challenge':'See the final scoreboard'}</span><span aria-hidden="true">→</span></button></div>`;
   document.getElementById('wkgo').onclick=async()=>{if(!w.open)return showChallenge(w.code);const c=await getChal(w.code);if(!c)return;
     showWeekendIntro(c)}})}
 function weekendMenu(){weekendNow().then(w=>{const el=document.getElementById('wkmenu');if(!el||!w||!(w.open||wkSoon(w)))return;
-  el.innerHTML=`<div class="list in" style="--d:1"><button class="lrow" id="wkm" style="border:2px solid var(--ink);background:var(--acc);color:#2A1A0E;padding-left:14px;padding-right:14px"><span>Weekend challenge${w.open?` · ${esc(w.theme)}`:''}</span><span id="wkmcd">${w.open?`closes in ${leftLabel(w.closes-Date.now())} →`:''}</span></button></div>`;
+  el.innerHTML=`<div class="list in" style="--d:1"><button class="lrow" id="wkm" style="border:2px solid var(--ink);background:var(--acc);color:#2A1A0E;padding-left:14px;padding-right:14px"><span>${w.open&&w.code&&!wkPlayed(w.code)?'<span class="ldot" aria-hidden="true"></span>':''}Weekend challenge${w.open?` · ${esc(w.theme)}`:''}</span><span id="wkmcd">${w.open?`closes in ${leftLabel(w.closes-Date.now())} →`:''}</span></button></div>`;
   document.getElementById('wkm').onclick=()=>w.open&&w.code?openWeekend(w.code):showJoin();
   if(!w.open)wkCountdown(w,'wkmcd',t=>t.startsWith('starting')?'starting soon':`starts in ${t}`)})}
 // a finished challenge game posts its score (one try per person)
