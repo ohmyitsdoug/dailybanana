@@ -1942,6 +1942,7 @@ async function openChallenges(){
       <h3>${(c.mine||ownChal(c.code))?'Your challenge':chalName(c)}</h3>
       <span class="note">Closes in ${leftLabel(c.closes-Date.now())} · ${tot} played${i>=0?` · you're ${ordinal(i+1)} of ${tot}`:''}</span></button>`}).join('');
   b.querySelectorAll('[data-ch]').forEach(x=>x.onclick=()=>showChallenge(x.dataset.ch));
+  if(cs.some(c=>c.weekend)){const m=document.getElementById('wkmenu');if(m)m.innerHTML=''}   // the weekend is listed here already
 }
 const ownChal=code=>quickList().some(q=>q.own&&q.chal&&q.chal.code===code);
 // challenges you made that have finished: check their final boards for Bragging rights (once a day), even if you never reopen them
@@ -2041,6 +2042,8 @@ function weekendCard(){weekendNow().then(w=>{const el=document.getElementById('w
   document.getElementById('wkgo').onclick=async()=>{if(!w.open)return showChallenge(w.code);const c=await getChal(w.code);if(!c)return;
     showWeekendIntro(c)}})}
 function weekendMenu(){weekendNow().then(w=>{const el=document.getElementById('wkmenu');if(!el||!w||!(w.open||wkSoon(w)))return;
+  // once you've played it, it's already in Open challenges with your place, so don't show it twice
+  if(w.open&&w.code&&(wkPlayed(w.code)||document.querySelector(`#opench [data-ch="${w.code}"]`)))return;
   el.innerHTML=`<div class="list in" style="--d:1"><button class="lrow" id="wkm" style="border:2px solid var(--ink);background:var(--acc);color:#2A1A0E;padding-left:14px;padding-right:14px"><span>${w.open&&w.code&&!wkPlayed(w.code)?'<span class="ldot" aria-hidden="true"></span>':''}Weekend challenge${w.open?` · ${esc(w.theme)}`:''}</span><span id="wkmcd">${w.open?`closes in ${leftLabel(w.closes-Date.now())} →`:''}</span></button></div>`;
   document.getElementById('wkm').onclick=()=>w.open&&w.code?openWeekend(w.code):showJoin();
   if(!w.open)wkCountdown(w,'wkmcd',t=>t.startsWith('starting')?'starting soon':`starts in ${t}`)})}
