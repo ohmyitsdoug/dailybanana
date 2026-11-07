@@ -756,8 +756,8 @@ const wkPlayed=code=>quickList().some(q=>q.chal&&q.chal.code===code);
 // playing the weekend challenge while it's open: no answers, points or colors until it closes
 const wkLive=()=>!!(S&&S.r&&S.r.quick&&S.r.chal&&S.r.chal.weekend&&(S.r.chal.closes?Date.now()<S.r.chal.closes:true));
 // a weekend challenge game while the challenge is still open: answers and per-round points stay hidden
-// the weekend challenge's copy-and-paste result: the score and the theme, nothing about any question or answer
-const wkShareTxt=res=>{const w=res.chal.weekend||{};return`Daily Banana · Weekend challenge #${pad3(w.n||0)}${w.theme?` · ${w.theme}`:''}\n${fmt(res.total)}/${ROUNDS*MAX_PTS}\nCan you beat me? ${location.host||'dailybanana.io'}/weekend`};
+// the weekend challenge's copy-and-paste result: the score, the theme and the round marks, nothing about any question or answer
+const wkShareTxt=res=>{const w=res.chal.weekend||{};return`Daily Banana · Weekend challenge #${pad3(w.n||0)}${w.theme?` · ${w.theme}`:''}\n${fmt(res.total)}/${ROUNDS*MAX_PTS}\n${(res.answers||[]).map(markA).join(' ')}\nCan you beat me? ${location.host||'dailybanana.io'}/weekend`};
 const wkHidden=(r,res)=>{const c=r&&r.quick&&res&&res.chal&&res.chal.weekend?res.chal:null;return!!c&&(c.closes?Date.now()<c.closes:(wkWindow()&&Date.now()-res.at<3*864e5))};
 // Saturday or Sunday in Eastern time, or early Monday before it closes (midnight Pacific): the only times the app asks about it
 const wkWindow=()=>{const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).map(x=>[x.type,x.value]));
@@ -1330,11 +1330,10 @@ function showResults(r,res){
   const title=r.quick?(wkc?`Daily Banana · Weekend challenge #${pad3(wkc.weekend.n||0)}`:res.chal?'Daily Banana · challenge':'Daily Banana · quick play'):`Daily Banana #${pad3(r.n)}`;
   // the weekend challenge keeps its answers (and each round's points) hidden until it closes, so they can't be passed around
   const HIDE=wkHidden(r,res);
-  // while the weekend answers are hidden, the shared text has the score only: no per-round marks that would show which rounds were easy
-  const marks=HIDE?'':res.answers.map(markA).join(' ');   // a space between each mark, so they don't run together
+  const marks=res.answers.map(markA).join(' ');   // a space between each mark, so they don't run together
   const shareTxt=HIDE?wkShareTxt(res):`${title} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n${marks}\n${location.host||'dailybanana.io'}`;
   const SHARE=`<div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(shareTxt)}</div>
-    ${HIDE?'':`<div class="legend-row in" style="--d:4">${LEGEND.split(' · ').map(x=>{const [e,...t]=x.split(' ');return`<span><span class="emo">${e}</span> ${t.join(' ')}</span>`}).join('')}</div>`}
+    ${`<div class="legend-row in" style="--d:4">${LEGEND.split(' · ').map(x=>{const [e,...t]=x.split(' ');return`<span><span class="emo">${e}</span> ${t.join(' ')}</span>`}).join('')}</div>`}
     <div class="cprow in" style="--d:5" id="cprow-ab"><button class="btn main" id="cp"><span id="cpl">Copy results</span>${ICON.copy}</button><button class="btn sharebtn" id="dl" aria-label="Share your results as an image">${ICON.share}</button></div>`;
   const PLAYBTN=`<button class="btn in" style="--d:6;width:100%" id="again">Play again</button>`;
   const PLAY=`<div class="fact in" style="--d:7" id="fact" hidden><span class="eyebrow">Fun fact</span><p id="factt"></p></div>
