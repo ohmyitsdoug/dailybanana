@@ -738,11 +738,15 @@ function quick(chal){
   const wk=chal&&chal.weekend||null;
   const rounds=chal?fromNames(chal.rounds,wk&&wk.unit):randomRounds();
   if(rounds.some(x=>x.a==null||x.b==null))return alertBox('This challenge uses items this version of the game doesn\'t have.');
-  leave({...puzzleFor({rounds}),n:0,quick:true,date:todayISO(),chal:chal?{code:chal.code,host:chal.host,...(wk?{weekend:wk}:{})}:null});
+  leave({...puzzleFor({rounds}),n:0,quick:true,date:todayISO(),chal:chal?{code:chal.code,host:chal.host,...(wk?{weekend:wk,closes:chal.closes}:{})}:null});
 }
 const quickList=()=>store.get('quick',[]);
 // ---------- weekend challenge ----------
 const wkPlayed=code=>quickList().some(q=>q.chal&&q.chal.code===code);
+// playing the weekend challenge while it's open: no answers, points or colors until it closes
+const wkLive=()=>!!(S&&S.r&&S.r.quick&&S.r.chal&&S.r.chal.weekend&&(S.r.chal.closes?Date.now()<S.r.chal.closes:true));
+// a weekend challenge game while the challenge is still open: answers and per-round points stay hidden
+const wkHidden=(r,res)=>{const c=r&&r.quick&&res&&res.chal&&res.chal.weekend?res.chal:null;return!!c&&(c.closes?Date.now()<c.closes:(wkWindow()&&Date.now()-res.at<3*864e5))};
 // Saturday or Sunday in Eastern time, or early Monday before it closes (midnight Pacific): the only times the app asks about it
 const wkWindow=()=>{const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).map(x=>[x.type,x.value]));
   return p.weekday==='Sat'||p.weekday==='Sun'||(p.weekday==='Mon'&&+p.hour<4)};
@@ -783,7 +787,9 @@ function wkStatsHtml(c){
   const cs=st.countries||[];
   const ctry=`<div class="wkc">${cs.map((x,i)=>`<div><span class="n num">${i+1}</span><span class="nm">${FLAG(x.cc)} ${esc(regionName(x.cc))}</span><span class="note">${fmt(x.players)} players</span><b class="num">${fmt(x.avg)}</b></div>`).join('')}</div>${cs.length<5?`<span class="note">${cs.length?'More countries appear as people play.':`Countries appear once ${st.min_country} people from the same country have played.`}</span>`:''}`;
   return`<div class="wks">
-    <span class="note">${me?`You’re <b style="color:var(--ink)">${ordinal(me.rank)}</b> of ${fmt(st.players)} players`:`${fmt(st.players)} players so far`} · ${c.open?`closes in ${leftLabel(c.closes-Date.now())}`:'final results'}</span>
+    ${c.open?'':'<span class="tag" style="align-self:flex-start">Final results</span>'}
+    <span class="note">${c.open?`${me?`You’re <b style="color:var(--ink)">${ordinal(me.rank)}</b> of ${fmt(st.players)} players`:`${fmt(st.players)} players so far`} · live · closes in ${leftLabel(c.closes-Date.now())}`
+      :`${me?`You finished <b style="color:var(--ink)">${ordinal(me.rank)}</b> of ${fmt(st.players)} players`:`${fmt(st.players)} players`}`}</span>
     <span class="eyebrow">Score spread</span><div>${spread}</div>
     ${qs?`<span class="eyebrow">Rounds</span>${qs}`:''}
     <span class="eyebrow">Top countries</span>${ctry}
@@ -931,9 +937,10 @@ const statBoxes=()=>{const sc=playedDailies().map(x=>x.res.total);return`
 // lifetime bananas (rounds scored 90+) from dailies only, so it can't be farmed in quick play
 const dailyBananas=()=>playedDailies().reduce((t,x)=>t+(x.res.answers||[]).filter(a=>(a&&a.p||0)>=90).length,0);
 // one square per round
-function squares(answers,cur){
+function squares(answers,cur,hide){
   let h='';
   for(let i=0;i<ROUNDS;i++){const a=(answers||[])[i];
+    if(hide&&a){h+=`<span class="sqr on" title="Round ${i+1}: locked in"><span>✓</span></span>`;continue}
     h+=a?`<span class="sqr on ${a.guess==null||a.p<40?'miss':a.p>=100?'bull gold':a.p>=90?'bull':a.p>=70?'good':'mid'}" title="Round ${i+1}: ${a.guess==null?'no guess':a.p||0}">${a.guess==null?'✕':a.p>=100?'<span class="gb" aria-hidden="true"></span><span class="n">'+(a.p||0)+'</span>':a.p>=90?BANANA(16)+'<span class="n">'+(a.p||0)+'</span>':a.p||0}</span>`
       :`<span class="sqr ${i===cur?'cur':''}"><span>${i===cur?i+1:'?'}</span></span>`}
   return`<div class="sqrow seven" role="img" aria-label="${(answers||[]).length} of ${ROUNDS} rounds played">${h}</div>`;
@@ -1116,9 +1123,9 @@ function showQuestion(){
       <div class="playtop in" style="--d:0">
         <span class="timer num" id="t">0:${String(Math.ceil(S.left/1000)).padStart(2,'0')}</span>
         <div class="bar" id="bar"><div style="width:${100*S.left/(ROUND_SECONDS*1000)}%"></div></div>
-        <span class="tag pts num">${S.i+1}/${ROUNDS} · ${fmt(S.score)}</span>
+        <span class="tag pts num">${S.i+1}/${ROUNDS}${wkLive()?'':` · ${fmt(S.score)}`}</span>
       </div>
-      <div class="in" style="--d:1">${squares(S.answers,S.i)}</div>
+      <div class="in" style="--d:1">${squares(S.answers,S.i,wkLive())}</div>
       <div class="ask in" style="--d:1"><span class="lab">Approximately how many</span><b>${esc(q.A.plural)}</b><span class="lab">${esc(q.B.dim)} is${q.B.avg?' the average':''}</span><b>${esc(q.B.avg?q.B.name:the(q.B))}?</b></div>
       ${S.r.chal&&S.r.chal.weekend&&((S.r.chal.weekend.hints||[])[S.i]||S.r.chal.weekend.hint)?`<p class="wkhint in" style="--d:1">(${esc((S.r.chal.weekend.hints||[])[S.i]||S.r.chal.weekend.hint)})</p>`:''}
       <form id="f" class="in" style="--d:2" autocomplete="off">
@@ -1194,7 +1201,16 @@ function guessScale(q,a){
 }
 function showReveal(){
   const q=S.r.qs[S.i],a=S.answers[S.i],last=S.i>=ROUNDS-1;
-  app.innerHTML=`<div class="page play reveal">
+  if(wkLive()){   // weekend challenge: the guess is locked in, the answer and points come Monday
+    app.innerHTML=`<div class="page play reveal"><div class="main-col" style="display:flex;flex-direction:column;gap:14px">
+      <div class="playtop in" style="--d:0"><button class="sq icon" id="pause" aria-label="Pause">${ICON.pause}</button><span class="timer">Round ${S.i+1}</span><span class="tag pts num">${S.i+1}/${ROUNDS}</span></div>
+      <div class="in" style="--d:1">${squares(S.answers,null,true)}</div>
+      <b class="score in" style="--d:1;font-size:40px">Locked in</b>
+      <div class="answer in" style="--d:1">${a&&a.guess!=null?`You said <b class="num">${fmt(q.v2?shownAns(a.guess):nice(a.guess))}</b>.`:'Out of time on this one.'}</div>
+      <div class="note in" style="--d:2">Answers and points are revealed Monday, when the weekend challenge closes.</div>
+      <div class="cprow in" style="--d:3"><button class="btn main" id="next"><span>${last?'See results':'Next round'}</span><span aria-hidden="true">→</span></button></div>
+    </div></div>`;
+  } else app.innerHTML=`<div class="page play reveal">
     <div class="main-col" style="display:flex;flex-direction:column;gap:14px">
       <div class="playtop in" style="--d:0"><button class="sq icon" id="pause" aria-label="Pause">${ICON.pause}</button><span class="timer">Round ${S.i+1}</span><span class="tag pts num">${S.i+1}/${ROUNDS} · ${fmt(S.score)}</span></div>
       <div class="in" style="--d:1">${squares(S.answers)}</div>
@@ -1276,7 +1292,10 @@ function abAutoResults(){
 function showResults(r,res){
   clearInterval(tick);
   const LAYOUT=abVersion(),MODE=modeOf(r,res);
-  const title=r.quick?(res.chal?'Daily Banana · challenge':'Daily Banana · quick play'):`Daily Banana #${pad3(r.n)}`;
+  const wkc=r.quick&&res.chal&&res.chal.weekend?res.chal:null;
+  const title=r.quick?(wkc?`Daily Banana · Weekend challenge #${pad3(wkc.weekend.n||0)}`:res.chal?'Daily Banana · challenge':'Daily Banana · quick play'):`Daily Banana #${pad3(r.n)}`;
+  // the weekend challenge keeps its answers (and each round's points) hidden until it closes, so they can't be passed around
+  const HIDE=wkHidden(r,res);
   const marks=res.answers.map(markA).join(' ');   // a space between each mark, so they don't run together
   const shareTxt=`${title} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n${marks}\n${location.host||'dailybanana.io'}`;
   const SHARE=`<div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(title)} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n<span class="emo">${marks}</span>\n${esc(location.host||'dailybanana.io')}</div>
@@ -1296,14 +1315,14 @@ function showResults(r,res){
     ${r.quick?'':`<div class="in" style="--d:1;display:flex;flex-direction:column;gap:2px"><b id="rank" style="font-size:17px">&nbsp;</b></div>`}
     ${(res.badges||[]).length?`<div class="badge-new in" style="--d:2"><b>New badge${res.badges.length>1?'s':''} · ${res.badges.map(id=>BADGES.find(x=>x.id===id).name).join(', ')}</b><span>${res.badges.map(id=>BADGES.find(x=>x.id===id).how).join(' · ')}</span></div>`:''}
 `;
-  const rounds=`    <div class="in" style="--d:2"><div class="eyebrow" style="margin-bottom:4px">Your rounds</div>
+  const rounds=`    <div class="in" style="--d:2"><div class="eyebrow" style="margin-bottom:4px">Your rounds</div>${HIDE?'<p class="note" style="margin:0 0 6px">Answers are hidden until the weekend challenge closes, so nobody can pass them around. Check back Monday.</p>':''}
       ${r.quick?'':`<div class="mlegend" id="mleg" hidden><span><i style="width:10px;height:10px;border-radius:50%;background:var(--ink)"></i>you</span><span><i style="width:8px;height:8px;background:var(--acc);border:2px solid var(--ink);transform:rotate(45deg)"></i>typical player</span><span><i style="width:2px;height:12px;background:var(--accsh)"></i>answer</span></div>`}
       <div class="path">${r.qs.map((q,i)=>{const a=res.answers[i]||{};
         return`<div class="prow round" data-flip="${i}" tabindex="0" aria-expanded="false"><span class="i num">${i+1}</span><span class="w"><b>${esc(question(q).replace(/^Approximately h/,'H'))}</b><br>
-          <span class="t">answer: about ${fmt(q.show)} · ${a.guess!=null?`you: ${fmt(q.v2?shownAns(a.guess):nice(a.guess))}`:'no guess'}<span id="pr${i}"></span></span>
-          <span class="t calc" hidden>${calcLine(q,a)}</span>
+          <span class="t">${HIDE?`${a.guess!=null?`you: ${fmt(q.v2?shownAns(a.guess):nice(a.guess))}`:'no guess'} · answer on Monday`:`answer: about ${fmt(q.show)} · ${a.guess!=null?`you: ${fmt(q.v2?shownAns(a.guess):nice(a.guess))}`:'no guess'}`}<span id="pr${i}"></span></span>
+          ${HIDE?'':`<span class="t calc" hidden>${calcLine(q,a)}</span>`}
           ${r.quick?'':`<span class="mini" id="mini${i}" hidden><span class="c"></span>${a.guess!=null?`<span class="you" style="left:${posOf(a.guess,q.ans).toFixed(1)}%"></span>`:''}</span>`}</span>
-          <span class="num">${a.guess==null?'–':a.p||0}</span></div>`}).join('')}
+          <span class="num">${HIDE?'':a.guess==null?'–':a.p||0}</span></div>`}).join('')}
       </div></div>
     ${r.quick?`<div class="in" style="--d:3" id="chalbox"></div>`:''}
 `;
@@ -1319,7 +1338,7 @@ function showResults(r,res){
     b.innerHTML='<span>Try the weekend challenge</span><span aria-hidden="true">→</span>';b.style.justifyContent='space-between';b.style.padding='0 20px';
     b.onclick=()=>{abLog('weekend',MODE);openWeekend(w.code)}});
   // easter egg: tap a round to swap the short answer line for the math in bananas (tap again to swap back)
-  app.querySelectorAll('[data-flip]').forEach(row=>{const flip=()=>{const [t,c]=row.querySelectorAll('.t'),on=c.hidden;c.hidden=!on;t.hidden=on;row.setAttribute('aria-expanded',String(on))};
+  if(!HIDE)app.querySelectorAll('[data-flip]').forEach(row=>{const flip=()=>{const [t,c]=row.querySelectorAll('.t'),on=c.hidden;c.hidden=!on;t.hidden=on;row.setAttribute('aria-expanded',String(on))};
     row.onclick=e=>{if(e.target.closest('a,button'))return;flip()};row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip()}}});
   SHOWN={r,res};if(r.quick)chalBox(res);else showRank(r,res);
   if(!r.quick&&rateDue())setTimeout(()=>{if(SHOWN&&SHOWN.r===r&&document.getElementById('rank')&&!document.querySelector('.welcome'))askRating()},1500);
@@ -1492,9 +1511,9 @@ async function shareImage(r,res,btn){
       const fill=bull?CARD:miss?CARD:p>=70?'#8A5A2B':ACC,col=p>=70&&!bull?'#FFF3C9':miss?MUT:INK;
       if(miss){x.fillStyle=fill;x.fillRect(X,sy,sq,sq);x.lineWidth=4;x.strokeStyle=MUT;x.strokeRect(X+2,sy+2,sq-4,sq-4)}else box(X,sy,sq,sq,fill,5);
       x.fillStyle=col;x.textAlign='center';
-      if(bull&&p>=100){const gi=await goldImg();x.save();x.beginPath();x.rect(X+4,sy+4,sq-8,sq-8);x.clip();x.drawImage(gi,X+sq/2-sq*0.42,sy+sq/2-20-sq*0.42,sq*0.84,sq*0.84);x.restore();x.fillStyle=col;font(700,34);x.fillText(String(p),X+sq/2,sy+sq/2+46)}   // an exact guess: the golden banana
-      else if(bull){ban(54,X+sq/2,sy+sq/2-20);font(700,34);x.fillText(String(p),X+sq/2,sy+sq/2+46)}
-      else{font(700,44);x.fillText(a.guess==null?'–':String(p),X+sq/2,sy+sq/2+16)}
+      if(bull&&p>=100){const gi=await goldImg();x.save();x.beginPath();x.rect(X+4,sy+4,sq-8,sq-8);x.clip();x.drawImage(gi,X+sq/2-sq*0.42,sy+sq/2-20-sq*0.42,sq*0.84,sq*0.84);x.restore();x.fillStyle=col;font(700,34);if(!wkHidden(r,res))x.fillText(String(p),X+sq/2,sy+sq/2+46)}   // an exact guess: the golden banana
+      else if(bull){ban(54,X+sq/2,sy+sq/2-20);font(700,34);if(!wkHidden(r,res))x.fillText(String(p),X+sq/2,sy+sq/2+46)}
+      else if(!wkHidden(r,res)){font(700,44);x.fillText(a.guess==null?'–':String(p),X+sq/2,sy+sq/2+16)}
       x.textAlign='left'}
     x.fillStyle=INK;x.fillRect(L,878,R-L,4);
     // three stats spread evenly across the width
