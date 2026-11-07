@@ -2,6 +2,7 @@
 // META_AD_ACCOUNT_ID is optional (defaults to Daily Banana's ad account). Kept for 3 hours in meta/ads so the
 // dashboard doesn't ask Meta on every view. Returns { connected, at, campaigns:[{ id, name, status, from, to, spend, impressions, clicks }], error }
 const V = 'v21.0', KEEP = 3 * 3600e3;
+// only campaigns with "Daily Banana" in their name are shown (the ad account also runs Smidgen Games ads)
 const ET = (t) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(t));
 
 async function graph(path, token, tries = 2) {
@@ -37,7 +38,7 @@ export async function metaAds(store, { fresh = false } = {}) {
       const i = byId.get(c.id) || {};
       return { id: c.id, name: c.name, status: c.effective_status, from: c.start_time ? ET(Date.parse(c.start_time)) : null, to: c.stop_time ? ET(Date.parse(c.stop_time)) : null,
         spend: Math.round(100 * (+i.spend || 0)) / 100, impressions: +i.impressions || 0, clicks: +i.clicks || 0 };
-    }).filter((c) => c.spend > 0 || c.status === 'ACTIVE');
+    }).filter((c) => /daily\s*banana/i.test(c.name || ''));   // the ad account is shared with Smidgen: only Daily Banana campaigns
     const out = { connected: true, at: Date.now(), campaigns };
     await store.setJSON('meta/ads', out).catch(() => {});
     return out;
