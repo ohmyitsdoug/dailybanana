@@ -9,7 +9,7 @@
 //   { kind:"visit", …, tz, lang, dev, app }                  also: time zone, language, phone/tablet/desktop, installed app (country comes from Netlify)
 //   { kind:"time", device, secs, sid, use:{daily,quick,other}, h }   seconds actively in the game since the last report
 //   { kind:"backfill", puzzle, score, points, guesses, device } one time: guesses for a daily finished before they were sent
-// Netlify Blobs keys: ab/{day}/{id} {test,v,ev,mode} · seen/{device} {first day} · visits/{day}/{device} {first} · plays/{puzzle}/{id} · quick/{day}/{id} · shares/{day}/{id}
+// Netlify Blobs keys: depth/{day}/{id} {seen,mode,v} · ab/{day}/{id} {test,v,ev,mode} · seen/{device} {first day} · visits/{day}/{device} {first} · plays/{puzzle}/{id} · quick/{day}/{id} · shares/{day}/{id}
 import { db, cleanDevice, day, getAll } from '../lib/db.mjs';
 
 const pts = (x) => (Array.isArray(x) ? x : []).slice(0, 6).map((v) => Math.max(0, Math.min(100, Math.round(+v || 0))));
@@ -60,6 +60,12 @@ export default async (req, context) => {
       await store.setJSON(`plays/${puzzle}/${id()}`, { score: score(b.score), points: pts(b.points), guesses, device, day: today });
     }
     await store.delete(`stats-live/${puzzle}`).catch(() => {});   // so the next results view uses it
+    return new Response('ok');
+  }
+  if (b.kind === 'depth') {   // how far down the results screen a view got (landmarks seen)
+    const OK = ['share', 'rounds', 'fact', 'bottom'], seen = (Array.isArray(b.seen) ? b.seen : []).filter((x) => OK.includes(x));
+    const mode = ['daily', 'quick', 'chal'].includes(b.mode) ? b.mode : null, v = ['A', 'B'].includes(b.v) ? b.v : null;
+    await store.setJSON(`depth/${today}/${id()}`, { seen, ...(mode ? { mode } : {}), ...(v ? { v } : {}), device });
     return new Response('ok');
   }
   if (b.kind === 'ab') {   // the results-layout A/B test: a results view or a button tap, with the version the device sees

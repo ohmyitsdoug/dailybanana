@@ -1295,6 +1295,21 @@ function abVersion(){if(AB_WINNER)return AB_WINNER;if(!abLive())return'A';
 const abLog=(ev,mode)=>{if(abLive())log('ab',{test:AB_TEST,v:abVersion(),ev,mode:mode||null,device:DEVICE})};
 const modeOf=(r,res)=>r.quick?(res.chal?'chal':'quick'):'daily';
 // version B: the first time the game opens in a visit, after today's daily is done, go straight to the results
+// how far people scroll on the results screen: which landmarks came at least half into view, sent once when they leave it
+let DEPTH=null;
+function trackDepth(mode,v){
+  sendDepth();
+  const marks={share:document.getElementById('cprow-ab'),rounds:document.querySelector('.path .prow:last-child'),fact:document.getElementById('factt')&&document.getElementById('factt').closest('.fact'),bottom:document.querySelector('.narrow .foot')};
+  const d=DEPTH={mode,v,seen:new Set(),sent:false,io:null,at:Date.now()};
+  if(!('IntersectionObserver'in window))return;
+  d.io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)d.seen.add(e.target.dataset.mark)}),{threshold:.5});
+  for(const [k,el] of Object.entries(marks))if(el){el.dataset.mark=k;d.io.observe(el)}
+}
+function sendDepth(){const d=DEPTH;if(!d||d.sent)return;d.sent=true;if(d.io)d.io.disconnect();
+  if(Date.now()-d.at<1500)return;   // a results screen left right away isn't a real view
+  log('depth',{device:DEVICE,mode:d.mode,v:d.v,seen:[...d.seen]})}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sendDepth()});
+setInterval(()=>{if(DEPTH&&!DEPTH.sent&&!document.getElementById('cprow-ab'))sendDepth()},2000);   // left the results for another screen
 function abAutoResults(){
   if(abVersion()!=='B'||!TODAY||!saved(TODAY.n))return false;
   try{if(sessionStorage.getItem('db-auto-res'))return false;sessionStorage.setItem('db-auto-res','1')}catch(_){return false}
@@ -1343,7 +1358,7 @@ function showResults(r,res){
   window.scrollTo(0,0);wireNav();
   tick=setInterval(()=>{const cd=document.getElementById('cd');if(cd)cd.textContent=untilMidnight();else clearInterval(tick)},1000);
   document.getElementById('again').onclick=()=>{abLog('again',MODE);quick()};
-  abLog('view',MODE);
+  abLog('view',MODE);trackDepth(MODE,LAYOUT);
   // on a weekend, after the daily: if you haven't played the weekend challenge, Play again becomes the way in
   if(!r.quick)wkToPlay().then(w=>{const b=document.getElementById('again');if(!w||!b||SHOWN.r!==r)return;
     b.innerHTML='<span>Try the weekend challenge</span><span aria-hidden="true">→</span>';b.style.justifyContent='space-between';b.style.padding='0 20px';

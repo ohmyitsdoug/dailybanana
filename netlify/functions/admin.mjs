@@ -71,10 +71,10 @@ export default async (req) => {
   await metaP;
   const fresh = url.searchParams.get('fresh') === '1', yday = add(today, -1);
   const C = (p, recheck) => getAllCached(store, p, { recheck, fresh });
-  const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users, seenAll, signins, kofi, timeRaw, ratingsRaw, feedbackRaw, abRaw] = await Promise.all([
+  const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users, seenAll, signins, kofi, timeRaw, ratingsRaw, feedbackRaw, abRaw, depthRaw] = await Promise.all([
     C('plays/', (v) => !Array.isArray(v.guesses) || !v.guesses.length), C('quick/'), C('starts/daily/'), C('starts/quick/'),
     C('visits/'), C('shares/'), getAll(store, 'challenges/'), C('entries/'), getAll(store, 'users/'), C('seen/', (v) => !v.first || (v.first >= yday && !v.src)), C('signins/'), C('kofi/'),
-    getAll(store, `time/`), getAll(store, 'ratings/'), getAll(store, 'feedback/'), C('ab/'),
+    getAll(store, `time/`), getAll(store, 'ratings/'), getAll(store, 'feedback/'), C('ab/'), C('depth/'),
   ]);
   const RV = await reviews(store);
   // accounts whose name breaks the name rules go back to their original sign-in name (or 'Player')
@@ -316,6 +316,10 @@ export default async (req) => {
     if (se > 0) { const z = Math.abs(p2 - p1) / se, erf = (x) => { const t = 1 / (1 + 0.3275911 * x); return 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); };
       abConf = Math.round(1000 * erf(z / Math.SQRT2)) / 10; }
   }
+  // M. scroll depth on the results screen, in the range: share of views where each landmark came into view (A/B split too)
+  const dR2 = depthRaw.filter((x) => inR(x.key.split('/')[1], from, to));
+  const depthOf = (rows) => ({ views: rows.length, ...Object.fromEntries(['share', 'rounds', 'fact', 'bottom'].map((k) => [k, rows.length ? pct(rows.filter((x) => (x.seen || []).includes(k)).length, rows.length) : null])) });
+  const depth = { all: depthOf(dR2), A: depthOf(dR2.filter((x) => x.v === 'A')), B: depthOf(dR2.filter((x) => x.v === 'B')), since: '2026-11-07' };
   const ab = { test: AB_TEST, ends: '2026-11-11T05:00:00Z', A: abA, B: abB, confidence: abConf };
 
   // J. games to review: daily games in the range that look too good, plus any already reviewed
@@ -338,5 +342,5 @@ export default async (req) => {
   }
   toReview.sort((a, b) => b.day.localeCompare(a.day) || b.score - a.score);
 
-  return json({ ab, ads, meta: { connected: !!meta.connected, at: meta.at || null, error: meta.error || null }, review: toReview, from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
+  return json({ depth, ab, ads, meta: { connected: !!meta.connected, at: meta.at || null, error: meta.error || null }, review: toReview, from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
 };
