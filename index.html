@@ -605,7 +605,7 @@ const SRC=(()=>{let s=store.get('src',null);if(s)return s;
   // ?ref=handle is a creator link Doug sent directly: counted as creator · handle (medium: social).
   // Dashes stand in for underscores (Instagram turns _text_ into italics; handles never contain dashes)
   const cr=(q.get('ref')||'').replace(/^@/,'').replace(/-/g,'_').toLowerCase().replace(/[^a-z0-9_.\-]/g,'').slice(0,40);
-  s=cr?{s:'creator',m:'social',c:cr}:t('utm_source')?{s:t('utm_source'),m:t('utm_medium'),c:t('utm_campaign')}:q.get('fbclid')?{s:'facebook',m:'untagged',c:''}:ref?{s:ref,m:'referral',c:''}:{s:'direct',m:'',c:''};
+  s=cr?{s:'creator',m:'social',c:cr}:t('utm_source')?{s:t('utm_source'),m:t('utm_medium'),c:t('utm_campaign'),...(q.get('fbclid')?{f:1}:{})}:q.get('fbclid')?{s:'facebook',m:'untagged',c:''}:ref?{s:ref,m:'referral',c:''}:{s:'direct',m:'',c:''};
   store.set('src',s);return s})();
 // installable app (Chrome on Windows/Mac/Android): the browser offers it once the service worker is running
 let INSTALL=null;

@@ -201,6 +201,15 @@ export default async (req) => {
   };
 
   // G. where new devices came from (first visit's ad tags / Facebook click / referring site / direct), tracked from Nov 4
+  // Meta ad traffic (Facebook, Instagram, Messenger, Audience Network), however it arrives: a Facebook click id, Meta's own utm_source
+  // values (fb, ig, an, msg), or a facebook.com / instagram.com referral. Tagged organic posts (medium social, bio, organic…) stay out.
+  const isMeta = (x) => {
+    if (!x) return false;
+    const s = String(x.s || ''), m = String(x.m || '');
+    if (x.f) return true;   // arrived with fbclid, even when the link also had utm tags
+    if (/^(fb|facebook|ig|instagram|meta|an|msg|messenger|audience_network|facebook_ads|fb_ads|ig_ads|meta_ads)$/.test(s)) return !/^(social|organic|bio|profile|post|story|stories|reel|dm)$/.test(m);
+    return m === 'referral' && /(^|\.)(facebook\.com|instagram\.com|fb\.com|fb\.me|messenger\.com)$/.test(s);
+  };
   const label = (x) => (!x ? 'before tracking' : x.s === 'direct' ? 'direct' : [x.s, x.c || x.m].filter(Boolean).join(' · '));
   const visitDays = new Map();
   for (const v of visits) { if (!visitDays.has(v.device)) visitDays.set(v.device, new Set()); visitDays.get(v.device).add(v.day); }
@@ -226,13 +235,13 @@ export default async (req) => {
   const adsList = (await store.get('ads', { type: 'json' }).catch(() => null)) || [{ name: 'Dailydle listing', match: 'dailydle', amount: 138.9, from: '2026-11-05', to: '2026-11-12' }];
   // Meta campaigns come in on their own (spend straight from Meta); which visitors they brought is matched by source text, "facebook" unless changed
   const [meta, metaMatch] = await Promise.all([metaP, store.get('ads-meta', { type: 'json' }).catch(() => null)]);
-  const metaRows = (meta.campaigns || []).filter((c) => /daily\s*banana/i.test(c.name || '')).map((c) => ({   // Daily Banana campaigns only, even from an older saved copy meta: true, id: c.id, name: c.name, status: c.status, match: (metaMatch && metaMatch[c.id]) || 'facebook',
+  const metaRows = (meta.campaigns || []).filter((c) => /daily\s*banana/i.test(c.name || '')).map((c) => ({   // Daily Banana campaigns only, even from an older saved copy meta: true, id: c.id, name: c.name, status: c.status, match: (metaMatch && metaMatch[c.id] && metaMatch[c.id] !== 'facebook' && metaMatch[c.id]) || 'meta',
     amount: c.spend, from: c.from || today, to: c.to && c.to < today ? c.to : today, impressions: c.impressions, clicks: c.clicks }));
   const ads = [...metaRows, ...adsList].map((a) => {
     const r = { ...a, running: a.meta ? a.status === 'ACTIVE' : today <= a.to, day: Math.min(span(a.from, a.to), Math.max(0, span(a.from, today))), days: span(a.from, a.to), visitors: 0, played: 0, daily: 0, came_back: 0, signed_in: 0 };
     for (const sn of seenAll) {
       const dev = sn.key.split('/')[1];
-      if (!sn.first || !inR(sn.first, a.from, a.to) || !label(sn.src).toLowerCase().includes(a.match)) continue;
+      if (!sn.first || !inR(sn.first, a.from, a.to) || !(a.match === 'meta' ? isMeta(sn.src) : label(sn.src).toLowerCase().includes(a.match))) continue;
       r.visitors++; if (first.has(dev)) r.played++; if (dailyDevs.has(dev)) r.daily++; if (signedIn.has(dev)) r.signed_in++;
       if ([...(visitDays.get(dev) || []), ...(active.get(dev) || [])].some((d) => d > sn.first)) r.came_back++;
     }

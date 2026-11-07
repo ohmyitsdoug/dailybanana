@@ -16,7 +16,7 @@ const pts = (x) => (Array.isArray(x) ? x : []).slice(0, 6).map((v) => Math.max(0
 const score = (x) => Math.max(0, Math.min(600, Math.round(+x || 0)));
 const ms = (x) => { const n = Math.round(+x || 0); return n > 0 && n < 6 * 60e3 ? n : null; };
 const tag = (x) => String(x || '').toLowerCase().replace(/[^a-z0-9_.\-]/g, '').slice(0, 40);
-const cleanSrc = (x) => (x && typeof x === 'object' && tag(x.s) ? { s: tag(x.s), m: tag(x.m), c: tag(x.c) } : null);
+const cleanSrc = (x) => (x && typeof x === 'object' && tag(x.s) ? { s: tag(x.s), m: tag(x.m), c: tag(x.c), ...(x.f ? { f: 1 } : {}) } : null);   // f: arrived with a Facebook click id
 const id = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 export default async (req, context) => {
