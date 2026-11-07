@@ -756,6 +756,8 @@ const wkPlayed=code=>quickList().some(q=>q.chal&&q.chal.code===code);
 // playing the weekend challenge while it's open: no answers, points or colors until it closes
 const wkLive=()=>!!(S&&S.r&&S.r.quick&&S.r.chal&&S.r.chal.weekend&&(S.r.chal.closes?Date.now()<S.r.chal.closes:true));
 // a weekend challenge game while the challenge is still open: answers and per-round points stay hidden
+// the weekend challenge's copy-and-paste result: the score and the theme, nothing about any question or answer
+const wkShareTxt=res=>{const w=res.chal.weekend||{};return`Daily Banana · Weekend challenge #${pad3(w.n||0)}${w.theme?` · ${w.theme}`:''}\n${fmt(res.total)}/${ROUNDS*MAX_PTS}\nCan you beat me? ${location.host||'dailybanana.io'}/weekend`};
 const wkHidden=(r,res)=>{const c=r&&r.quick&&res&&res.chal&&res.chal.weekend?res.chal:null;return!!c&&(c.closes?Date.now()<c.closes:(wkWindow()&&Date.now()-res.at<3*864e5))};
 // Saturday or Sunday in Eastern time, or early Monday before it closes (midnight Pacific): the only times the app asks about it
 const wkWindow=()=>{const p=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',hour:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).map(x=>[x.type,x.value]));
@@ -1328,10 +1330,11 @@ function showResults(r,res){
   const title=r.quick?(wkc?`Daily Banana · Weekend challenge #${pad3(wkc.weekend.n||0)}`:res.chal?'Daily Banana · challenge':'Daily Banana · quick play'):`Daily Banana #${pad3(r.n)}`;
   // the weekend challenge keeps its answers (and each round's points) hidden until it closes, so they can't be passed around
   const HIDE=wkHidden(r,res);
-  const marks=res.answers.map(markA).join(' ');   // a space between each mark, so they don't run together
-  const shareTxt=`${title} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n${marks}\n${location.host||'dailybanana.io'}`;
-  const SHARE=`<div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(title)} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n<span class="emo">${marks}</span>\n${esc(location.host||'dailybanana.io')}</div>
-    <div class="legend-row in" style="--d:4">${LEGEND.split(' · ').map(x=>{const [e,...t]=x.split(' ');return`<span><span class="emo">${e}</span> ${t.join(' ')}</span>`}).join('')}</div>
+  // while the weekend answers are hidden, the shared text has the score only: no per-round marks that would show which rounds were easy
+  const marks=HIDE?'':res.answers.map(markA).join(' ');   // a space between each mark, so they don't run together
+  const shareTxt=HIDE?wkShareTxt(res):`${title} · ${fmt(res.total)}/${ROUNDS*MAX_PTS}\n${marks}\n${location.host||'dailybanana.io'}`;
+  const SHARE=`<div class="share in" style="--d:4" id="sh"><span class="eyebrow">Share preview</span>\n${esc(shareTxt)}</div>
+    ${HIDE?'':`<div class="legend-row in" style="--d:4">${LEGEND.split(' · ').map(x=>{const [e,...t]=x.split(' ');return`<span><span class="emo">${e}</span> ${t.join(' ')}</span>`}).join('')}</div>`}
     <div class="cprow in" style="--d:5" id="cprow-ab"><button class="btn main" id="cp"><span id="cpl">Copy results</span>${ICON.copy}</button><button class="btn sharebtn" id="dl" aria-label="Share your results as an image">${ICON.share}</button></div>`;
   const PLAYBTN=`<button class="btn in" style="--d:6;width:100%" id="again">Play again</button>`;
   const PLAY=`<div class="fact in" style="--d:7" id="fact" hidden><span class="eyebrow">Fun fact</span><p id="factt"></p></div>
@@ -1341,7 +1344,7 @@ function showResults(r,res){
   const top=`    <div class="sumrow in" style="--d:1">
       <div style="display:flex;flex-direction:column;gap:4px"><span class="note">${r.quick?(res.chal?(res.own?'Your challenge':(res.chal.weekend?'Weekend challenge':`Challenge from ${esc(res.chal.host)}`)):'Quick play'):`Daily #${pad3(r.n)}`}${res.why==='paused'?' · ended by pausing':''}</span>
         ${LAYOUT==='B'?`<b class="score num">${fmt(res.total)}<span style="font-weight:400;font-size:14px;letter-spacing:0">&nbsp;/ ${ROUNDS*MAX_PTS}</span></b>`
-          :`<b class="score num">${fmt(res.total)}</b><span style="font-size:14px">out of ${ROUNDS*MAX_PTS} · <span class="emo">${marks}</span></span>`}</div>
+          :`<b class="score num">${fmt(res.total)}</b><span style="font-size:14px">out of ${ROUNDS*MAX_PTS}${marks?` · <span class="emo">${marks}</span>`:''}</span>`}</div>
       <div class="r">${r.quick?'':`<span>${streak()} day streak</span>`}</div>
     </div>
     ${r.quick?'':`<div class="in" style="--d:1;display:flex;flex-direction:column;gap:2px"><b id="rank" style="font-size:17px">&nbsp;</b></div>`}
@@ -1543,7 +1546,9 @@ async function shareImage(r,res,btn){
     const line=r.quick?(res.chal?(res.chal.weekend?`Weekend challenge · ${res.chal.weekend.theme||''}`:res.own?'My challenge':`Challenge from ${res.chal.host}`):'Quick play · 6 random questions'):await rankText(r,res,true);
     font(700,52);x.fillStyle=INK;while(x.measureText(line).width>R-L&&parseInt(x.font)>30)font(700,parseInt(x.font)-2);x.fillText(line,L,610);
     const g=20,sq=(R-L-g*(ROUNDS-1))/ROUNDS,sy=680;
-    for(let i=0;i<ROUNDS;i++){const a=ans[i]||{},p=a.p||0,X=L+i*(sq+g),miss=a.guess==null||p<40,bull=!miss&&p>=90;
+    const HID=wkHidden(r,res);
+    if(HID)for(let i=0;i<ROUNDS;i++){const a=ans[i]||{},X=L+i*(sq+g);box(X,sy,sq,sq,CARD,5);x.fillStyle=INK;x.textAlign='center';font(700,54);x.fillText(a.guess==null?'–':'✓',X+sq/2,sy+sq/2+18);x.textAlign='left'}   // weekend: played, nothing about how each round went
+    else for(let i=0;i<ROUNDS;i++){const a=ans[i]||{},p=a.p||0,X=L+i*(sq+g),miss=a.guess==null||p<40,bull=!miss&&p>=90;
       const gold=bull&&p>=100,fill=gold?'#B35C00':bull?CARD:miss?CARD:p>=70?'#8A5A2B':ACC,col=p>=70&&!bull?'#FFF3C9':miss?MUT:INK;
       if(miss){x.fillStyle=fill;x.fillRect(X,sy,sq,sq);x.lineWidth=4;x.strokeStyle=MUT;x.strokeRect(X+2,sy+2,sq-4,sq-4)}else box(X,sy,sq,sq,fill,5);
       x.fillStyle=col;x.textAlign='center';
@@ -1554,7 +1559,7 @@ async function shareImage(r,res,btn){
     x.fillStyle=INK;x.fillRect(L,878,R-L,4);
     // three stats spread evenly across the width
     const today=ans.filter(a=>(a&&a.p||0)>=90).length,qt=quickTotals();
-    const stats=r.quick?[[fmt(today),'bananas this game',true],[`${Math.round(100*res.total/(ROUNDS*MAX_PTS))}%`,'accuracy'],[qt.g?fmt(Math.round(qt.t/qt.g)):'–','avg score']]:[[fmt(today),'bananas today',true],[fmt(dailyBananas()),'bananas all time'],[fmt(streak()),'day streak']];
+    const stats=HID?[[`${Math.round(100*res.total/(ROUNDS*MAX_PTS))}%`,'accuracy'],[`${ans.filter(a=>a&&a.guess!=null).length}/${ROUNDS}`,'rounds answered']]:r.quick?[[fmt(today),'bananas this game',true],[`${Math.round(100*res.total/(ROUNDS*MAX_PTS))}%`,'accuracy'],[qt.g?fmt(Math.round(qt.t/qt.g)):'–','avg score']]:[[fmt(today),'bananas today',true],[fmt(dailyBananas()),'bananas all time'],[fmt(streak()),'day streak']];
     const ws=stats.map(([v,l,ic])=>{font(700,80);const vw=x.measureText(v).width+(ic?78:0);font(400,34);return Math.max(vw,x.measureText(l).width)});
     const gap=(R-L-ws.reduce((a,b)=>a+b,0))/(stats.length-1);let sx=L;
     stats.forEach(([v,l,ic],i)=>{let vx=sx;if(ic){ban(64,sx+32,972);vx+=78}font(700,80);x.fillStyle=INK;x.fillText(v,vx,1000);font(400,34);x.fillStyle=MUT;x.fillText(l,sx,1050);sx+=ws[i]+gap});
@@ -1979,11 +1984,15 @@ async function showChallenge(code){USE.other=1;
     <div class="head in" style="--d:1"><h2>${(c.mine||ownChal(c.code))?'Your challenge':chalName(c)}</h2></div>
     <div class="in" style="--d:1;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><button class="codechip" id="cpcode" aria-label="Copy challenge code ${esc(c.code)}">${esc(c.code)} ${ICON.copy}</button><span class="note">${status(c)} · 6 rounds, the same for everyone · ${c.entries.length} played</span></div>
     <div class="in" style="--d:2">${c.weekend?wkStatsHtml(c):board(c)}</div>
+    ${c.weekend&&wkMine(c)?`<div class="chal in" style="--d:2"><h3>Your result · ${fmt(wkMine(c).total)} / ${ROUNDS*MAX_PTS}</h3><div class="share" id="sh" style="margin:0">${esc(wkShareTxt(wkMine(c)))}</div><div class="cprow"><button class="btn main" id="cp"><span id="cpl">Copy results</span>${ICON.copy}</button><button class="btn sharebtn" id="dl" aria-label="Share your result as an image">${ICON.share}</button></div>${c.open?'<span class="note">Just your score. The answers stay hidden until the challenge closes.</span>':''}</div>`:''}
     ${c.open&&!played?`<div class="chal in" style="--d:3"><h3>Your turn</h3><span class="note">Six questions, 25 seconds each. You get one try.</span>${nameNote()}<button class="btn main" id="playch"><span>Play the challenge</span><span aria-hidden="true">→</span></button><span class="note" id="cherr"></span></div>`:''}
     ${c.open&&(c.mine||ownChal(c.code))?`<div class="chal in" style="--d:3"><h3>Share it</h3>${shareLinkRow(c.code)}${c.mine?'<button class="btn" id="closech">Close challenge now</button>':''}</div>`:''}
     ${!c.open?`<div class="note in" style="--d:3">This challenge is closed. ${c.entries[0]&&!c.weekend?`${esc(c.entries[0].name)} came out on top.`:''}${c.weekend?' Results go up Monday morning on <a href="https://www.instagram.com/dailybanana.io/" target="_blank" rel="noopener">Instagram</a>.':''}</div>`:''}
   </div>${footer(5)}`;
   wireNav();wireLink(c.code,c.host);wireCode(c.code);
+  const mine=c.weekend&&wkMine(c);if(mine){const r={...puzzleFor({rounds:fromNames(mine.rounds,c.weekend.unit)}),n:0,quick:true,chal:mine.chal};
+    document.getElementById('cp').onclick=async()=>{const lab=document.getElementById('cpl');try{await navigator.clipboard.writeText(wkShareTxt(mine));lab.textContent='Copied!';toast('Results copied to your clipboard');log('share',{what:'weekend',device:DEVICE})}catch(_){const rg=document.createRange();rg.selectNodeContents(document.getElementById('sh'));const sl=getSelection();sl.removeAllRanges();sl.addRange(rg);lab.textContent='Selected: copy it'}};
+    const dl=document.getElementById('dl');dl.onclick=()=>shareImage(r,mine,dl)}
   
   const cl=document.getElementById('closech');if(cl)cl.onclick=async()=>{cl.disabled=true;await chalApi({action:'close',code:c.code});showChallenge(c.code)};
   const pl=document.getElementById('playch');if(pl)pl.onclick=()=>{
@@ -1991,6 +2000,8 @@ async function showChallenge(code){USE.other=1;
     quick(c);
   };
 }
+// your finished game of this weekend challenge, from this device's history (with its chal info filled in)
+const wkMine=c=>{const q=quickList().find(q=>q.chal&&q.chal.code===c.code&&Array.isArray(q.answers));return q?{...q,chal:{...c,...q.chal,weekend:{...c.weekend,...(q.chal.weekend||{})},closes:c.closes}}:null};
 // tap the code to copy it, so it can be typed in on another phone
 function wireCode(code){const b=document.getElementById('cpcode');if(b)b.onclick=async()=>{try{await navigator.clipboard.writeText(code);toast('Challenge code copied')}catch(_){toast(code)}}}
 // enter a code from the home screen
