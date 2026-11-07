@@ -24,7 +24,7 @@ const cleanMarks = (s) => [...String(s || '')].slice(0, ROUNDS).join('');
 // each round's points (0-100, null = no guess), for the weekend stats
 const cleanPoints = (a) => (Array.isArray(a) && a.length === ROUNDS ? a.map((x) => (x == null || !Number.isFinite(+x) ? null : Math.max(0, Math.min(100, Math.round(+x))))) : null);
 const ccOf = (context) => String((context && context.geo && context.geo.country && context.geo.country.code) || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
-const MIN_COUNTRY = 30;   // a country needs this many players to appear in the weekend's top countries
+const MIN_COUNTRY = 10;   // a country needs this many players to appear in the weekend's top countries
 const avg = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
 // the weekend challenge's numbers: score spread, how each round went, top countries (totals only, never names)
 function weekendStats(all) {
