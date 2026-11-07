@@ -320,7 +320,16 @@ export default async (req) => {
   const dR2 = depthRaw.filter((x) => inR(x.key.split('/')[1], from, to));
   const depthOf = (rows) => ({ views: rows.length, ...Object.fromEntries(['share', 'rounds', 'fact', 'bottom'].map((k) => [k, rows.length ? pct(rows.filter((x) => (x.seen || []).includes(k)).length, rows.length) : null])) });
   const depth = { all: depthOf(dR2), A: depthOf(dR2.filter((x) => x.v === 'A')), B: depthOf(dR2.filter((x) => x.v === 'B')), since: '2026-11-07' };
-  const ab = { test: AB_TEST, ends: '2026-11-11T05:00:00Z', A: abA, B: abB, confidence: abConf };
+  // N. weekend hints test: this weekend's players before the hints were turned off vs after
+  const HINTS_OFF = Date.parse('2026-11-07T13:38:48Z');
+  const wkCur = await store.get('weekend/current', { type: 'json' }).catch(() => null);
+  let hints = null;
+  if (wkCur && wkCur.code) {
+    const es = entries.filter((e) => e.key.startsWith(`entries/${wkCur.code}/`) && Number.isFinite(e.score));
+    const side = (xs) => ({ players: xs.length, avg: xs.length ? Math.round(xs.reduce((t, e) => t + e.score, 0) / xs.length) : null });
+    hints = { off_at: new Date(HINTS_OFF).toISOString(), with: side(es.filter((e) => e.at < HINTS_OFF)), without: side(es.filter((e) => e.at >= HINTS_OFF)) };
+  }
+  const ab = { test: AB_TEST, hints, ends: '2026-11-11T05:00:00Z', A: abA, B: abB, confidence: abConf };
 
   // J. games to review: daily games in the range that look too good, plus any already reviewed
   const [itemsD, dailiesD] = await Promise.all(['items', 'dailies'].map((f) => fetch(`${url.origin}/data/${f}.json`).then((r) => r.json()).catch(() => null)));

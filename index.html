@@ -1141,7 +1141,7 @@ function showQuestion(){
       </div>
       <div class="in" style="--d:1">${squares(S.answers,S.i,wkLive())}</div>
       <div class="ask in" style="--d:1"><span class="lab">Approximately how many</span><b>${esc(q.A.plural)}</b><span class="lab">${esc(q.B.dim)} is${q.B.avg?' the average':''}</span><b>${esc(q.B.avg?q.B.name:the(q.B))}?</b></div>
-      ${S.r.chal&&S.r.chal.weekend&&((S.r.chal.weekend.hints||[])[S.i]||S.r.chal.weekend.hint)?`<p class="wkhint in" style="--d:1">(${esc((S.r.chal.weekend.hints||[])[S.i]||S.r.chal.weekend.hint)})</p>`:''}
+      ${/* weekend size hints are off from Nov 7 (they confused people about which item they meant); Admin compares scores with and without them */''}
       <form id="f" class="in" style="--d:2" autocomplete="off">
         <label for="g" class="field"><span class="mut">≈</span><span class="mirror num" id="m"></span><span class="caret"></span>
           <button type="submit" class="go" id="go" aria-label="Enter guess">Enter</button>
