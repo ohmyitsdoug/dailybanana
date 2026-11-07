@@ -54,23 +54,51 @@ const flagsFor = (g, usual, plays) => {
   return f;
 };
 
+// the preset ranges the dashboard offers; their numbers are worked out every 15 minutes ahead of time (admin-snap.mjs)
+export const presets = (today = day()) => ({ 1: [today, today], 7: [add(today, -6), today], 30: [add(today, -29), today], all: [SINCE.games, today] });
+const SNAP_OK = 20 * 60e3;   // a ready copy older than this (a missed run) is worked out live instead
+export const saveSnap = (store, p, d) => store.setJSON(`snap/${p}`, { at: Date.now(), d }).catch(() => {});
+// a review decision shows on the ready copies right away (the counts catch up on the next 15-minute run)
+const patchSnaps = (store, key, s) => Promise.all(Object.keys(presets()).map(async (p) => {
+  const sn = await store.get(`snap/${p}`, { type: 'json' }).catch(() => null), r = sn && sn.d && (sn.d.review || []).find((x) => x.key === key);
+  if (r) { r.s = s; r.box = s ? 'done' : r.auto ? 'auto' : 'inbox'; await store.setJSON(`snap/${p}`, sn).catch(() => {}); }
+}));
+
 export default async (req) => {
   if (!isAdminUser(await userFor(req))) return json({ error: 'not the admin account' }, 401);
   const store = db(), url = new URL(req.url), today = day();
-  if (req.method === 'POST') { let b = {}; try { b = await req.json(); } catch {} return b.action === 'review' ? review(store, b) : b.action === 'ads' ? saveAds(store, b) : json({ error: 'unknown action' }, 400); }
+  if (req.method === 'POST') {
+    let b = {}; try { b = await req.json(); } catch {}
+    const r = b.action === 'review' ? await review(store, b) : b.action === 'ads' ? await saveAds(store, b) : json({ error: 'unknown action' }, 400);
+    if (b.action === 'review' && r.ok) await patchSnaps(store, String(b.key || ''), b.s === 'out' || b.s === 'ok' ? b.s : null);
+    return r;
+  }
   let to = isISO(url.searchParams.get('to')) ? url.searchParams.get('to') : today;
   let from = isISO(url.searchParams.get('from')) ? url.searchParams.get('from') : add(to, -29);
   if (to > today) to = today;
   if (from < SINCE.games) from = SINCE.games;
   if (from > to) from = to;
+  const q = (k) => url.searchParams.get(k) === '1', live = q('live') || q('meta') || q('fresh');
+  const p = Object.entries(presets(today)).find(([, r]) => r[0] === from && r[1] === to)?.[0];
+  if (p && !live) {   // a preset range: send the copy worked out in the last 15 minutes, instantly
+    const sn = await store.get(`snap/${p}`, { type: 'json' }).catch(() => null);
+    if (sn && sn.d && sn.d.to === to && Date.now() - sn.at < SNAP_OK) return json({ ...sn.d, snap_at: sn.at });
+  }
+  const d = await report(store, { from, to, origin: url.origin, metaFresh: q('meta'), fresh: q('fresh') });
+  if (p) await saveSnap(store, p, d);
+  return json({ ...d, snap_at: Date.now() });
+};
 
+// every number on the dashboard for one date range (Eastern days, inclusive)
+export async function report(store, { from, to, origin = process.env.URL || 'https://dailybanana.io', metaFresh = false, fresh = false, reuse = 0 }) {
+  const today = day();
   // most records never change once written, so they come from a cache and only new ones are read (see getAllCached);
   // the few that can change get read again: plays still missing guesses (a backfill can add them), brand-new devices' source, challenges, accounts
   // Meta first, on its own: with hundreds of storage reads in flight the server's address lookups get too busy to reach Meta (EBUSY)
-  const metaP = Promise.resolve(metaAds(store, { fresh: url.searchParams.get('meta') === '1' }));
+  const metaP = Promise.resolve(metaAds(store, { fresh: metaFresh }));
   await metaP;
-  const fresh = url.searchParams.get('fresh') === '1', yday = add(today, -1);
-  const C = (p, recheck) => getAllCached(store, p, { recheck, fresh });
+  const yday = add(today, -1);
+  const C = (p, recheck) => getAllCached(store, p, { recheck, fresh, reuse });
   const [plays, quickRaw, startsD, startsQ, visitsRaw, shares, chals, entries, users, seenAll, signins, kofi, timeRaw, ratingsRaw, feedbackRaw, abRaw, depthRaw] = await Promise.all([
     C('plays/', (v) => !Array.isArray(v.guesses) || !v.guesses.length), C('quick/'), C('starts/daily/'), C('starts/quick/'),
     C('visits/'), C('shares/'), getAll(store, 'challenges/'), C('entries/'), getAll(store, 'users/'), C('seen/', (v) => !v.first || (v.first >= yday && !v.src)), C('signins/'), C('kofi/'),
@@ -341,7 +369,7 @@ export default async (req) => {
   const ab = { test: AB_TEST, hints, ends: '2026-11-11T05:00:00Z', A: abA, B: abB, confidence: abConf };
 
   // J. games to review: daily games in the range that look too good, plus any already reviewed
-  const [itemsD, dailiesD] = await Promise.all(['items', 'dailies'].map((f) => fetch(`${url.origin}/data/${f}.json`).then((r) => r.json()).catch(() => null)));
+  const [itemsD, dailiesD] = await Promise.all(['items', 'dailies'].map((f) => fetch(`${origin}/data/${f}.json`).then((r) => r.json()).catch(() => null)));
   const sent = new Map(); for (const p of plays) { const k = `${p.device}|${p.key.split('/')[1]}`; sent.set(k, (sent.get(k) || 0) + 1); }
   const byDev = new Map(); for (const g of dailies) { if (!byDev.has(g.device)) byDev.set(g.device, []); byDev.get(g.device).push(g); }
   const lastV = new Map(); for (const v of [...visits].sort((a, b) => (a.day < b.day ? -1 : 1))) lastV.set(v.device, v);
@@ -360,5 +388,5 @@ export default async (req) => {
   }
   toReview.sort((a, b) => b.day.localeCompare(a.day) || b.score - a.score);
 
-  return json({ depth, ab, ads, meta: { connected: !!meta.connected, at: meta.at || null, error: meta.error || null }, review: toReview, from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
+  return ({ depth, ab, ads, meta: { connected: !!meta.connected, at: meta.at || null, error: meta.error || null }, review: toReview, from, to, today, days_in_range: len, since: { ...SINCE, sources: '2026-11-04' }, health, retention, daily, quick: quickM, bananas, traffic, sources, where, ratings, renamed, feedback: feedbackRaw.sort((a, b) => (b.at || 0) - (a.at || 0)).slice(0, 100).map((f) => ({ name: f.name || '', message: f.message, at: f.at, day: f.key.split('/')[1] })), days });
 };

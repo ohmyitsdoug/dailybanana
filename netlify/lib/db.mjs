@@ -25,8 +25,9 @@ export async function getAll(store, prefix) {
 // once written, so values are kept in memory (while the function is warm) and in one snapshot blob per prefix
 // (cache/{prefix}), and only keys that are new since last time are fetched. `recheck(value)` says which
 // cached records may still change (e.g. ones written today) so they are fetched again; `fresh` refetches all.
-const MEM = new Map();
-export async function getAllCached(store, prefix, { recheck = null, fresh = false } = {}) {
+const MEM = new Map(), LISTED = new Map();
+// reuse: ms — skip listing the prefix again if it was read that recently (the 15-minute job works out several ranges in one go)
+export async function getAllCached(store, prefix, { recheck = null, fresh = false, reuse = 0 } = {}) {
   const ck = `cache/${prefix.replace(/\//g, '_')}`;
   let vals = MEM.get(prefix);
   if (!vals) {
@@ -34,6 +35,8 @@ export async function getAllCached(store, prefix, { recheck = null, fresh = fals
     vals = new Map(snap ? Object.entries(snap) : []);
     MEM.set(prefix, vals);
   }
+  const L = LISTED.get(prefix);
+  if (reuse && !fresh && L && Date.now() - L.at < reuse && MEM.get(prefix) === vals) return L.ks.map((k) => ({ key: k, ...(vals.get(k) || {}) }));
   const ks = await keys(store, prefix), live = new Set(ks);
   const need = ks.filter((k) => fresh || !vals.has(k) || (recheck && recheck(vals.get(k), k)));
   let changed = false;
@@ -43,5 +46,6 @@ export async function getAllCached(store, prefix, { recheck = null, fresh = fals
     part.forEach((k, j) => { const before = vals.get(k); vals.set(k, got[j] || {}); if (JSON.stringify(before) !== JSON.stringify(got[j] || {})) changed = true; });
   }
   if (changed) await store.setJSON(ck, Object.fromEntries(vals)).catch(() => {});
+  LISTED.set(prefix, { at: Date.now(), ks });
   return ks.map((k) => ({ key: k, ...(vals.get(k) || {}) }));
 }

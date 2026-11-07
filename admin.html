@@ -125,40 +125,42 @@ function rangeDates(R=RANGE){
   if(R==='all')return{from:'2026-11-03',to:t};
   return{from:add(t,-(+R||30)+1),to:t};
 }
-// Standard dashboard caching: numbers for each range are kept on this device for 30 minutes and shown instantly.
-// The server is only asked when they're older than that, when you tap Refresh, or for a custom date range.
-const FRESH_MS=30*60e3,ADM=new Map();let LAST='',PRE=false;
+// Standard dashboard caching: the last numbers for each range are kept on this device and shown instantly (even yesterday's),
+// then swapped for the server's copy, which is worked out every 15 minutes ahead of time. Refresh works them out live.
+const FRESH_MS=3*60e3,ADM=new Map();let LAST='',PRE=false;
 const cacheGet=key=>{if(ADM.has(key))return ADM.get(key);try{const v=JSON.parse(localStorage.getItem('db-adm:'+key)||'null');if(v&&v.d)ADM.set(key,v);return v}catch(_){return null}};
-const cachePut=(key,d)=>{const v={at:Date.now(),d};ADM.set(key,v);
+const cachePut=(key,d)=>{const v={at:d.snap_at||Date.now(),d};ADM.set(key,v);
   try{localStorage.setItem('db-adm:'+key,JSON.stringify(v))}catch(_){   // full: drop older ranges and try again
     try{Object.keys(localStorage).filter(k=>k.startsWith('db-adm:')&&k!=='db-adm:'+key).forEach(k=>localStorage.removeItem(k));localStorage.setItem('db-adm:'+key,JSON.stringify(v))}catch(_){}}};
-const fresh=v=>v&&Date.now()-v.at<FRESH_MS;
+const fresh=v=>v&&v.d&&v.d.today===todayET()&&Date.now()-v.at<FRESH_MS;
+// presets are saved under their name, so a new day still opens with the last numbers while the new ones load
+const keyFor=(R,from,to)=>R==='custom'?from+'_'+to:'p'+R;
 async function load(force=false){
   if(!TOKEN)return gate();
-  const {from,to}=rangeDates(),key=from+'_'+to,seen=cacheGet(key);
+  const {from,to}=rangeDates(),key=keyFor(RANGE,from,to),seen=cacheGet(key);
   if(seen)draw(seen.d,seen.at);
   else if(!m.querySelector('main'))m.innerHTML='<main class="wrapx"><div class="mut">Loading…</div></main>';
   LAST=key;
   if(seen&&fresh(seen)&&!force&&RANGE!=='custom'){prefetch();return}   // fresh enough: no server call
   setBusy(true);
-  const d=await fetchRange(from,to);
+  const d=await fetchRange(from,to,key,force);
   if(LAST!==key)return;   // a different range was picked meanwhile
   setBusy(false);
   if(d&&d.unauth)return gate('This account isn\'t the admin. Sign in with your admin Google or Discord account on the game\'s Menu.');
   if(!d)return seen?null:m.innerHTML='<main class="wrapx"><div class="msg">Could not reach the server.</div></main>';
   if(!d.health)return seen?null:m.innerHTML='<main class="wrapx"><div class="msg">Server error.</div></main>';
-  draw(d,Date.now());prefetch();
+  draw(d,d.snap_at||Date.now());prefetch();
 }
 function setBusy(on){const b=document.getElementById('refresh');if(b){b.disabled=on;b.textContent=on?'Updating…':'Refresh'}}
 // once the range on screen is ready, quietly fill in the other preset ranges that are out of date, one at a time
 async function prefetch(){if(PRE)return;PRE=true;
-  for(const R of ['1','7','30','all']){const {from,to}=rangeDates(R);if(fresh(cacheGet(from+'_'+to)))continue;await fetchRange(from,to)}
+  for(const R of ['1','7','30','all']){const {from,to}=rangeDates(R),k=keyFor(R,from,to);if(fresh(cacheGet(k)))continue;await fetchRange(from,to,k)}
   PRE=false}
 let META_NOW=false;
 function adminToast(msg){let t=document.getElementById('atoast');if(!t){t=document.createElement('div');t.id='atoast';t.setAttribute('role','status');
   t.style.cssText='position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;font-weight:700;font-size:14px;z-index:50;box-shadow:3px 3px 0 var(--accsh);max-width:calc(100vw - 32px)';document.body.appendChild(t)}
   t.textContent=msg;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',2200)}
-async function fetchRange(from,to){const key=from+'_'+to,mq=META_NOW?'&meta=1':'';META_NOW=false;
+async function fetchRange(from,to,key,live=false){const mq=(META_NOW?'&meta=1':'')+(live?'&live=1':'');META_NOW=false;
   const r=await fetch(`${API}/admin?from=${from}&to=${to}${mq}`,{headers:{authorization:'Bearer '+TOKEN}}).catch(()=>null);
   if(!r)return null;if(r.status===401)return{unauth:true};
   const d=await r.json().catch(()=>null);
